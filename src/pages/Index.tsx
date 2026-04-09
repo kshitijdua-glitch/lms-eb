@@ -1,16 +1,20 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useRole } from "@/contexts/RoleContext";
+import { AgentDashboard } from "@/components/dashboards/AgentDashboard";
+import { TLDashboard } from "@/components/dashboards/TLDashboard";
+import { ManagerDashboard } from "@/components/dashboards/ManagerDashboard";
+import { ClusterHeadDashboard } from "@/components/dashboards/ClusterHeadDashboard";
+import { AdminDashboard } from "@/components/dashboards/AdminDashboard";
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
-  return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
-    </div>
-  );
+const Index = () => {
+  const { role } = useRole();
+
+  switch (role) {
+    case "agent": return <AgentDashboard />;
+    case "team_leader": return <TLDashboard />;
+    case "manager": return <ManagerDashboard />;
+    case "cluster_head": return <ClusterHeadDashboard />;
+    case "data_admin": return <AdminDashboard />;
+  }
 };
-
-const Index = PlaceholderIndex;
 
 export default Index;
