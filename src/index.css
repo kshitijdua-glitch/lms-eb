@@ -1,89 +1,91 @@
+@import url('https://fonts.googleapis.com/css2?family=Architects+Daughter&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
+    --background: 0 0% 100%;
+    --foreground: 0 0% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 0 0% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 0 0% 10%;
 
-    --primary: 221 83% 25%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 0 0% 10%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 214 32% 91%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 0 0% 94%;
+    --secondary-foreground: 0 0% 10%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
 
-    --accent: 210 40% 96%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 0 0% 94%;
+    --accent-foreground: 0 0% 10%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 0% 35%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 221 83% 25%;
+    --border: 0 0% 72%;
+    --input: 0 0% 72%;
+    --ring: 0 0% 10%;
 
-    --radius: 0.5rem;
+    --radius: 2px;
 
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 210 40% 98%;
-    --sidebar-primary-foreground: 222 47% 11%;
-    --sidebar-accent: 221 50% 18%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 221 50% 18%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-background: 0 0% 96%;
+    --sidebar-foreground: 0 0% 10%;
+    --sidebar-primary: 0 0% 10%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 88%;
+    --sidebar-accent-foreground: 0 0% 10%;
+    --sidebar-border: 0 0% 72%;
+    --sidebar-ring: 0 0% 10%;
 
-    --success: 142 76% 36%;
+    --success: 0 0% 35%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
+    --warning: 0 0% 50%;
     --warning-foreground: 0 0% 100%;
-    --info: 199 89% 48%;
+    --info: 0 0% 60%;
     --info-foreground: 0 0% 100%;
   }
 
   .dark {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 98%;
-    --card: 222 47% 8%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 47% 8%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 11%;
-    --secondary: 217 33% 18%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 18%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 217 33% 18%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217 33% 18%;
-    --input: 217 33% 18%;
-    --ring: 213 27% 84%;
-    --sidebar-background: 222 47% 6%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 47% 12%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 222 47% 12%;
-    --sidebar-ring: 217 91% 60%;
-    --success: 142 76% 36%;
+    --background: 0 0% 8%;
+    --foreground: 0 0% 90%;
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 90%;
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 90%;
+    --primary: 0 0% 90%;
+    --primary-foreground: 0 0% 10%;
+    --secondary: 0 0% 18%;
+    --secondary-foreground: 0 0% 90%;
+    --muted: 0 0% 18%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 0 0% 18%;
+    --accent-foreground: 0 0% 90%;
+    --destructive: 0 0% 40%;
+    --destructive-foreground: 0 0% 90%;
+    --border: 0 0% 28%;
+    --input: 0 0% 28%;
+    --ring: 0 0% 80%;
+    --sidebar-background: 0 0% 10%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 0 0% 90%;
+    --sidebar-primary-foreground: 0 0% 10%;
+    --sidebar-accent: 0 0% 16%;
+    --sidebar-accent-foreground: 0 0% 90%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 0 0% 80%;
+    --success: 0 0% 55%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
+    --warning: 0 0% 50%;
     --warning-foreground: 0 0% 100%;
-    --info: 199 89% 48%;
+    --info: 0 0% 60%;
     --info-foreground: 0 0% 100%;
   }
 }
@@ -91,8 +93,74 @@
 @layer base {
   * {
     @apply border-border;
+    font-family: 'Architects Daughter', cursive !important;
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Lo-fi wireframe overrides */
+@layer components {
+  /* Dashed borders for cards */
+  .border, [class*="border-"] {
+    border-style: dashed !important;
+  }
+
+  /* Remove all shadows */
+  *, *::before, *::after {
+    box-shadow: none !important;
+  }
+
+  /* Roughen up buttons */
+  button, [role="button"] {
+    border: 1.5px dashed hsl(var(--border)) !important;
+    border-radius: 2px !important;
+  }
+
+  /* Make inputs look hand-drawn */
+  input, textarea, select, [role="combobox"] {
+    border: 1.5px dashed hsl(var(--border)) !important;
+    border-radius: 2px !important;
+    background: transparent !important;
+  }
+
+  /* Cross-hatch pattern for filled areas */
+  .bg-primary {
+    background: repeating-linear-gradient(
+      45deg,
+      hsl(var(--primary)),
+      hsl(var(--primary)) 2px,
+      hsl(var(--primary) / 0.7) 2px,
+      hsl(var(--primary) / 0.7) 4px
+    ) !important;
+  }
+
+  /* Badge wireframe style */
+  [class*="badge"], .badge {
+    border: 1.5px dashed hsl(var(--foreground)) !important;
+    border-radius: 2px !important;
+    background: transparent !important;
+    color: hsl(var(--foreground)) !important;
+  }
+
+  /* Table wireframe */
+  table {
+    border: 1.5px dashed hsl(var(--border)) !important;
+  }
+  th, td {
+    border: 1px dashed hsl(var(--border)) !important;
+  }
+
+  /* Card wireframe */
+  [class*="card"] {
+    border: 1.5px dashed hsl(var(--border)) !important;
+    border-radius: 2px !important;
+    box-shadow: none !important;
+  }
+
+  /* Annotation style for labels */
+  label {
+    font-style: italic;
   }
 }
