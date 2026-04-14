@@ -1,93 +1,95 @@
 
 
-# Plan: Update Agent Flow Per PRD
+# Plan: Update Team Leader Flow Per TL PRD
 
 ## Summary
-Align the agent portal with the detailed Agent PRD. The current prototype covers the basics but is missing several key features and details specified in the PRD.
+The current TL view is a basic dashboard with 4 KPI cards, agent activity chart, disposition pie chart, and aging alerts. The PRD defines the TL as a dual-role (producer + supervisor) with extensive team management, lead reassignment, agent monitoring, target setting, performance reporting, and lead count reports. This plan brings the TL portal in line with the PRD.
 
 ## Gap Analysis
 
-**What exists and needs enhancement:**
-- Dashboard: Missing "Total Assigned Leads" widget, "Create New Lead" quick-nav, lead expiry warnings, motivational daily target tracker
-- My Leads: Missing Source column, Follow-Up Scheduled column, lead source filter, follow-up status filter, sorting, lead count summary bar (total / worked today / never contacted)
-- Lead Detail: Missing editable profile fields, Pin Code field, Company Name, DND status, profile lock after STB, "Check Eligibility" and "Back to Leads" action bar buttons, immutable timestamped notes (currently just a single notes field), bureau pull flow with consent SMS status, STB events and system events in history
-- Call Log Modal: Missing separate date/time pickers, backdating limit (24hr), duration auto-zero for "Not Connected", "No Action" next action option already exists but missing "Schedule Follow-Up" date picker when that option is selected
-- Disposition System: Current types are flat. PRD defines 9 categories with sub-types (Follow-Up: Hot/Warm/Cold/Document/Callback/Price Discussion; Not Contactable: Busy/No Response/Switched Off/Invalid/Dropped/Wrong; etc.). Need grouped disposition selector.
-- STB Page: Missing Sanction Amount, Disbursement Date, Days Since Submission columns. Missing inline status update actions for non-API partners.
-- Follow-Ups: Missing Lead ID, Scheduled Time column, Days Since Allocation, status column (Upcoming/Due Now/Overdue), retry schedule display per sub-type
+**Current state:** Single `TLDashboard.tsx` with basic team stats. TL shares the same `/leads`, `/follow-ups`, `/stb` pages as agents with no team-specific views. No team management, no reassignment, no agent notes/flags, no target setting, no lead count report, no TL-specific performance view.
 
-**What is completely missing:**
-- Performance History page (`/performance`) with monthly summary cards and trend chart
-- Notifications panel (bell icon drawer with event list from PRD section 15)
-- Manual Lead Creation form needs Lead Source field, Loan Amount, City, Income, Notes, and duplicate check warning
+**What needs to be built:**
+
+1. **Dashboard** — Split into Own Production widgets (same as Agent) + Team Health widgets (missed FUs, compliance rate, agent activity status with login/zero-activity indicators, team STB/disbursed). Add 9 quick-nav buttons.
+
+2. **My Team Leads** — New page/tab at `/team-leads` with all team leads, Assigned Agent column, full filter set (agent, date range, stage, disposition, product, source, follow-up status, aging threshold, search). Bulk selection + Reassign Selected action.
+
+3. **My Team Follow-Ups** — New page/tab at `/team-follow-ups` with agent column, priority filters, escalation badges for 5+ NC leads.
+
+4. **My Team STB** — New page/tab at `/team-stb` with agent column, bank column, days since submission, inline status updates.
+
+5. **Team Management** — New page at `/team-management` with agent overview table (login status, leads assigned, worked today, FU compliance, STB, disbursed, last activity). Click agent row to filter team leads. Agent activity monitoring (calls today, disposition breakdown, missed FUs, overdue leads).
+
+6. **Lead Reassignment** — Reassign button on lead detail (when TL views team agent's lead). Single reassignment with agent dropdown + optional reason. Bulk reassignment from team leads view. Restrictions: same team only, no reassigning own leads, no reassigning STB-locked leads.
+
+7. **Agent Notes & Flags** — Agent profile card accessible from Team Management. Add dated notes (immutable). Flag types: On Leave, Performance Watch, Disposition Quality Issue, Training Required, DND Violation Risk. Flags removable by TL.
+
+8. **Daily Target Setting** — From Team Management, set per-agent daily targets (Calls, FUs, STBs, Leads to Work). Actual vs target display. Repeat daily option.
+
+9. **Lead Count Report** — New page at `/team-reports` with date range, agent, product, disposition filters. Table: date, agent, disposition category/sub-type, count. Summary row. CSV export.
+
+10. **Performance Reporting** — Own performance (reuse agent Performance page). Agent performance history (per agent, 12 months, with trend chart). Team performance summary table (all agents side by side for current month, sortable). CSV export.
+
+11. **TL Disposition on Agent Leads** — When TL views an agent's lead, dispositions are tagged as "TL" type in history. TL Not Eligible locks STB. TL Closed/Lost archives lead.
+
+12. **TL Notifications** — Extend notification mock data with team events: agent missed FU, 5-NC escalation, team lead expiry, agent not logged in, STB initiated by agent, STB status updates.
 
 ## Implementation Steps
 
-### 1. Update Types and Disposition System
-- Expand `DispositionType` to include all PRD sub-types (hot_follow_up, warm_follow_up, cold_follow_up, document_follow_up, callback_requested, price_discussion_pending, number_busy, no_response, invalid_number, call_dropped, already_has_loan, does_not_need, rate_too_high, will_decide_later, chose_competitor, language_barrier, hung_up, credit_score_low, income_below, age_outside, pin_not_serviceable, too_many_loans, high_dpd, recent_writeoff, dnd_registered, pan_not_available, income_proof_not_ready, address_proof_pending, bank_statement_not_available, photo_id_missing, stb_qualified, duplicate, closed_sanctioned_elsewhere, closed_changed_mind, closed_unreachable)
-- Add `pinCode`, `companyName`, `dndStatus`, `leadSource` fields to Lead type
-- Add disposition category grouping to DispositionConfig
-- Update mock data generator accordingly
+### 1. Update Navigation & Routes
+- Add TL nav items: My Leads, My Follow-Ups, My STB, Team Leads, Team Follow-Ups, Team STB, Team Management, Lead Count Report, Performance
+- Add routes: `/team-leads`, `/team-follow-ups`, `/team-stb`, `/team-management`, `/team-reports`
 
-### 2. Enhance Agent Dashboard
-- Add "Total Assigned Leads" KPI widget
-- Add "Create New Lead" quick-nav button
-- Add lead expiry warnings section (leads expiring within 3 days)
-- Add optional daily target tracker (calls logged vs target)
+### 2. Revamp TL Dashboard
+- Split into two sections: "My Production" (6 KPI cards mirroring agent) and "Team Health" (7 widgets per PRD)
+- Agent Activity Status list with login indicators and zero-activity alerts
+- 9 quick-nav buttons
 
-### 3. Enhance My Leads Page
-- Add Source and Follow-Up Scheduled columns to table
-- Add lead source and follow-up status filters
-- Add summary bar: Total leads / Worked today / Never contacted
-- Add column sorting
-- Hide Export button for agent role (PRD restriction)
+### 3. Build Team Leads Page
+- Full table with Assigned Agent column and all PRD filters
+- Checkbox selection + Reassign Selected button
+- Reuse lead row components from LeadsPage
 
-### 4. Revamp Lead Detail Page
-- Make profile fields editable with inline edit controls; mark mandatory fields
-- Add Pin Code (auto-fill State), Company Name, DND status display
-- Implement profile lock indicator when STB has been initiated
-- Add persistent Action Bar with: Log Call, Check Eligibility (triggers BRE), Send to Bank (with pre-STB checklist), Back to Leads
-- Replace single notes field with immutable timestamped notes list + add note form
-- Enhance Bureau section: pull status (Fresh/Stale/Not Pulled), Pull Bureau button with consent SMS status
-- Add BRE mode toggle (Basic vs Bureau)
-- Expand history timeline to show STB events, bureau pulls, status changes, system events alongside call logs and follow-ups
+### 4. Build Team Follow-Ups & Team STB Pages
+- Team Follow-Ups: agent column, escalation badges for 5+ NC
+- Team STB: agent column, bank column, inline status updates
 
-### 5. Revamp Call Log Modal
-- Separate Date picker (max 24hr backdating) and Time picker
-- Duration auto-set to 0 and disabled when outcome is "Not Connected"
-- Grouped disposition selector organized by PRD categories
-- Show follow-up date/time picker when "Schedule Follow-Up" is selected as next action
+### 5. Build Team Management Page
+- Agent overview table with all PRD columns
+- Click agent row to filter team leads
+- Agent activity monitoring panel (calls today, disposition breakdown)
+- Agent profile card with notes (immutable, timestamped) and flags
+- Set Targets modal per agent
 
-### 6. Enhance STB Page
-- Add Sanction Amount, Disbursement Date, Days Since Submission columns
-- Add inline status update dropdown for each submission (for non-API partners)
-- Show multi-bank rows per lead clearly
+### 6. Add Lead Reassignment
+- Reassign button on LeadDetailPage when role=TL and lead belongs to team agent
+- Agent dropdown (same team, exclude current assignee)
+- Optional reason field
+- Mock reassignment with history log entry
+- Bulk reassignment from Team Leads page
 
-### 7. Enhance Follow-Ups Page
-- Add Lead ID, Scheduled Time, Days Since Allocation, Status (Upcoming/Due Now/Overdue) columns
-- Show retry schedule info for Not Contactable leads
-- Add product type and date filters
+### 7. Build Lead Count Report Page
+- Date range, agent, product, disposition filters
+- Aggregated table with summary row
+- CSV export button
 
-### 8. Add Performance History Page
-- New route `/performance` with monthly summary cards (6 months)
-- Metrics: Allocated, Contacted, Contact Rate, STB Count/Rate, Approved, Disbursed Count/Amount, Follow-Up Compliance
-- Monthly trend chart (selectable metric)
-- Add nav link in agent sidebar
+### 8. Enhance TL Performance Page
+- Own performance (reuse agent view)
+- Agent selector to view individual agent history
+- Team summary table (all agents, current month)
 
-### 9. Add Notifications Drawer
-- Bell icon opens a slide-out drawer with notification list
-- Mock notifications matching PRD events (follow-up due, missed, expiry warning, consent received, lead reassigned, new allocation, STB status update)
-- Read/unread state, timestamps
+### 9. Update Notifications for TL
+- Add team-specific notification types to mock data
+- Show team notifications in the existing NotificationsDrawer
 
-### 10. Enhance Manual Lead Creation
-- Add Lead Source (required, from configured list), Loan Amount, City, Monthly Income, Notes fields
-- Add duplicate mobile check with warning toast
-- Post-creation toast with DND check result
+### 10. TL Disposition Tagging
+- When TL logs call/disposition on agent lead, tag as "TL" in history
+- Visual badge in timeline showing TL vs Agent actions
 
 ## Technical Notes
-- All changes are mock/prototype-level with client-side state
-- Disposition grouping will use a custom grouped select component
-- Profile edit uses controlled form state with toast on save
-- Performance chart will use recharts (already available via shadcn chart)
-- Approximately 10 files modified, 2 new files created
+- All client-side mock data, no backend changes
+- ~5 new page files, ~3 modified files
+- Reuse existing table/card/chart components
+- TL inherits all agent functionality on own leads — reuse agent pages with role checks
 
