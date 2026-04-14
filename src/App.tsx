@@ -15,6 +15,12 @@ import LeadUploadPage from "./pages/admin/LeadUploadPage";
 import AgentManagementPage from "./pages/admin/AgentManagementPage";
 import ConfigPage from "./pages/admin/ConfigPage";
 import PartnersPage from "./pages/admin/PartnersPage";
+import AdminAllocationPage from "./pages/admin/AdminAllocationPage";
+import LeadPoolsPage from "./pages/admin/LeadPoolsPage";
+import MISExportPage from "./pages/admin/MISExportPage";
+import BureauCampaignPage from "./pages/admin/BureauCampaignPage";
+import AdminStaffPage from "./pages/admin/AdminStaffPage";
+import PartnersPage from "./pages/admin/PartnersPage";
 import PerformancePage from "./pages/PerformancePage";
 import TeamLeadsPage from "./pages/TeamLeadsPage";
 import TeamFollowUpsPage from "./pages/TeamFollowUpsPage";
@@ -58,6 +64,11 @@ const App = () => (
               <Route path="/admin/agents" element={<AgentManagementPage />} />
               <Route path="/admin/config" element={<ConfigPage />} />
               <Route path="/admin/partners" element={<PartnersPage />} />
+              <Route path="/admin/allocation" element={<AdminAllocationPage />} />
+              <Route path="/admin/pools" element={<LeadPoolsPage />} />
+              <Route path="/admin/mis" element={<MISExportPage />} />
+              <Route path="/admin/bureau" element={<BureauCampaignPage />} />
+              <Route path="/admin/staff" element={<AdminStaffPage />} />
               <Route path="/team-leads" element={<TeamLeadsPage />} />
               <Route path="/team-follow-ups" element={<TeamFollowUpsPage />} />
               <Route path="/team-stb" element={<TeamSTBPage />} />
