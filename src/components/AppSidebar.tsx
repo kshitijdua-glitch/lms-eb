@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Users, Phone, Send, Clock, BarChart3, Upload, Settings, UserCog, FileText, Building2, ChevronDown, TrendingUp,
+  LayoutDashboard, Users, Phone, Send, Clock, BarChart3, Upload, Settings, UserCog, FileText, Building2, ChevronDown, TrendingUp, Shield,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -63,11 +63,14 @@ const clusterHeadNav = [
 const adminNav = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Lead Upload", url: "/admin/upload", icon: Upload },
-  { title: "Lead Pool", url: "/leads", icon: Users },
-  { title: "Agent Management", url: "/admin/agents", icon: UserCog },
-  { title: "Configuration", url: "/admin/config", icon: Settings },
-  { title: "Partners", url: "/admin/partners", icon: Building2 },
-  { title: "MIS & Reports", url: "/reports", icon: FileText },
+  { title: "Lead Allocation", url: "/admin/allocation", icon: Users },
+  { title: "Lead Pools", url: "/admin/pools", icon: FileText },
+  { title: "MIS Export", url: "/admin/mis", icon: BarChart3 },
+  { title: "Bureau Data", url: "/admin/bureau", icon: Building2 },
+  { title: "Staff Mgmt", url: "/admin/staff", icon: UserCog },
+  { title: "System Config", url: "/system-config", icon: Settings },
+  { title: "Audit Trail", url: "/audit-trail", icon: Shield },
+  { title: "Performance", url: "/performance", icon: TrendingUp },
 ];
 
 function getNav(role: UserRole) {
