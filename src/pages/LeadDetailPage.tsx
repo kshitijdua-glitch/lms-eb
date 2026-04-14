@@ -375,6 +375,7 @@ const LeadDetailPage = () => {
                           <div className="flex items-center gap-1 flex-wrap">
                             <Badge variant="outline" className="text-[9px]">Call</Badge>
                             {cl.agentId === "agent-9" && <Badge className="text-[9px] bg-primary/20 text-primary">TL</Badge>}
+                            {cl.agentId === "agent-9" && role === "manager" && <Badge className="text-[9px] bg-accent text-accent-foreground">Manager</Badge>}
                             <span className="font-medium">{cl.outcome === "connected" ? "Connected" : "Not Connected"}</span>
                             <Badge variant="outline" className="text-[9px]">{getDispositionLabel(cl.disposition)}</Badge>
                             <span className="text-muted-foreground">{Math.floor(cl.duration / 60)}m {cl.duration % 60}s</span>
@@ -612,7 +613,7 @@ const LeadDetailPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* TL Reassign Dialog */}
+      {/* Reassign Dialog (TL: same team, Manager: cross-team) */}
       <Dialog open={showReassign} onOpenChange={setShowReassign}>
         <DialogContent>
           <DialogHeader><DialogTitle>Reassign Lead — {lead.name}</DialogTitle></DialogHeader>
@@ -622,14 +623,26 @@ const LeadDetailPage = () => {
                 ⚠ This lead has active STB submissions. Reassignment is blocked.
               </div>
             )}
+            {role === "manager" && (
+              <div>
+                <Label>Target TL / Team</Label>
+                <Select value={reassignTL} onValueChange={v => { setReassignTL(v); setReassignAgent(""); }}>
+                  <SelectTrigger><SelectValue placeholder="Select TL (for cross-team)" /></SelectTrigger>
+                  <SelectContent>
+                    {teams.map(t => <SelectItem key={t.tlId} value={t.id}>{t.tlName} ({t.name})</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div>
               <Label>Assign to Agent *</Label>
               <Select value={reassignAgent} onValueChange={setReassignAgent}>
                 <SelectTrigger><SelectValue placeholder="Select agent" /></SelectTrigger>
                 <SelectContent>
-                  {getAgentsForTeam(lead.assignedTeamId)
-                    .filter(a => a.id !== lead.assignedAgentId && a.id !== "agent-9")
-                    .map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+                  {(role === "manager" && reassignTL
+                    ? getAgentsForTeam(reassignTL).filter(a => a.id !== lead.assignedAgentId && !teams.some(t => t.tlId === a.id))
+                    : getAgentsForTeam(lead.assignedTeamId).filter(a => a.id !== lead.assignedAgentId && !teams.some(t => t.tlId === a.id))
+                  ).map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -638,7 +651,7 @@ const LeadDetailPage = () => {
               <Textarea placeholder="Reason for reassignment..." value={reassignReason} onChange={e => setReassignReason(e.target.value)} />
             </div>
             <div className="text-xs text-muted-foreground">
-              Current Agent: {agents.find(a => a.id === lead.assignedAgentId)?.name}
+              Current Agent: {agents.find(a => a.id === lead.assignedAgentId)?.name} · Team: {teams.find(t => t.id === lead.assignedTeamId)?.name}
             </div>
           </div>
           <DialogFooter>
@@ -648,11 +661,44 @@ const LeadDetailPage = () => {
               onClick={() => {
                 toast.success(`Lead reassigned to ${agents.find(a => a.id === reassignAgent)?.name}`);
                 setShowReassign(false);
-                setReassignAgent("");
-                setReassignReason("");
+                setReassignAgent(""); setReassignTL(""); setReassignReason("");
               }}
             >
               Reassign
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manager Override Dialog */}
+      <Dialog open={showOverride} onOpenChange={setShowOverride}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Override Disposition — {lead.name}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="p-2 rounded border text-xs">
+              <span className="text-muted-foreground">Current Stage:</span> <strong>{getStageLabel(lead.stage)}</strong>
+              <br />
+              <span className="text-muted-foreground">Current Disposition:</span> <strong>{getDispositionLabel(lead.disposition)}</strong>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Overriding will reset the lead to its previous active stage, notify the TL and agent, and log this action in the history.
+            </p>
+            <div>
+              <Label>Reason *</Label>
+              <Textarea placeholder="Why are you overriding this disposition?" value={overrideReason} onChange={e => setOverrideReason(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowOverride(false)}>Cancel</Button>
+            <Button
+              disabled={!overrideReason.trim()}
+              onClick={() => {
+                toast.success(`Disposition overridden. Lead moved back to active stage.`);
+                setShowOverride(false);
+                setOverrideReason("");
+              }}
+            >
+              Confirm Override
             </Button>
           </DialogFooter>
         </DialogContent>
