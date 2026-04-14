@@ -20,7 +20,6 @@ import LeadPoolsPage from "./pages/admin/LeadPoolsPage";
 import MISExportPage from "./pages/admin/MISExportPage";
 import BureauCampaignPage from "./pages/admin/BureauCampaignPage";
 import AdminStaffPage from "./pages/admin/AdminStaffPage";
-import PartnersPage from "./pages/admin/PartnersPage";
 import PerformancePage from "./pages/PerformancePage";
 import TeamLeadsPage from "./pages/TeamLeadsPage";
 import TeamFollowUpsPage from "./pages/TeamFollowUpsPage";
