@@ -26,6 +26,14 @@ import GroupFollowUpsPage from "./pages/GroupFollowUpsPage";
 import GroupSTBPage from "./pages/GroupSTBPage";
 import GroupManagementPage from "./pages/GroupManagementPage";
 import GroupReportsPage from "./pages/GroupReportsPage";
+import OrgLeadsPage from "./pages/OrgLeadsPage";
+import OrgFollowUpsPage from "./pages/OrgFollowUpsPage";
+import OrgSTBPage from "./pages/OrgSTBPage";
+import OrgReportsPage from "./pages/OrgReportsPage";
+import StaffManagementPage from "./pages/StaffManagementPage";
+import SystemConfigPage from "./pages/SystemConfigPage";
+import LeadAllocationPage from "./pages/LeadAllocationPage";
+import AuditTrailPage from "./pages/AuditTrailPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -60,6 +68,14 @@ const App = () => (
               <Route path="/group-stb" element={<GroupSTBPage />} />
               <Route path="/group-management" element={<GroupManagementPage />} />
               <Route path="/group-reports" element={<GroupReportsPage />} />
+              <Route path="/org-leads" element={<OrgLeadsPage />} />
+              <Route path="/org-follow-ups" element={<OrgFollowUpsPage />} />
+              <Route path="/org-stb" element={<OrgSTBPage />} />
+              <Route path="/org-reports" element={<OrgReportsPage />} />
+              <Route path="/staff-management" element={<StaffManagementPage />} />
+              <Route path="/system-config" element={<SystemConfigPage />} />
+              <Route path="/lead-allocation" element={<LeadAllocationPage />} />
+              <Route path="/audit-trail" element={<AuditTrailPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AppLayout>

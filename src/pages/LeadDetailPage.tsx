@@ -139,12 +139,12 @@ const LeadDetailPage = () => {
             <Shuffle className="h-4 w-4 mr-1" /> Reassign
           </Button>
         )}
-        {role === "manager" && (
+        {(role === "manager" || role === "cluster_head") && (
           <Button size="sm" variant="outline" onClick={() => setShowReassign(true)}>
             <Shuffle className="h-4 w-4 mr-1" /> Reassign
           </Button>
         )}
-        {role === "manager" && (lead.stage === "closed_lost" || lead.stage === "declined") && (
+        {(role === "manager" || role === "cluster_head") && (lead.stage === "closed_lost" || lead.stage === "declined") && (
           <Button size="sm" variant="secondary" onClick={() => setShowOverride(true)}>
             Override
           </Button>
@@ -376,6 +376,7 @@ const LeadDetailPage = () => {
                             <Badge variant="outline" className="text-[9px]">Call</Badge>
                             {cl.agentId === "agent-9" && <Badge className="text-[9px] bg-primary/20 text-primary">TL</Badge>}
                             {cl.agentId === "agent-9" && role === "manager" && <Badge className="text-[9px] bg-accent text-accent-foreground">Manager</Badge>}
+                            {role === "cluster_head" && <Badge className="text-[9px] bg-warning/20 text-warning">Cluster Head</Badge>}
                             <span className="font-medium">{cl.outcome === "connected" ? "Connected" : "Not Connected"}</span>
                             <Badge variant="outline" className="text-[9px]">{getDispositionLabel(cl.disposition)}</Badge>
                             <span className="text-muted-foreground">{Math.floor(cl.duration / 60)}m {cl.duration % 60}s</span>
@@ -623,7 +624,7 @@ const LeadDetailPage = () => {
                 ⚠ This lead has active STB submissions. Reassignment is blocked.
               </div>
             )}
-            {role === "manager" && (
+            {(role === "manager" || role === "cluster_head") && (
               <div>
                 <Label>Target TL / Team</Label>
                 <Select value={reassignTL} onValueChange={v => { setReassignTL(v); setReassignAgent(""); }}>
@@ -639,7 +640,7 @@ const LeadDetailPage = () => {
               <Select value={reassignAgent} onValueChange={setReassignAgent}>
                 <SelectTrigger><SelectValue placeholder="Select agent" /></SelectTrigger>
                 <SelectContent>
-                  {(role === "manager" && reassignTL
+                  {((role === "manager" || role === "cluster_head") && reassignTL
                     ? getAgentsForTeam(reassignTL).filter(a => a.id !== lead.assignedAgentId && !teams.some(t => t.tlId === a.id))
                     : getAgentsForTeam(lead.assignedTeamId).filter(a => a.id !== lead.assignedAgentId && !teams.some(t => t.tlId === a.id))
                   ).map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
