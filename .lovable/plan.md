@@ -1,90 +1,91 @@
 
 
-# Plan: Update Cluster Head Flow Per PRD
+# Plan: Update Data Admin Flow Per PRD
 
 ## Summary
-The Cluster Head currently has a minimal dashboard (4 KPI cards, source quality chart, trend chart, agent ranking, partner disbursal) and only 3 nav items (Dashboard, All Leads, Reports). The PRD defines the Cluster Head as the highest supervisory role with full org-wide visibility, staff profile management, system configuration, lead allocation, disposition overrides, audit trail, and org-wide reporting. This plan brings the Cluster Head portal in line with the PRD.
+The current Data Admin portal has a basic dashboard (4 KPI cards, 4 quick-nav buttons), a simple lead upload page (drag-drop with instant mock import, flat unallocated lead table), a basic agent management page, and a minimal config page (dispositions, BRE rules, products). The PRD defines the Data Admin as a dedicated data operations role with comprehensive lead upload validation, lead pool management, MIS/data export, bureau campaign data, full staff profile management (including Cluster Head), system configuration, audit trail with export, and configurable performance dashboard access.
 
 ## What Gets Built
 
-1. **Navigation** -- Expand from 3 items to ~14: Dashboard, Org Leads, Org Follow-Ups, Org STB, Staff Management, System Config, Lead Allocation, Lead Count Report, Performance, Audit Trail.
+1. **Navigation** -- Expand from 7 items to 10: Dashboard, Lead Upload, Lead Allocation, Lead Pools, MIS Export, Bureau Campaigns, Staff Management, System Config, Audit Trail, Performance.
 
-2. **Dashboard revamp** -- Four sections per PRD:
-   - Organisation Pipeline Health Strip (funnel: Allocated → Contacted → STB → Approved → Disbursed with rates and total INR)
-   - Manager Group Comparison Panel (table: all managers side-by-side with group size, contact rate, STB, disbursed, sortable)
-   - System Alerts Panel (color-coded: managers not logged in, DND violations, unallocated pools, stale STBs, zero-activity agents, override spikes, expiry warnings)
-   - Quick Navigation (9 buttons)
+2. **Dashboard revamp** -- Replace 4 generic KPIs with 6 data-health widgets per PRD: Unallocated Lead Pools count, Leads Pending Validation, Stale Lead Pools, Active Staff Count (by role), Profiles Flagged for Review, Recent Upload Activity (last 5 batches). 8 quick-nav buttons.
 
-3. **Org Leads page** -- All leads across entire org. Columns: Customer Name, Manager, TL, Agent, Product, Source, Last Disposition, Last Activity, Days Since Allocation, Stage, Follow-Up. Filters: Manager → TL → Agent (cascading), date, stage, disposition, product, source, follow-up status, aging, search. Bulk select + org-wide reassign (Manager → TL → Agent dropdowns).
+3. **Lead Upload page overhaul** -- Multi-step upload flow: file drop/browse (CSV/XLSX, 50MB max) → column mapping step (map uploaded columns to system fields) → pre-ingestion validation report (total rows, valid, invalid with reasons, duplicates) → action buttons: "Ingest Valid Rows", "Download Rejected Rows CSV", "Cancel Upload". Post-ingestion: batch created with status "Awaiting Allocation". No individual row approval.
 
-4. **Org Follow-Ups page** -- All follow-ups with Manager, TL, Agent columns. Same cascading filters.
+4. **Lead Allocation page** (`/admin/allocation`) -- List of unallocated pools (batch name, source, product, date, count). Select pool → select allocation mode (Assign to Manager Group, Assign to TL Team, Auto Round Robin Group, Auto Round Robin Team) → cascading Manager/TL dropdown → allocation summary with agent count and leads-per-agent preview → confirm. Partial allocation supported (split pool across multiple runs). Restrictions: no direct-to-agent, no re-allocation of allocated leads, no inactive groups.
 
-5. **Org STB page** -- All STB leads with Manager, TL, Agent, Bank, days since submission. Inline status updates.
+5. **Lead Pool Management page** (`/admin/pools`) -- All uploaded batches with columns: Batch Name, Source, Product, Upload Date, Uploaded By, Total/Valid/Rejected Rows, Allocation Status (Unallocated/Partial/Fully Allocated), Allocated To, Allocation Date. Filters: date, source, product, status. Click pool → detail view: validation report, allocation history, pipeline stage breakdown. Read-only (no individual lead editing).
 
-6. **Staff Management page** -- Create/edit/deactivate/reactivate Agents, TLs, and Managers. Agent form: name, email, phone, assigned Manager → TL (cascading), location, process assignment, allocation type, status. TL form adds team size limit. Manager form adds group name, TL capacity. Password reset button (mock). Deactivation warnings (unworked leads, open FUs, active STBs).
+6. **MIS & Data Export page** (`/admin/mis`) -- 6 export types: Full Lead Export (with PII warning), Disposition Summary, STB Pipeline, Source Attribution, Agent Activity, Staff Profile. Each with filters: date range (mandatory), Manager (cascading to TL to Agent), product, source, stage. Export as CSV. PII exports logged in audit trail. Scheduled reports section: configure non-PII reports with frequency (daily/weekly), day, time, recipients.
 
-7. **System Configuration page** -- Configurable settings panels: Lead Sources (add/rename/deactivate), Disposition sub-types (add/rename/deactivate per category), Allocation Rules (schedule, leads/agent/day, mode, active agent definition, product matching), Retry Logic (NC sub-type retry intervals, max consecutive NC), Lead Aging/Expiry (inactivity alert, expiry threshold per product, warning window), Bureau freshness (report window, consent cooldown, max attempts), STB config (consent expiry, cooldown, max attempts), Notification config (toggle real-time vs summary per type). All changes mock-logged.
+7. **Bureau Campaign Data page** (`/admin/bureau`) -- Separate upload form with additional fields: Bureau Name (CIBIL/Experian/CRIF/Equifax), Campaign Name, Campaign Date, Bureau Score, Pre-Approval Amount, Bureau Grade. Same validation as standard upload plus bureau-specific format checks. Bureau batches tagged separately in Lead Pool Management.
 
-8. **Lead Allocation page** -- View unallocated lead pools (source, date, count, product). Allocate via: Assign to Group (Manager), Assign to Team (TL), Assign to Agent, or Auto Round Robin. Mock allocation with toast confirmation.
+8. **Staff Management overhaul** (`/admin/staff`) -- Tabbed: Agents | TLs | Managers | Cluster Heads. Create/edit/deactivate/reactivate all roles. Agent form: name, email, phone, Manager → TL (cascading), location, process, allocation type, status. TL form adds team size limit. Manager form adds group name, TL capacity. Cluster Head form: name, email, phone, org scope, status. Deactivation pre-check: active leads, open FUs, pending STBs, reporting staff count. Password reset button (mock: generates temp password, logs in audit). Search by name/email/role.
 
-9. **Disposition Override** -- On Lead Detail when role=cluster_head, show Override button for TL-level AND Manager-level dispositions. CH dispositions cannot be self-overridden. Override logs reason, resets stage, notifies all parties. CH dispositions are absolute locks (Not Eligible / Closed Lost cannot be reopened by anyone below).
+9. **System Configuration** -- Same scope as Cluster Head config (already built at `/system-config`). Reuse existing SystemConfigPage but make it accessible from admin nav. Add note that changes are audit-logged.
 
-10. **CH disposition tagging** -- Call logs and dispositions by CH tagged with "Cluster Head" badge in timeline. CH Hot Follow-Up shows priority flag.
+10. **Audit Trail** -- Same as Cluster Head audit trail but WITH CSV export capability (Data Admin can export, CH cannot per CH PRD). Reuse AuditTrailPage pattern, add export button for Data Admin role.
 
-11. **Audit Trail page** -- Immutable log table with: timestamp, actor (name + role), action type, target, before/after state, reason. Filters: date range, actor/role, action type, target lead, target profile, configuration. No export button (per PRD restriction). Mock data covering dispositions, overrides, reassignments, profile changes, config changes, login events.
+11. **Performance Dashboard** -- Configurable access level display. Show a toggle (mock) for No Access / Read-Only MIS / Full Analytics. Default: show data health widgets only. When Read-Only MIS enabled, show org-wide performance summary (reuse patterns from CH performance).
 
-12. **Org Lead Count Report** -- Same as Manager report but with Manager filter at top. Table: Manager, TL, Agent, disposition category/sub-type, count. Summary rows at Manager, TL, and org level. CSV export.
-
-13. **Org Performance page** -- Manager-level summary table (all managers side-by-side, current month, 12-month history). Cross-group comparison chart (bar/line, any metric, any time window). TL performance history (any TL, org-wide). Agent performance history (any agent, org-wide). Org-wide agent ranking (sort by any metric). CSV export.
-
-14. **CH Notifications** -- Extend mock notifications: manager not logged in, DND risk, override spike, unallocated pool, stale STB pool, config change confirmation, staff deactivation confirmation, daily summary.
+12. **Notifications** -- Upload validation complete, large export ready, scheduled report sent/failed, allocation confirmed/failed, profile created/deactivated/reactivated, password reset, config change confirmation.
 
 ## Implementation Steps
 
 ### Step 1: Update navigation and routes
-- Expand `clusterHeadNav` to ~14 items with sections
-- Add routes: `/org-leads`, `/org-follow-ups`, `/org-stb`, `/staff-management`, `/system-config`, `/lead-allocation`, `/org-reports`, `/audit-trail`
+- Expand `adminNav` to 10 items
+- Add routes: `/admin/allocation`, `/admin/pools`, `/admin/mis`, `/admin/bureau`, `/admin/staff`
+- Reuse `/system-config` and `/audit-trail` routes (already exist, just add to admin nav)
 
-### Step 2: Revamp CH Dashboard
-- Pipeline health strip, manager comparison table, system alerts panel, quick-nav
+### Step 2: Revamp Admin Dashboard
+- 6 data-health widgets with mock data
+- 8 quick-nav buttons per PRD
 
-### Step 3: Build Org Leads, Follow-Ups, STB pages
-- Reuse Group page patterns, add Manager column and cascading Manager → TL → Agent filters
-- Org-wide reassignment with 3-level dropdown
+### Step 3: Overhaul Lead Upload page
+- Multi-step flow: upload → column mapping → validation report → ingest/reject/cancel
+- Mock validation with sample valid/invalid/duplicate counts
+- Download rejected rows as CSV mock
 
-### Step 4: Build Staff Management page
-- Tabbed view: Agents | TLs | Managers
-- Create/Edit modals with cascading dropdowns
-- Deactivate with warning dialog
-- Password reset button (mock)
+### Step 4: Build Lead Allocation page
+- Unallocated pool list from mock batches
+- 4 allocation modes with cascading dropdowns
+- Partial allocation support
+- Allocation summary preview
 
-### Step 5: Build System Configuration page
-- Accordion/tabbed panels for each config area
-- Inline editable fields with save buttons
-- Mock audit logging on changes
+### Step 5: Build Lead Pool Management page
+- Batch list table with all PRD columns
+- Filters: date, source, product, allocation status
+- Pool detail view with validation report and allocation history
 
-### Step 6: Build Lead Allocation page
-- Unallocated pool list with allocation mode selection
-- Manager → TL → Agent cascading for targeted allocation
+### Step 6: Build MIS Export page
+- 6 export type cards/tabs
+- Cascading filters per export
+- PII warning for Full Lead Export
+- Scheduled reports configuration section
 
-### Step 7: Build Audit Trail page
-- Filterable immutable log table with mock data
-- No export (per PRD)
+### Step 7: Build Bureau Campaign page
+- Bureau-specific upload form with additional fields
+- Same validation flow as standard upload
+- Bureau tag in pool management
 
-### Step 8: Build Org Reports and Performance pages
-- Org-level lead count report with Manager filter
-- Cross-group comparison charts, org-wide agent ranking
+### Step 8: Overhaul Staff Management
+- 4-tab view (Agents, TLs, Managers, Cluster Heads)
+- Create/edit modals with role-appropriate fields
+- Deactivation pre-check dialog
+- Password reset button with mock flow
 
-### Step 9: Update Lead Detail for CH
-- Override for TL-level AND Manager-level dispositions
-- CH disposition tagging and absolute lock behavior
+### Step 9: Update Audit Trail for Data Admin
+- Add CSV export button when role is data_admin
+- Export logged in audit trail
 
-### Step 10: Update notifications
-- Add CH-specific notification types to mock data
+### Step 10: Update mock data and notifications
+- Add admin-specific notification types
+- Add mock batch/pool data for lead pool management
 
 ## Technical Notes
 - All client-side mock data, no backend
-- ~8 new page files, ~4 modified files
-- Reuse existing table/card/chart components from Manager/TL pages
-- CH does not carry personal leads -- no "My Leads" section (purely supervisory per PRD)
+- ~6 new/overhauled page files, ~3 modified files
+- Reuse SystemConfigPage and AuditTrailPage (with minor role-based tweaks)
+- Data Admin has NO LMS portal access -- no lead detail, no dispositions, no calling
 
