@@ -131,7 +131,6 @@ const AuditTrailPage = () => {
       <div className="text-xs text-muted-foreground text-center">
         Showing {filtered.length} of {mockAuditLog.length} entries{role !== "data_admin" && " · Export disabled per policy"}
       </div>
-      </div>
     </div>
   );
 };
