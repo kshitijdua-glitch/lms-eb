@@ -14,6 +14,10 @@ const iconMap: Record<string, any> = {
   lead_reassigned: Users,
   new_allocation: Users,
   stb_status_update: Send,
+  agent_missed_fu: AlertTriangle,
+  nc_escalation: AlertTriangle,
+  agent_not_logged_in: Users,
+  stb_initiated_by_agent: Send,
 };
 
 export function NotificationsDrawer() {
