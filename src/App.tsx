@@ -15,6 +15,7 @@ import LeadUploadPage from "./pages/admin/LeadUploadPage";
 import AgentManagementPage from "./pages/admin/AgentManagementPage";
 import ConfigPage from "./pages/admin/ConfigPage";
 import PartnersPage from "./pages/admin/PartnersPage";
+import PerformancePage from "./pages/PerformancePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
               <Route path="/leads/:id" element={<LeadDetailPage />} />
               <Route path="/follow-ups" element={<FollowUpsPage />} />
               <Route path="/stb" element={<STBPage />} />
+              <Route path="/performance" element={<PerformancePage />} />
               <Route path="/reports" element={<ReportsPage />} />
               <Route path="/admin/upload" element={<LeadUploadPage />} />
               <Route path="/admin/agents" element={<AgentManagementPage />} />
