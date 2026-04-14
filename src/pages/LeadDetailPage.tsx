@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { leads, getDispositionLabel, getStageLabel, getProductLabel, dispositionGroups, lendingPartners } from "@/data/mockData";
+import { leads, getDispositionLabel, getStageLabel, getProductLabel, dispositionGroups, lendingPartners, getAgentsForTeam, agents } from "@/data/mockData";
+import { useRole } from "@/contexts/RoleContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import {
   ArrowLeft, Phone, Send, Calculator, Clock, CheckCircle, XCircle, AlertTriangle,
-  User, Edit2, Lock, FileText, Shield, CalendarIcon, Search as SearchIcon
+  User, Edit2, Lock, FileText, Shield, CalendarIcon, Search as SearchIcon, Shuffle
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -23,9 +24,13 @@ import { toast } from "sonner";
 const LeadDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { role } = useRole();
   const lead = leads.find(l => l.id === id);
   const [showCallLog, setShowCallLog] = useState(false);
   const [showEMI, setShowEMI] = useState(false);
+  const [showReassign, setShowReassign] = useState(false);
+  const [reassignAgent, setReassignAgent] = useState("");
+  const [reassignReason, setReassignReason] = useState("");
   const [emiAmount, setEmiAmount] = useState("");
   const [emiRate, setEmiRate] = useState("");
   const [emiTenure, setEmiTenure] = useState("");
@@ -126,6 +131,11 @@ const LeadDetailPage = () => {
         <Button size="sm" variant="outline" onClick={handleCheckEligibility}><SearchIcon className="h-4 w-4 mr-1" /> Check Eligibility</Button>
         <Button size="sm" variant="outline" onClick={handleSendToBank}><Send className="h-4 w-4 mr-1" /> Send to Bank</Button>
         <Button size="sm" variant="outline" onClick={() => setShowEMI(true)}><Calculator className="h-4 w-4 mr-1" /> EMI Calc</Button>
+        {role === "team_leader" && lead.assignedAgentId !== "agent-9" && (
+          <Button size="sm" variant="outline" onClick={() => setShowReassign(true)}>
+            <Shuffle className="h-4 w-4 mr-1" /> Reassign
+          </Button>
+        )}
       </div>
 
       {/* Header */}
@@ -351,6 +361,7 @@ const LeadDetailPage = () => {
                         return <>
                           <div className="flex items-center gap-1 flex-wrap">
                             <Badge variant="outline" className="text-[9px]">Call</Badge>
+                            {cl.agentId === "agent-9" && <Badge className="text-[9px] bg-primary/20 text-primary">TL</Badge>}
                             <span className="font-medium">{cl.outcome === "connected" ? "Connected" : "Not Connected"}</span>
                             <Badge variant="outline" className="text-[9px]">{getDispositionLabel(cl.disposition)}</Badge>
                             <span className="text-muted-foreground">{Math.floor(cl.duration / 60)}m {cl.duration % 60}s</span>
@@ -585,6 +596,52 @@ const LeadDetailPage = () => {
               </div>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* TL Reassign Dialog */}
+      <Dialog open={showReassign} onOpenChange={setShowReassign}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Reassign Lead — {lead.name}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            {lead.stbSubmissions.length > 0 && (
+              <div className="p-2 rounded border border-destructive/30 text-xs text-destructive">
+                ⚠ This lead has active STB submissions. Reassignment is blocked.
+              </div>
+            )}
+            <div>
+              <Label>Assign to Agent *</Label>
+              <Select value={reassignAgent} onValueChange={setReassignAgent}>
+                <SelectTrigger><SelectValue placeholder="Select agent" /></SelectTrigger>
+                <SelectContent>
+                  {getAgentsForTeam(lead.assignedTeamId)
+                    .filter(a => a.id !== lead.assignedAgentId && a.id !== "agent-9")
+                    .map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Reason (optional)</Label>
+              <Textarea placeholder="Reason for reassignment..." value={reassignReason} onChange={e => setReassignReason(e.target.value)} />
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Current Agent: {agents.find(a => a.id === lead.assignedAgentId)?.name}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowReassign(false)}>Cancel</Button>
+            <Button
+              disabled={!reassignAgent || lead.stbSubmissions.length > 0}
+              onClick={() => {
+                toast.success(`Lead reassigned to ${agents.find(a => a.id === reassignAgent)?.name}`);
+                setShowReassign(false);
+                setReassignAgent("");
+                setReassignReason("");
+              }}
+            >
+              Reassign
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

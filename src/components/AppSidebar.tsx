@@ -20,10 +20,16 @@ const agentNav = [
 ];
 
 const tlNav = [
-  { title: "Team Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Team Leads", url: "/leads", icon: Users },
-  { title: "Follow-Ups", url: "/follow-ups", icon: Clock },
-  { title: "STB Pipeline", url: "/stb", icon: Send },
+  { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "My Leads", url: "/leads", icon: Users },
+  { title: "My Follow-Ups", url: "/follow-ups", icon: Clock },
+  { title: "My STB", url: "/stb", icon: Send },
+  { title: "Team Leads", url: "/team-leads", icon: Users },
+  { title: "Team Follow-Ups", url: "/team-follow-ups", icon: Clock },
+  { title: "Team STB", url: "/team-stb", icon: Send },
+  { title: "Team Mgmt", url: "/team-management", icon: UserCog },
+  { title: "Lead Report", url: "/team-reports", icon: FileText },
+  { title: "Performance", url: "/performance", icon: TrendingUp },
 ];
 
 const managerNav = [
