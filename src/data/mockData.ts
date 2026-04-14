@@ -298,6 +298,11 @@ export const mockNotifications: Notification[] = [
   { id: "n-12", type: "stb_initiated_by_agent", title: "STB Initiated", message: "Sneha Gupta initiated STB for Vikram Chauhan to HDFC Bank", timestamp: daysAgo(0), read: false, leadId: "lead-5" },
   { id: "n-13", type: "lead_expiry", title: "Team Lead Expiring", message: "3 team leads expiring within 48 hours", timestamp: daysAgo(0), read: false },
   { id: "n-14", type: "stb_status_update", title: "STB Approved", message: "ICICI Bank approved loan for Fatima Begum — agent: Rahul Jain", timestamp: daysAgo(0), read: true, leadId: "lead-8" },
+  // Manager-specific notifications
+  { id: "n-15", type: "agent_not_logged_in", title: "TL Not Logged In", message: "TL Ravi Kumar (Beta Force) has not logged in today", timestamp: daysAgo(0), read: false },
+  { id: "n-16", type: "nc_escalation", title: "Team Missed F/U Threshold", message: "Alpha Squad has exceeded 10 missed follow-ups this week", timestamp: daysAgo(0), read: false },
+  { id: "n-17", type: "stb_status_update", title: "Group STB Update", message: "Bajaj Finserv declined loan for Manoj Tiwari — TL: Priya Sharma, Agent: Meera Patel", timestamp: daysAgo(0), read: false, leadId: "lead-15" },
+  { id: "n-18", type: "lead_reassigned", title: "Override Confirmation", message: "You overrode a Closed/Lost disposition on lead Arjun Rao — lead moved to Contacted", timestamp: daysAgo(1), read: true, leadId: "lead-9" },
 ];
 
 // Performance mock data
