@@ -1,4 +1,4 @@
-import { Lead, Agent, Team, LendingPartner, DispositionConfig, type DispositionType, type LeadStage, type ProductType, type EmploymentType, type Priority } from "@/types/lms";
+import { Lead, Agent, Team, LendingPartner, DispositionConfig, Notification, type DispositionType, type LeadStage, type ProductType, type EmploymentType, type Priority } from "@/types/lms";
 
 // Teams
 export const teams: Team[] = [
@@ -29,25 +29,80 @@ export const lendingPartners: LendingPartner[] = [
   { id: "lp-5", name: "Axis Bank", products: ["home_loan", "personal_loan", "credit_card"], integrationType: "api", minCreditScore: 690, maxFoir: 58, minIncome: 22000, status: "inactive" },
 ];
 
-// Disposition Config
+// Grouped Disposition Config
 export const dispositionConfigs: DispositionConfig[] = [
-  { type: "connected_interested", label: "Connected - Interested", category: "connected", requiresFollowUp: true },
-  { type: "connected_not_interested", label: "Connected - Not Interested", category: "connected", requiresFollowUp: false },
-  { type: "connected_callback", label: "Connected - Callback Requested", category: "connected", requiresFollowUp: true },
-  { type: "not_contactable", label: "Not Contactable", category: "not_connected", requiresFollowUp: true },
-  { type: "wrong_number", label: "Wrong Number", category: "not_connected", requiresFollowUp: false },
-  { type: "switched_off", label: "Switched Off", category: "not_connected", requiresFollowUp: true },
-  { type: "ringing_no_answer", label: "Ringing - No Answer", category: "not_connected", requiresFollowUp: true },
-  { type: "busy", label: "Busy", category: "not_connected", requiresFollowUp: true },
-  { type: "dnc", label: "DNC", category: "not_connected", requiresFollowUp: false },
-  { type: "documents_pending", label: "Documents Pending", category: "outcome", requiresFollowUp: true },
-  { type: "bre_eligible", label: "BRE - Eligible", category: "outcome", requiresFollowUp: true },
-  { type: "bre_ineligible", label: "BRE - Ineligible", category: "outcome", requiresFollowUp: false },
-  { type: "stb_initiated", label: "STB Initiated", category: "outcome", requiresFollowUp: true },
-  { type: "stb_approved", label: "STB Approved", category: "outcome", requiresFollowUp: true },
-  { type: "stb_declined", label: "STB Declined", category: "outcome", requiresFollowUp: false },
-  { type: "disbursed", label: "Disbursed", category: "outcome", requiresFollowUp: false },
+  // Follow-Up
+  { type: "hot_follow_up", label: "Hot Follow-Up", category: "follow_up", group: "Follow-Up", requiresFollowUp: true },
+  { type: "warm_follow_up", label: "Warm Follow-Up", category: "follow_up", group: "Follow-Up", requiresFollowUp: true },
+  { type: "cold_follow_up", label: "Cold Follow-Up", category: "follow_up", group: "Follow-Up", requiresFollowUp: true },
+  { type: "document_follow_up", label: "Document Follow-Up", category: "follow_up", group: "Follow-Up", requiresFollowUp: true },
+  { type: "callback_requested", label: "Callback Requested", category: "follow_up", group: "Follow-Up", requiresFollowUp: true },
+  { type: "price_discussion_pending", label: "Price Discussion Pending", category: "follow_up", group: "Follow-Up", requiresFollowUp: true },
+  // Not Contactable
+  { type: "number_busy", label: "Number Busy", category: "not_contactable", group: "Not Contactable", requiresFollowUp: true },
+  { type: "no_response", label: "No Response / Ringing", category: "not_contactable", group: "Not Contactable", requiresFollowUp: true },
+  { type: "switched_off", label: "Switched Off", category: "not_contactable", group: "Not Contactable", requiresFollowUp: true },
+  { type: "invalid_number", label: "Invalid Number", category: "not_contactable", group: "Not Contactable", requiresFollowUp: false },
+  { type: "call_dropped", label: "Call Dropped", category: "not_contactable", group: "Not Contactable", requiresFollowUp: true },
+  { type: "wrong_number", label: "Wrong Number", category: "not_contactable", group: "Not Contactable", requiresFollowUp: false },
+  // Not Interested
+  { type: "already_has_loan", label: "Already Has Loan", category: "not_interested", group: "Not Interested", requiresFollowUp: false },
+  { type: "does_not_need", label: "Does Not Need", category: "not_interested", group: "Not Interested", requiresFollowUp: false },
+  { type: "rate_too_high", label: "Rate Too High", category: "not_interested", group: "Not Interested", requiresFollowUp: false },
+  { type: "will_decide_later", label: "Will Decide Later", category: "not_interested", group: "Not Interested", requiresFollowUp: true },
+  { type: "chose_competitor", label: "Chose Competitor", category: "not_interested", group: "Not Interested", requiresFollowUp: false },
+  // Negative
+  { type: "language_barrier", label: "Language Barrier", category: "negative", group: "Negative", requiresFollowUp: false },
+  { type: "hung_up", label: "Hung Up", category: "negative", group: "Negative", requiresFollowUp: false },
+  // BRE Ineligible
+  { type: "credit_score_low", label: "Credit Score Low", category: "bre_ineligible", group: "BRE Ineligible", requiresFollowUp: false },
+  { type: "income_below", label: "Income Below Threshold", category: "bre_ineligible", group: "BRE Ineligible", requiresFollowUp: false },
+  { type: "age_outside", label: "Age Outside Range", category: "bre_ineligible", group: "BRE Ineligible", requiresFollowUp: false },
+  { type: "pin_not_serviceable", label: "PIN Not Serviceable", category: "bre_ineligible", group: "BRE Ineligible", requiresFollowUp: false },
+  { type: "too_many_loans", label: "Too Many Active Loans", category: "bre_ineligible", group: "BRE Ineligible", requiresFollowUp: false },
+  { type: "high_dpd", label: "High DPD", category: "bre_ineligible", group: "BRE Ineligible", requiresFollowUp: false },
+  { type: "recent_writeoff", label: "Recent Write-Off", category: "bre_ineligible", group: "BRE Ineligible", requiresFollowUp: false },
+  // Compliance
+  { type: "dnd_registered", label: "DND Registered", category: "compliance", group: "Compliance", requiresFollowUp: false },
+  // Documents Pending
+  { type: "pan_not_available", label: "PAN Not Available", category: "documents_pending", group: "Documents Pending", requiresFollowUp: true },
+  { type: "income_proof_not_ready", label: "Income Proof Not Ready", category: "documents_pending", group: "Documents Pending", requiresFollowUp: true },
+  { type: "address_proof_pending", label: "Address Proof Pending", category: "documents_pending", group: "Documents Pending", requiresFollowUp: true },
+  { type: "bank_statement_not_available", label: "Bank Statement Not Available", category: "documents_pending", group: "Documents Pending", requiresFollowUp: true },
+  { type: "photo_id_missing", label: "Photo ID Missing", category: "documents_pending", group: "Documents Pending", requiresFollowUp: true },
+  // Outcome
+  { type: "stb_qualified", label: "STB Qualified", category: "outcome", group: "Outcome", requiresFollowUp: true },
+  { type: "duplicate", label: "Duplicate Lead", category: "outcome", group: "Outcome", requiresFollowUp: false },
+  // Closed
+  { type: "closed_sanctioned_elsewhere", label: "Sanctioned Elsewhere", category: "closed", group: "Closed", requiresFollowUp: false },
+  { type: "closed_changed_mind", label: "Changed Mind", category: "closed", group: "Closed", requiresFollowUp: false },
+  { type: "closed_unreachable", label: "Permanently Unreachable", category: "closed", group: "Closed", requiresFollowUp: false },
+  // Legacy
+  { type: "connected_interested", label: "Connected - Interested", category: "connected", group: "Connected", requiresFollowUp: true },
+  { type: "connected_not_interested", label: "Connected - Not Interested", category: "connected", group: "Connected", requiresFollowUp: false },
+  { type: "connected_callback", label: "Callback Requested", category: "connected", group: "Connected", requiresFollowUp: true },
+  { type: "not_contactable", label: "Not Contactable", category: "not_connected", group: "Not Connected", requiresFollowUp: true },
+  { type: "ringing_no_answer", label: "Ringing - No Answer", category: "not_connected", group: "Not Connected", requiresFollowUp: true },
+  { type: "busy", label: "Busy", category: "not_connected", group: "Not Connected", requiresFollowUp: true },
+  { type: "dnc", label: "DNC", category: "not_connected", group: "Not Connected", requiresFollowUp: false },
+  { type: "documents_pending", label: "Documents Pending", category: "outcome", group: "Documents", requiresFollowUp: true },
+  { type: "bre_eligible", label: "BRE - Eligible", category: "outcome", group: "BRE", requiresFollowUp: true },
+  { type: "bre_ineligible", label: "BRE - Ineligible", category: "outcome", group: "BRE", requiresFollowUp: false },
+  { type: "stb_initiated", label: "STB Initiated", category: "outcome", group: "STB", requiresFollowUp: true },
+  { type: "stb_approved", label: "STB Approved", category: "outcome", group: "STB", requiresFollowUp: true },
+  { type: "stb_declined", label: "STB Declined", category: "outcome", group: "STB", requiresFollowUp: false },
+  { type: "disbursed", label: "Disbursed", category: "outcome", group: "Outcome", requiresFollowUp: false },
 ];
+
+export const dispositionGroups = (): { group: string; items: DispositionConfig[] }[] => {
+  const groups: { group: string; items: DispositionConfig[] }[] = [];
+  const primaryGroups = ["Follow-Up", "Not Contactable", "Not Interested", "Negative", "BRE Ineligible", "Compliance", "Documents Pending", "Outcome", "Closed"];
+  for (const g of primaryGroups) {
+    const items = dispositionConfigs.filter(d => d.group === g);
+    if (items.length) groups.push({ group: g, items });
+  }
+  return groups;
+};
 
 const names = ["Rajesh Khanna","Sunita Devi","Mohd Irfan","Lakshmi Narayan","Vikram Chauhan","Nisha Agarwal","Suresh Babu","Fatima Begum","Arjun Rao","Kavita Mishra","Dinesh Thakur","Rekha Pandey","Sanjay Dubey","Asha Kumari","Manoj Tiwari","Geeta Sinha","Ramprasad Yadav","Zainab Khan","Harish Chandra","Padma Lakshmi","Gopal Krishna","Savitri Devi","Naresh Agarwal","Mumtaz Patel","Vijay Shankar","Usha Rani","Prakash Joshi","Salma Sheikh","Ashok Mehta","Kamla Devi","Bharat Bhushan","Parveen Akhtar","Sunil Sharma","Annapurna Iyer","Ramesh Chand","Indira Soni","Arun Kapoor","Sarita Gupta","Mukesh Ambani","Lata Deshmukh","Raghav Mehra","Shobha Rajan","Nilesh Puri","Rina Chakraborty","Satish Kale","Uma Mahesh","Jagdish Prasad","Rubina Sayyed","Kishore Bhat","Malti Sharma"];
 
@@ -61,9 +116,27 @@ const stages: LeadStage[] = ["new","contacted","interested","bre_done","stb_subm
 const products: ProductType[] = ["personal_loan","home_loan","business_loan","credit_card","loan_against_property"];
 const empTypes: EmploymentType[] = ["salaried","self_employed","business_owner"];
 const priorities: Priority[] = ["hot","warm","cold"];
-const sources = ["Website","Google Ads","Facebook","Referral","Partner","Walk-in","IVR","WhatsApp"];
+const leadSources = ["Website","Google Ads","Facebook","Referral","Partner","Walk-in","IVR","WhatsApp"];
 const cities = ["Mumbai","Delhi","Bangalore","Hyderabad","Chennai","Pune","Kolkata","Ahmedabad","Jaipur","Lucknow"];
-const dispositions: DispositionType[] = ["connected_interested","connected_not_interested","connected_callback","not_contactable","ringing_no_answer","documents_pending","bre_eligible","stb_initiated","stb_approved","stb_declined","disbursed"];
+const pinCodes: Record<string, string[]> = {
+  "Mumbai": ["400001","400050","400070"],
+  "Delhi": ["110001","110045","110085"],
+  "Bangalore": ["560001","560034","560078"],
+  "Hyderabad": ["500001","500032","500081"],
+  "Chennai": ["600001","600020","600096"],
+  "Pune": ["411001","411014","411038"],
+  "Kolkata": ["700001","700019","700064"],
+  "Ahmedabad": ["380001","380015","380059"],
+  "Jaipur": ["302001","302012","302033"],
+  "Lucknow": ["226001","226010","226025"],
+};
+const stateMap: Record<string, string> = {
+  "Mumbai": "Maharashtra", "Pune": "Maharashtra", "Delhi": "Delhi",
+  "Bangalore": "Karnataka", "Hyderabad": "Telangana", "Chennai": "Tamil Nadu",
+  "Kolkata": "West Bengal", "Ahmedabad": "Gujarat", "Jaipur": "Rajasthan", "Lucknow": "Uttar Pradesh",
+};
+const companies = ["TCS","Infosys","Wipro","HCL Tech","Self","Reliance","Tata Motors","Bajaj Auto","Own Business","Freelancer"];
+const newDispositions: DispositionType[] = ["hot_follow_up","warm_follow_up","cold_follow_up","document_follow_up","callback_requested","number_busy","no_response","switched_off","already_has_loan","does_not_need","stb_qualified","pan_not_available","income_proof_not_ready"];
 
 function generatePAN() {
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -82,7 +155,7 @@ function generateLeads(): Lead[] {
     const obligations = randomInt(0, income * 0.4);
     const foir = Math.round((obligations / income) * 100);
     const stage = stages[Math.min(Math.floor(i / 6), stages.length - 1)];
-    const disp = dispositions[i % dispositions.length];
+    const disp = newDispositions[i % newDispositions.length];
     const agentIdx = (i % 8) + 1;
     const teamId = agentIdx <= 5 ? "team-1" : "team-2";
     const mobile = `98${randomInt(10000000, 99999999)}`;
@@ -90,12 +163,14 @@ function generateLeads(): Lead[] {
     const allocDays = randomInt(1, 60);
     const lastActivityDays = randomInt(0, Math.min(allocDays, 14));
     const creditScore = randomInt(550, 850);
+    const city = randomFrom(cities);
+    const source = randomFrom(leadSources);
 
     const callLogs = Array.from({ length: randomInt(1, 5) }, (_, ci) => ({
       id: `call-${i}-${ci}`,
       timestamp: daysAgo(randomInt(0, allocDays)),
       outcome: (Math.random() > 0.3 ? "connected" : "not_connected") as "connected" | "not_connected",
-      duration: randomInt(30, 600),
+      duration: Math.random() > 0.3 ? randomInt(30, 600) : 0,
       disposition: disp,
       notes: ["Discussed loan options", "Customer busy, will call back", "Interested in PL", "Documents requested", "Not reachable"][ci % 5],
       agentId: `agent-${agentIdx}`,
@@ -110,10 +185,12 @@ function generateLeads(): Lead[] {
       type: (["call", "document_collection", "stb_follow_up"] as const)[fi % 3],
       status: (["pending", "completed", "missed"] as const)[fi % 3],
       notes: "Follow up on documentation",
+      subType: fi === 0 ? "hot_follow_up" : undefined,
     }));
 
     const breResult = ["bre_done", "stb_submitted", "approved", "disbursed"].includes(stage) ? {
       timestamp: daysAgo(randomInt(1, 20)),
+      mode: (Math.random() > 0.5 ? "bureau" : "basic") as "basic" | "bureau",
       eligiblePartners: lendingPartners.filter(lp => creditScore >= lp.minCreditScore && foir <= lp.maxFoir && income >= lp.minIncome && lp.status === "active").map(lp => ({
         partnerId: lp.id, partnerName: lp.name, maxAmount: randomInt(100000, 2000000), minRate: randomInt(9, 16), tenure: randomInt(12, 60),
       })),
@@ -129,9 +206,21 @@ function generateLeads(): Lead[] {
       submittedAt: daysAgo(randomInt(1, 15)),
       status: (stage === "approved" ? "approved" : stage === "disbursed" ? "disbursed" : "submitted") as "submitted" | "approved" | "disbursed",
       approvedAmount: stage === "approved" || stage === "disbursed" ? randomInt(100000, 1500000) : null,
+      sanctionAmount: stage === "approved" || stage === "disbursed" ? randomInt(100000, 1500000) : null,
       disbursedAmount: stage === "disbursed" ? randomInt(100000, 1500000) : null,
+      disbursementDate: stage === "disbursed" ? daysAgo(randomInt(1, 5)) : null,
       remarks: "Application processed",
+      integrationType: "api" as const,
     }] : [];
+
+    const noteTexts = ["Initial contact made", "Customer interested in PL ₹5L", "Documents collection pending", "Bureau pulled - score 720", "Submitted to HDFC"];
+    const leadNotes = Array.from({ length: randomInt(0, 3) }, (_, ni) => ({
+      id: `note-${i}-${ni}`,
+      text: noteTexts[ni % noteTexts.length],
+      createdAt: daysAgo(randomInt(0, allocDays)),
+      agentId: `agent-${agentIdx}`,
+      agentName: agents[agentIdx - 1].name,
+    }));
 
     return {
       id: `lead-${i + 1}`,
@@ -140,8 +229,10 @@ function generateLeads(): Lead[] {
       email: `${name.split(" ")[0].toLowerCase()}@email.com`,
       pan: maskPan(pan),
       dob: `${1970 + randomInt(0, 35)}-${String(randomInt(1, 12)).padStart(2, "0")}-${String(randomInt(1, 28)).padStart(2, "0")}`,
-      city: randomFrom(cities),
-      state: "Maharashtra",
+      city,
+      state: stateMap[city] || "Maharashtra",
+      pinCode: randomFrom(pinCodes[city] || ["400001"]),
+      companyName: randomFrom(companies),
       employmentType: randomFrom(empTypes),
       monthlyIncome: income,
       existingObligations: obligations,
@@ -151,21 +242,25 @@ function generateLeads(): Lead[] {
       stage,
       disposition: disp,
       priority: randomFrom(priorities),
-      source: randomFrom(sources),
+      source,
+      leadSource: source,
+      dndStatus: Math.random() > 0.85 ? "dnd_registered" : "clean",
       assignedAgentId: `agent-${agentIdx}`,
       assignedTeamId: teamId,
       creditScore,
       bureauStatus: creditScore ? "pulled" : "not_pulled",
+      bureauPulledAt: creditScore ? daysAgo(randomInt(1, 30)) : null,
       breResult,
       stbSubmissions,
       callLogs,
       followUps,
-      notes: "",
+      notes: leadNotes,
       createdAt: daysAgo(allocDays + randomInt(0, 10)),
       lastActivityAt: daysAgo(lastActivityDays),
       allocatedAt: daysAgo(allocDays),
       consentStatus: ["stb_submitted", "approved", "disbursed"].includes(stage) ? "received" : "not_sent",
-      retryCount: disp === "not_contactable" ? randomInt(1, 6) : 0,
+      retryCount: ["number_busy", "no_response", "switched_off"].includes(disp) ? randomInt(1, 6) : 0,
+      expiresAt: daysAgo(-(90 - allocDays)),
     };
   });
 }
@@ -175,7 +270,7 @@ export const leads: Lead[] = generateLeads();
 export const getLeadsForAgent = (agentId: string) => leads.filter(l => l.assignedAgentId === agentId);
 export const getLeadsForTeam = (teamId: string) => leads.filter(l => l.assignedTeamId === teamId);
 export const getAgentsForTeam = (teamId: string) => agents.filter(a => a.teamId === teamId);
-export const getDispositionLabel = (d: DispositionType) => dispositionConfigs.find(c => c.type === d)?.label ?? d;
+export const getDispositionLabel = (d: DispositionType) => dispositionConfigs.find(c => c.type === d)?.label ?? d.replace(/_/g, " ");
 export const getStageLabel = (s: LeadStage) => ({
   new: "New", contacted: "Contacted", interested: "Interested", bre_done: "BRE Done",
   stb_submitted: "STB Submitted", approved: "Approved", declined: "Declined",
@@ -185,3 +280,25 @@ export const getProductLabel = (p: ProductType) => ({
   personal_loan: "Personal Loan", home_loan: "Home Loan", business_loan: "Business Loan",
   credit_card: "Credit Card", loan_against_property: "Loan Against Property",
 }[p]);
+
+// Mock Notifications
+export const mockNotifications: Notification[] = [
+  { id: "n-1", type: "follow_up_due", title: "Follow-Up Due", message: "Follow-up with Rajesh Khanna is due in 30 minutes", timestamp: daysAgo(0), read: false, leadId: "lead-1" },
+  { id: "n-2", type: "follow_up_missed", title: "Missed Follow-Up", message: "You missed a follow-up with Sunita Devi", timestamp: daysAgo(0), read: false, leadId: "lead-2" },
+  { id: "n-3", type: "lead_expiry", title: "Lead Expiring Soon", message: "Lead Mohd Irfan expires in 2 days", timestamp: daysAgo(0), read: false, leadId: "lead-3" },
+  { id: "n-4", type: "consent_received", title: "Consent Received", message: "Consent SMS confirmed for Lakshmi Narayan", timestamp: daysAgo(0), read: true, leadId: "lead-4" },
+  { id: "n-5", type: "new_allocation", title: "New Lead Allocated", message: "3 new leads have been assigned to you", timestamp: daysAgo(0), read: true },
+  { id: "n-6", type: "stb_status_update", title: "STB Update", message: "HDFC Bank approved loan for Vikram Chauhan", timestamp: daysAgo(1), read: true, leadId: "lead-5" },
+  { id: "n-7", type: "lead_reassigned", title: "Lead Reassigned", message: "Lead Nisha Agarwal reassigned to you from Sneha Gupta", timestamp: daysAgo(1), read: true, leadId: "lead-6" },
+  { id: "n-8", type: "follow_up_due", title: "Follow-Up Due", message: "Document collection follow-up with Arjun Rao", timestamp: daysAgo(0), read: false, leadId: "lead-9" },
+];
+
+// Performance mock data
+export const performanceData = [
+  { month: "Nov 2025", allocated: 22, contacted: 18, contactRate: 82, stbCount: 8, stbRate: 36, approved: 5, disbursedCount: 3, disbursedAmount: 1500000, followUpCompliance: 88 },
+  { month: "Dec 2025", allocated: 25, contacted: 21, contactRate: 84, stbCount: 10, stbRate: 40, approved: 6, disbursedCount: 4, disbursedAmount: 2200000, followUpCompliance: 91 },
+  { month: "Jan 2026", allocated: 20, contacted: 17, contactRate: 85, stbCount: 7, stbRate: 35, approved: 4, disbursedCount: 3, disbursedAmount: 1800000, followUpCompliance: 85 },
+  { month: "Feb 2026", allocated: 28, contacted: 24, contactRate: 86, stbCount: 12, stbRate: 43, approved: 7, disbursedCount: 5, disbursedAmount: 2800000, followUpCompliance: 92 },
+  { month: "Mar 2026", allocated: 30, contacted: 26, contactRate: 87, stbCount: 14, stbRate: 47, approved: 9, disbursedCount: 6, disbursedAmount: 3500000, followUpCompliance: 94 },
+  { month: "Apr 2026", allocated: 18, contacted: 15, contactRate: 83, stbCount: 6, stbRate: 33, approved: 3, disbursedCount: 2, disbursedAmount: 1200000, followUpCompliance: 90 },
+];
