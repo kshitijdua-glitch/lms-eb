@@ -597,6 +597,52 @@ const LeadDetailPage = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* TL Reassign Dialog */}
+      <Dialog open={showReassign} onOpenChange={setShowReassign}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Reassign Lead — {lead.name}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            {lead.stbSubmissions.length > 0 && (
+              <div className="p-2 rounded border border-destructive/30 text-xs text-destructive">
+                ⚠ This lead has active STB submissions. Reassignment is blocked.
+              </div>
+            )}
+            <div>
+              <Label>Assign to Agent *</Label>
+              <Select value={reassignAgent} onValueChange={setReassignAgent}>
+                <SelectTrigger><SelectValue placeholder="Select agent" /></SelectTrigger>
+                <SelectContent>
+                  {getAgentsForTeam(lead.assignedTeamId)
+                    .filter(a => a.id !== lead.assignedAgentId && a.id !== "agent-9")
+                    .map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Reason (optional)</Label>
+              <Textarea placeholder="Reason for reassignment..." value={reassignReason} onChange={e => setReassignReason(e.target.value)} />
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Current Agent: {agents.find(a => a.id === lead.assignedAgentId)?.name}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowReassign(false)}>Cancel</Button>
+            <Button
+              disabled={!reassignAgent || lead.stbSubmissions.length > 0}
+              onClick={() => {
+                toast.success(`Lead reassigned to ${agents.find(a => a.id === reassignAgent)?.name}`);
+                setShowReassign(false);
+                setReassignAgent("");
+                setReassignReason("");
+              }}
+            >
+              Reassign
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
