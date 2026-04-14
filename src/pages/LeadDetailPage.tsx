@@ -361,6 +361,7 @@ const LeadDetailPage = () => {
                         return <>
                           <div className="flex items-center gap-1 flex-wrap">
                             <Badge variant="outline" className="text-[9px]">Call</Badge>
+                            {cl.agentId === "agent-9" && <Badge className="text-[9px] bg-primary/20 text-primary">TL</Badge>}
                             <span className="font-medium">{cl.outcome === "connected" ? "Connected" : "Not Connected"}</span>
                             <Badge variant="outline" className="text-[9px]">{getDispositionLabel(cl.disposition)}</Badge>
                             <span className="text-muted-foreground">{Math.floor(cl.duration / 60)}m {cl.duration % 60}s</span>
