@@ -31,7 +31,6 @@ const LeadDetailPage = () => {
   const [showReassign, setShowReassign] = useState(false);
   const [reassignAgent, setReassignAgent] = useState("");
   const [reassignReason, setReassignReason] = useState("");
-  const [showEMI, setShowEMI] = useState(false);
   const [emiAmount, setEmiAmount] = useState("");
   const [emiRate, setEmiRate] = useState("");
   const [emiTenure, setEmiTenure] = useState("");
