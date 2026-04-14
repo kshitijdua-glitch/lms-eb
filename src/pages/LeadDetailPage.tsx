@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { leads, getDispositionLabel, getStageLabel, getProductLabel, dispositionGroups, lendingPartners, getAgentsForTeam, agents } from "@/data/mockData";
+import { leads, getDispositionLabel, getStageLabel, getProductLabel, dispositionGroups, lendingPartners, getAgentsForTeam, agents, teams } from "@/data/mockData";
 import { useRole } from "@/contexts/RoleContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +29,10 @@ const LeadDetailPage = () => {
   const [showCallLog, setShowCallLog] = useState(false);
   const [showEMI, setShowEMI] = useState(false);
   const [showReassign, setShowReassign] = useState(false);
+  const [showOverride, setShowOverride] = useState(false);
+  const [overrideReason, setOverrideReason] = useState("");
   const [reassignAgent, setReassignAgent] = useState("");
+  const [reassignTL, setReassignTL] = useState("");
   const [reassignReason, setReassignReason] = useState("");
   const [emiAmount, setEmiAmount] = useState("");
   const [emiRate, setEmiRate] = useState("");
@@ -134,6 +137,16 @@ const LeadDetailPage = () => {
         {role === "team_leader" && lead.assignedAgentId !== "agent-9" && (
           <Button size="sm" variant="outline" onClick={() => setShowReassign(true)}>
             <Shuffle className="h-4 w-4 mr-1" /> Reassign
+          </Button>
+        )}
+        {role === "manager" && (
+          <Button size="sm" variant="outline" onClick={() => setShowReassign(true)}>
+            <Shuffle className="h-4 w-4 mr-1" /> Reassign
+          </Button>
+        )}
+        {role === "manager" && (lead.stage === "closed_lost" || lead.stage === "declined") && (
+          <Button size="sm" variant="secondary" onClick={() => setShowOverride(true)}>
+            Override
           </Button>
         )}
       </div>
