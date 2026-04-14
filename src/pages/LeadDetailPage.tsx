@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { leads, getDispositionLabel, getStageLabel, getProductLabel, dispositionGroups, lendingPartners } from "@/data/mockData";
+import { leads, getDispositionLabel, getStageLabel, getProductLabel, dispositionGroups, lendingPartners, getAgentsForTeam, agents } from "@/data/mockData";
+import { useRole } from "@/contexts/RoleContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import {
   ArrowLeft, Phone, Send, Calculator, Clock, CheckCircle, XCircle, AlertTriangle,
-  User, Edit2, Lock, FileText, Shield, CalendarIcon, Search as SearchIcon
+  User, Edit2, Lock, FileText, Shield, CalendarIcon, Search as SearchIcon, Shuffle
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -23,8 +24,13 @@ import { toast } from "sonner";
 const LeadDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { role } = useRole();
   const lead = leads.find(l => l.id === id);
   const [showCallLog, setShowCallLog] = useState(false);
+  const [showEMI, setShowEMI] = useState(false);
+  const [showReassign, setShowReassign] = useState(false);
+  const [reassignAgent, setReassignAgent] = useState("");
+  const [reassignReason, setReassignReason] = useState("");
   const [showEMI, setShowEMI] = useState(false);
   const [emiAmount, setEmiAmount] = useState("");
   const [emiRate, setEmiRate] = useState("");
