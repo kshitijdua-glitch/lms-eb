@@ -1,86 +1,90 @@
 
 
-# Plan: Update Manager Flow Per PRD
+# Plan: Update Cluster Head Flow Per PRD
 
 ## Summary
-The Manager currently has a basic dashboard with 5 KPIs, a conversion funnel, approval rate chart, and bank pipeline table. The PRD defines the Manager as a triple-scope role (own production + TL supervision + group operations) with group lead management, cross-team reassignment, disposition overrides, TL notes/flags, TL target setting, group-level reporting, and agent ranking. This plan brings the Manager portal in line with the PRD.
+The Cluster Head currently has a minimal dashboard (4 KPI cards, source quality chart, trend chart, agent ranking, partner disbursal) and only 3 nav items (Dashboard, All Leads, Reports). The PRD defines the Cluster Head as the highest supervisory role with full org-wide visibility, staff profile management, system configuration, lead allocation, disposition overrides, audit trail, and org-wide reporting. This plan brings the Cluster Head portal in line with the PRD.
 
-## What Needs to Change
+## What Gets Built
 
-**Current state:** 4 nav items (Dashboard, All Leads, STB Pipeline, Reports). No group-specific views, no TL management, no cross-team reassignment, no disposition overrides, no TL notes/flags, no group performance views.
+1. **Navigation** -- Expand from 3 items to ~14: Dashboard, Org Leads, Org Follow-Ups, Org STB, Staff Management, System Config, Lead Allocation, Lead Count Report, Performance, Audit Trail.
 
-**What gets built:**
+2. **Dashboard revamp** -- Four sections per PRD:
+   - Organisation Pipeline Health Strip (funnel: Allocated → Contacted → STB → Approved → Disbursed with rates and total INR)
+   - Manager Group Comparison Panel (table: all managers side-by-side with group size, contact rate, STB, disbursed, sortable)
+   - System Alerts Panel (color-coded: managers not logged in, DND violations, unallocated pools, stale STBs, zero-activity agents, override spikes, expiry warnings)
+   - Quick Navigation (9 buttons)
 
-1. **Navigation** -- Expand from 4 items to 12: Dashboard, My Leads, My Follow-Ups, My STB, Group Leads, Group Follow-Ups, Group STB, Group Management, Lead Report, Performance, plus quick-nav on dashboard.
+3. **Org Leads page** -- All leads across entire org. Columns: Customer Name, Manager, TL, Agent, Product, Source, Last Disposition, Last Activity, Days Since Allocation, Stage, Follow-Up. Filters: Manager → TL → Agent (cascading), date, stage, disposition, product, source, follow-up status, aging, search. Bulk select + org-wide reassign (Manager → TL → Agent dropdowns).
 
-2. **Dashboard revamp** -- Three sections: Own Production (agent-style KPIs), Group Health (missed FUs, TL activity status with login/zero-activity flags, group STB/approved/disbursed), Business Performance Strip (conversion funnel: allocated > contacted > STB > approved > disbursed with rates).
+4. **Org Follow-Ups page** -- All follow-ups with Manager, TL, Agent columns. Same cascading filters.
 
-3. **Group Leads page** (`/group-leads`) -- All leads across all TLs/agents. Columns: Customer Name, Assigned TL, Assigned Agent, Product, Source, Last Disposition, Last Activity, Days Since Allocation, Stage, Follow-Up Scheduled. Filters: TL (cascading to Agent), date range, stage, disposition, product, source, follow-up status, aging, search. Bulk select + reassign.
+5. **Org STB page** -- All STB leads with Manager, TL, Agent, Bank, days since submission. Inline status updates.
 
-4. **Group Follow-Ups page** (`/group-follow-ups`) -- All follow-ups across group with TL and Agent columns. Filters: TL, agent, priority, date, product, overdue status.
+6. **Staff Management page** -- Create/edit/deactivate/reactivate Agents, TLs, and Managers. Agent form: name, email, phone, assigned Manager → TL (cascading), location, process assignment, allocation type, status. TL form adds team size limit. Manager form adds group name, TL capacity. Password reset button (mock). Deactivation warnings (unworked leads, open FUs, active STBs).
 
-5. **Group STB page** (`/group-stb`) -- All STB-stage leads across group with TL, Agent, Bank, days since submission. Inline status updates for non-API partners.
+7. **System Configuration page** -- Configurable settings panels: Lead Sources (add/rename/deactivate), Disposition sub-types (add/rename/deactivate per category), Allocation Rules (schedule, leads/agent/day, mode, active agent definition, product matching), Retry Logic (NC sub-type retry intervals, max consecutive NC), Lead Aging/Expiry (inactivity alert, expiry threshold per product, warning window), Bureau freshness (report window, consent cooldown, max attempts), STB config (consent expiry, cooldown, max attempts), Notification config (toggle real-time vs summary per type). All changes mock-logged.
 
-6. **Group Management page** (`/group-management`) -- TL overview table (login status, team size, leads assigned, worked today, FU compliance, STB, disbursed, last activity). Click TL row to expand agent-level breakdown. Group activity monitoring panel per TL. TL profile card with notes (immutable) and flags (On Leave, Performance Watch, Disposition Quality Issue, Management Quality Issue, Training Required). Set Targets modal for TLs (team-level targets). Also set targets directly for individual agents.
+8. **Lead Allocation page** -- View unallocated lead pools (source, date, count, product). Allocate via: Assign to Group (Manager), Assign to Team (TL), Assign to Agent, or Auto Round Robin. Mock allocation with toast confirmation.
 
-7. **Cross-team lead reassignment** -- From Group Leads or Lead Detail: select target TL then agent from group-scoped dropdown. Supports cross-team moves (TL A's agent to TL B's agent). STB-locked leads cannot be reassigned. Bulk reassignment supported.
+9. **Disposition Override** -- On Lead Detail when role=cluster_head, show Override button for TL-level AND Manager-level dispositions. CH dispositions cannot be self-overridden. Override logs reason, resets stage, notifies all parties. CH dispositions are absolute locks (Not Eligible / Closed Lost cannot be reopened by anyone below).
 
-8. **Disposition Override** -- On Lead Detail, when a TL-level "Not Eligible" or "Closed/Lost" disposition exists, show Override button. Override logs reason, resets lead to previous stage, notifies TL and agent. Manager-level dispositions cannot be self-overridden.
+10. **CH disposition tagging** -- Call logs and dispositions by CH tagged with "Cluster Head" badge in timeline. CH Hot Follow-Up shows priority flag.
 
-9. **Manager disposition tagging** -- When Manager logs call or disposition on group lead, tagged as "Manager" in history timeline with visual badge.
+11. **Audit Trail page** -- Immutable log table with: timestamp, actor (name + role), action type, target, before/after state, reason. Filters: date range, actor/role, action type, target lead, target profile, configuration. No export button (per PRD restriction). Mock data covering dispositions, overrides, reassignments, profile changes, config changes, login events.
 
-10. **Group Lead Count Report** (`/group-reports`) -- Date range, TL, agent, product, disposition filters. Table with TL Name, Agent, disposition category/sub-type, count. Summary rows at TL and group level. CSV export.
+12. **Org Lead Count Report** -- Same as Manager report but with Manager filter at top. Table: Manager, TL, Agent, disposition category/sub-type, count. Summary rows at Manager, TL, and org level. CSV export.
 
-11. **Group Performance page** (enhance `/performance`) -- Own performance (agent view), TL performance history (per TL, 12 months, team-level metrics), agent performance across entire group, group summary table (all TLs side by side), agent ranking across group. CSV export.
+13. **Org Performance page** -- Manager-level summary table (all managers side-by-side, current month, 12-month history). Cross-group comparison chart (bar/line, any metric, any time window). TL performance history (any TL, org-wide). Agent performance history (any agent, org-wide). Org-wide agent ranking (sort by any metric). CSV export.
 
-12. **Manager Notifications** -- Extend mock notifications: TL not logged in, team missed FU threshold, 5-NC escalation with TL attribution, override confirmation, STB status on group lead, daily summary.
+14. **CH Notifications** -- Extend mock notifications: manager not logged in, DND risk, override spike, unallocated pool, stale STB pool, config change confirmation, staff deactivation confirmation, daily summary.
 
 ## Implementation Steps
 
-### Step 1: Add routes and navigation
-- Update `managerNav` in AppSidebar with 12 items organized in sections
-- Add new routes in App.tsx: `/group-leads`, `/group-follow-ups`, `/group-stb`, `/group-management`, `/group-reports`
+### Step 1: Update navigation and routes
+- Expand `clusterHeadNav` to ~14 items with sections
+- Add routes: `/org-leads`, `/org-follow-ups`, `/org-stb`, `/staff-management`, `/system-config`, `/lead-allocation`, `/org-reports`, `/audit-trail`
 
-### Step 2: Revamp Manager Dashboard
-- Three-section layout: Own Production, Group Health (TL activity list), Business Performance Strip (funnel with rates)
-- Quick-nav buttons (9 items per PRD)
+### Step 2: Revamp CH Dashboard
+- Pipeline health strip, manager comparison table, system alerts panel, quick-nav
 
-### Step 3: Build Group Leads page
-- Reuse patterns from TeamLeadsPage but add TL column and cross-team reassignment
-- TL filter cascades to agent filter
-- Bulk select + reassign with TL > Agent dropdown
+### Step 3: Build Org Leads, Follow-Ups, STB pages
+- Reuse Group page patterns, add Manager column and cascading Manager → TL → Agent filters
+- Org-wide reassignment with 3-level dropdown
 
-### Step 4: Build Group Follow-Ups and Group STB pages
-- Similar to Team variants but with TL column added
-- Group-scoped filters
+### Step 4: Build Staff Management page
+- Tabbed view: Agents | TLs | Managers
+- Create/Edit modals with cascading dropdowns
+- Deactivate with warning dialog
+- Password reset button (mock)
 
-### Step 5: Build Group Management page
-- TL overview table with expandable agent rows
-- TL profile card with notes and flags
-- Set Targets modal for TLs (team-level targets)
-- Agent-level target setting (bypass TL)
+### Step 5: Build System Configuration page
+- Accordion/tabbed panels for each config area
+- Inline editable fields with save buttons
+- Mock audit logging on changes
 
-### Step 6: Add disposition override to Lead Detail
-- Show Override button when role=manager and lead has TL-level Not Eligible or Closed/Lost
-- Override modal with optional reason
-- Log override in history, reset stage, toast notification
+### Step 6: Build Lead Allocation page
+- Unallocated pool list with allocation mode selection
+- Manager → TL → Agent cascading for targeted allocation
 
-### Step 7: Build Group Reports page
-- Group-level lead count report with TL/agent breakdown
-- Summary rows, CSV export
+### Step 7: Build Audit Trail page
+- Filterable immutable log table with mock data
+- No export (per PRD)
 
-### Step 8: Enhance Performance page for Manager
-- Add TL selector for TL-level team performance
-- Agent ranking across group
-- Group summary table
+### Step 8: Build Org Reports and Performance pages
+- Org-level lead count report with Manager filter
+- Cross-group comparison charts, org-wide agent ranking
 
-### Step 9: Update mock data and notifications
-- Add manager-specific notification types
-- Extend mock data with group/TL relationships
+### Step 9: Update Lead Detail for CH
+- Override for TL-level AND Manager-level dispositions
+- CH disposition tagging and absolute lock behavior
+
+### Step 10: Update notifications
+- Add CH-specific notification types to mock data
 
 ## Technical Notes
 - All client-side mock data, no backend
-- ~5 new page files, ~4 modified files
-- Reuse existing table/card/chart components and patterns from TL pages
-- Manager inherits agent + TL functionality on own leads via existing pages
+- ~8 new page files, ~4 modified files
+- Reuse existing table/card/chart components from Manager/TL pages
+- CH does not carry personal leads -- no "My Leads" section (purely supervisory per PRD)
 
