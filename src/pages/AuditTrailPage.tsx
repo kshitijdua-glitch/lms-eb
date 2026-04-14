@@ -4,7 +4,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Shield, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Shield, Search, Download } from "lucide-react";
+import { useRole } from "@/contexts/RoleContext";
+import { toast } from "sonner";
 
 type AuditEntry = {
   id: string;
@@ -35,6 +38,7 @@ const actionTypes = ["All", "disposition_override", "config_change", "staff_deac
 const roles = ["All", "cluster_head", "manager", "team_leader", "system"];
 
 const AuditTrailPage = () => {
+  const { role } = useRole();
   const [search, setSearch] = useState("");
   const [actionFilter, setActionFilter] = useState("All");
   const [roleFilter, setRoleFilter] = useState("All");
@@ -55,8 +59,15 @@ const AuditTrailPage = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2"><Shield className="h-6 w-6" /> Audit Trail</h1>
-          <p className="text-muted-foreground text-sm">Immutable log of all system actions. No export available.</p>
+          <p className="text-muted-foreground text-sm">
+            Immutable log of all system actions.{role !== "data_admin" && " No export available."}
+          </p>
         </div>
+        {role === "data_admin" && (
+          <Button variant="outline" onClick={() => { toast.success("Audit trail CSV exported. Action logged."); }}>
+            <Download className="h-4 w-4 mr-1" /> Export CSV
+          </Button>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -118,7 +129,7 @@ const AuditTrailPage = () => {
       </Card>
 
       <div className="text-xs text-muted-foreground text-center">
-        Showing {filtered.length} of {mockAuditLog.length} entries · Export disabled per policy
+        Showing {filtered.length} of {mockAuditLog.length} entries{role !== "data_admin" && " · Export disabled per policy"}
       </div>
     </div>
   );
