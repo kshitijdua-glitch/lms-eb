@@ -1,158 +1,191 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { leads, agents, lendingPartners } from "@/data/mockData";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from "recharts";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { leads, agents, teams, lendingPartners } from "@/data/mockData";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState } from "react";
-import { Brain, TrendingDown, TrendingUp, BarChart3 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useNavigate } from "react-router-dom";
+import {
+  Users, Clock, Send, CheckCircle, AlertTriangle, BarChart3, UserCog,
+  Upload, Settings, FileText, TrendingUp, Shield, ArrowRight,
+} from "lucide-react";
 
 export function ClusterHeadDashboard() {
-  const [period, setPeriod] = useState("monthly");
+  const navigate = useNavigate();
 
-  const sourceQuality = ["Website", "Google Ads", "Facebook", "Referral", "Partner", "Walk-in"].map(src => {
-    const srcLeads = leads.filter(l => l.source === src);
-    const converted = srcLeads.filter(l => ["approved", "disbursed"].includes(l.stage)).length;
-    return { source: src, total: srcLeads.length, converted, rate: srcLeads.length > 0 ? Math.round((converted / srcLeads.length) * 100) : 0 };
+  // Pipeline funnel
+  const allocated = leads.length;
+  const contacted = leads.filter(l => !["new"].includes(l.stage)).length;
+  const stbSubmitted = leads.filter(l => ["stb_submitted", "approved", "disbursed"].includes(l.stage)).length;
+  const approved = leads.filter(l => ["approved", "disbursed"].includes(l.stage)).length;
+  const disbursed = leads.filter(l => l.stage === "disbursed").length;
+  const totalDisbursedAmt = leads.flatMap(l => l.stbSubmissions).filter(s => s.status === "disbursed").reduce((s, d) => s + (d.disbursedAmount || 0), 0);
+
+  const funnelSteps = [
+    { label: "Allocated", value: allocated, rate: 100 },
+    { label: "Contacted", value: contacted, rate: Math.round((contacted / allocated) * 100) },
+    { label: "STB", value: stbSubmitted, rate: Math.round((stbSubmitted / allocated) * 100) },
+    { label: "Approved", value: approved, rate: Math.round((approved / allocated) * 100) },
+    { label: "Disbursed", value: disbursed, rate: Math.round((disbursed / allocated) * 100) },
+  ];
+
+  // Manager group comparison (mock 2 managers mapped to teams)
+  const managers = [
+    { name: "Vikram Mehta", teams: ["team-1"], id: "mgr-1" },
+    { name: "Anjali Kapoor", teams: ["team-2"], id: "mgr-2" },
+  ];
+
+  const managerStats = managers.map(mgr => {
+    const mgrTeams = teams.filter(t => mgr.teams.includes(t.id));
+    const mgrAgents = agents.filter(a => mgr.teams.includes(a.teamId));
+    const mgrLeads = leads.filter(l => mgr.teams.includes(l.assignedTeamId));
+    const mgrContacted = mgrLeads.filter(l => !["new"].includes(l.stage)).length;
+    const mgrSTB = mgrLeads.filter(l => ["stb_submitted", "approved", "disbursed"].includes(l.stage)).length;
+    const mgrDisbursed = mgrLeads.filter(l => l.stage === "disbursed").length;
+    return {
+      name: mgr.name,
+      groupSize: mgrAgents.length,
+      leads: mgrLeads.length,
+      contactRate: mgrLeads.length > 0 ? Math.round((mgrContacted / mgrLeads.length) * 100) : 0,
+      stb: mgrSTB,
+      disbursed: mgrDisbursed,
+    };
   });
 
-  const agentProductivity = agents.filter(a => a.status === "active" && a.leadsAssigned > 0).map(a => ({
-    name: a.name.split(" ")[0],
-    assigned: a.leadsAssigned,
-    converted: a.leadsConverted,
-    rate: Math.round((a.leadsConverted / a.leadsAssigned) * 100),
-  })).sort((a, b) => b.rate - a.rate);
+  // System alerts
+  const today = new Date().toISOString().split("T")[0];
+  const inactiveAgents = agents.filter(a => a.status === "inactive").length;
+  const dndLeads = leads.filter(l => l.dndStatus === "dnd_registered").length;
+  const missedFUs = leads.flatMap(l => l.followUps).filter(f => f.status === "missed").length;
+  const staleSTBs = leads.flatMap(l => l.stbSubmissions).filter(s => {
+    const days = Math.floor((Date.now() - new Date(s.submittedAt).getTime()) / 86400000);
+    return s.status === "submitted" && days > 7;
+  }).length;
+  const expiringLeads = leads.filter(l => {
+    const daysToExpiry = Math.floor((new Date(l.expiresAt).getTime() - Date.now()) / 86400000);
+    return daysToExpiry <= 7 && daysToExpiry > 0;
+  }).length;
 
-  const partnerDisbursal = lendingPartners.map(lp => {
-    const subs = leads.flatMap(l => l.stbSubmissions).filter(s => s.partnerId === lp.id);
-    const disbursed = subs.filter(s => s.status === "disbursed");
-    const amount = disbursed.reduce((s, d) => s + (d.disbursedAmount || 0), 0);
-    return { partner: lp.name, count: disbursed.length, amount: Math.round(amount / 100000) };
-  });
+  const alerts = [
+    { label: "Inactive Agents", value: inactiveAgents, severity: inactiveAgents > 0 ? "warning" : "ok" },
+    { label: "DND Violations Risk", value: dndLeads, severity: dndLeads > 3 ? "error" : "ok" },
+    { label: "Missed Follow-Ups", value: missedFUs, severity: missedFUs > 5 ? "error" : missedFUs > 0 ? "warning" : "ok" },
+    { label: "Stale STBs (>7d)", value: staleSTBs, severity: staleSTBs > 0 ? "warning" : "ok" },
+    { label: "Expiring Leads (7d)", value: expiringLeads, severity: expiringLeads > 3 ? "error" : expiringLeads > 0 ? "warning" : "ok" },
+  ];
 
-  const trendData = Array.from({ length: 7 }, (_, i) => ({
-    day: `Day ${i + 1}`,
-    leads: Math.floor(Math.random() * 20) + 10,
-    stb: Math.floor(Math.random() * 8) + 2,
-    disbursed: Math.floor(Math.random() * 4) + 1,
-  }));
+  const quickNav = [
+    { label: "Org Leads", icon: Users, path: "/org-leads" },
+    { label: "Org Follow-Ups", icon: Clock, path: "/org-follow-ups" },
+    { label: "Org STB", icon: Send, path: "/org-stb" },
+    { label: "Staff Mgmt", icon: UserCog, path: "/staff-management" },
+    { label: "System Config", icon: Settings, path: "/system-config" },
+    { label: "Lead Allocation", icon: Upload, path: "/lead-allocation" },
+    { label: "Lead Report", icon: FileText, path: "/org-reports" },
+    { label: "Performance", icon: TrendingUp, path: "/performance" },
+    { label: "Audit Trail", icon: Shield, path: "/audit-trail" },
+  ];
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Cluster Head Dashboard</h1>
-          <p className="text-muted-foreground">Strategic overview & analytics</p>
-        </div>
-        <Select value={period} onValueChange={setPeriod}>
-          <SelectTrigger className="w-32">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="daily">Daily</SelectItem>
-            <SelectItem value="weekly">Weekly</SelectItem>
-            <SelectItem value="monthly">Monthly</SelectItem>
-          </SelectContent>
-        </Select>
+      <div>
+        <h1 className="text-2xl font-bold">Cluster Head Dashboard</h1>
+        <p className="text-muted-foreground">Organisation-wide overview & control</p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: "Avg Lead Score", value: "72/100", icon: Brain, desc: "Based on conversion probability" },
-          { label: "Drop-off Rate", value: "34%", icon: TrendingDown, desc: "Contacted → STB stage" },
-          { label: "Disbursal Forecast", value: "₹1.2Cr", icon: TrendingUp, desc: "Next 30 days predicted" },
-          { label: "Portfolio Health", value: "Good", icon: BarChart3, desc: "Based on aging & conversion" },
-        ].map(k => (
-          <Card key={k.label}>
-            <CardContent className="p-4">
-              <k.icon className="h-4 w-4 text-primary mb-1" />
-              <div className="text-2xl font-bold">{k.value}</div>
-              <div className="text-xs text-muted-foreground">{k.label}</div>
-              <div className="text-[10px] text-muted-foreground/70 mt-1">{k.desc}</div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {/* Pipeline Health Strip */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Organisation Pipeline Health</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between gap-2">
+            {funnelSteps.map((step, idx) => (
+              <div key={step.label} className="flex items-center gap-2 flex-1">
+                <div className="text-center flex-1">
+                  <div className="text-2xl font-bold">{step.value}</div>
+                  <div className="text-xs text-muted-foreground">{step.label}</div>
+                  <div className="text-[10px] text-muted-foreground">{step.rate}%</div>
+                </div>
+                {idx < funnelSteps.length - 1 && <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />}
+              </div>
+            ))}
+          </div>
+          <div className="text-right mt-2 text-sm text-muted-foreground">
+            Total Disbursed: <strong className="text-foreground">₹{(totalDisbursedAmt / 100000).toFixed(1)}L</strong>
+          </div>
+        </CardContent>
+      </Card>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader><CardTitle className="text-base">Source-wise Lead Quality</CardTitle></CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={sourceQuality}>
-                <XAxis dataKey="source" fontSize={11} />
-                <YAxis fontSize={12} />
-                <Tooltip />
-                <Bar dataKey="total" fill="hsl(214, 32%, 91%)" name="Total" />
-                <Bar dataKey="converted" fill="hsl(142, 76%, 36%)" name="Converted" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader><CardTitle className="text-base">Trend Analysis</CardTitle></CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={trendData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(214, 32%, 91%)" />
-                <XAxis dataKey="day" fontSize={12} />
-                <YAxis fontSize={12} />
-                <Tooltip />
-                <Line type="monotone" dataKey="leads" stroke="hsl(221, 83%, 25%)" name="Leads" strokeWidth={2} />
-                <Line type="monotone" dataKey="stb" stroke="hsl(38, 92%, 50%)" name="STB" strokeWidth={2} />
-                <Line type="monotone" dataKey="disbursed" stroke="hsl(142, 76%, 36%)" name="Disbursed" strokeWidth={2} />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader><CardTitle className="text-base">Agent Productivity Ranking</CardTitle></CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>#</TableHead>
-                  <TableHead>Agent</TableHead>
-                  <TableHead className="text-right">Assigned</TableHead>
-                  <TableHead className="text-right">Converted</TableHead>
-                  <TableHead className="text-right">Rate</TableHead>
+      {/* Manager Group Comparison */}
+      <Card>
+        <CardHeader className="pb-2"><CardTitle className="text-base">Manager Group Comparison</CardTitle></CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Manager</TableHead>
+                <TableHead className="text-right">Group Size</TableHead>
+                <TableHead className="text-right">Leads</TableHead>
+                <TableHead className="text-right">Contact Rate</TableHead>
+                <TableHead className="text-right">STB</TableHead>
+                <TableHead className="text-right">Disbursed</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {managerStats.map(m => (
+                <TableRow key={m.name}>
+                  <TableCell className="font-medium">{m.name}</TableCell>
+                  <TableCell className="text-right">{m.groupSize}</TableCell>
+                  <TableCell className="text-right">{m.leads}</TableCell>
+                  <TableCell className="text-right">
+                    <Badge variant={m.contactRate > 70 ? "default" : "secondary"}>{m.contactRate}%</Badge>
+                  </TableCell>
+                  <TableCell className="text-right">{m.stb}</TableCell>
+                  <TableCell className="text-right">{m.disbursed}</TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {agentProductivity.map((a, i) => (
-                  <TableRow key={a.name}>
-                    <TableCell>{i + 1}</TableCell>
-                    <TableCell className="font-medium">{a.name}</TableCell>
-                    <TableCell className="text-right">{a.assigned}</TableCell>
-                    <TableCell className="text-right">{a.converted}</TableCell>
-                    <TableCell className="text-right">
-                      <Badge variant={a.rate > 25 ? "default" : "secondary"}>{a.rate}%</Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
-        <Card>
-          <CardHeader><CardTitle className="text-base">Partner-wise Disbursal</CardTitle></CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={partnerDisbursal} layout="vertical">
-                <XAxis type="number" fontSize={12} />
-                <YAxis type="category" dataKey="partner" fontSize={11} width={90} />
-                <Tooltip formatter={(v: number) => `₹${v}L`} />
-                <Bar dataKey="amount" fill="hsl(221, 83%, 25%)" radius={[0, 4, 4, 0]} name="Amount (₹L)" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
+      {/* System Alerts */}
+      <Card>
+        <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="h-4 w-4" /> System Alerts</CardTitle></CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            {alerts.map(a => (
+              <div key={a.label} className={`p-3 rounded-lg border text-center ${
+                a.severity === "error" ? "border-destructive/40 bg-destructive/5" :
+                a.severity === "warning" ? "border-warning/40 bg-warning/5" :
+                "border-border bg-muted/30"
+              }`}>
+                <div className={`text-xl font-bold ${
+                  a.severity === "error" ? "text-destructive" :
+                  a.severity === "warning" ? "text-warning" :
+                  "text-muted-foreground"
+                }`}>{a.value}</div>
+                <div className="text-[10px] text-muted-foreground">{a.label}</div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Quick Navigation */}
+      <Card>
+        <CardHeader className="pb-2"><CardTitle className="text-base">Quick Navigation</CardTitle></CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-2">
+            {quickNav.map(n => (
+              <Button key={n.label} variant="outline" className="flex flex-col h-auto py-3 gap-1" onClick={() => navigate(n.path)}>
+                <n.icon className="h-5 w-5" />
+                <span className="text-[10px]">{n.label}</span>
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

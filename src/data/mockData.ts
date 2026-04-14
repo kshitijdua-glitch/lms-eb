@@ -303,6 +303,13 @@ export const mockNotifications: Notification[] = [
   { id: "n-16", type: "nc_escalation", title: "Team Missed F/U Threshold", message: "Alpha Squad has exceeded 10 missed follow-ups this week", timestamp: daysAgo(0), read: false },
   { id: "n-17", type: "stb_status_update", title: "Group STB Update", message: "Bajaj Finserv declined loan for Manoj Tiwari — TL: Priya Sharma, Agent: Meera Patel", timestamp: daysAgo(0), read: false, leadId: "lead-15" },
   { id: "n-18", type: "lead_reassigned", title: "Override Confirmation", message: "You overrode a Closed/Lost disposition on lead Arjun Rao — lead moved to Contacted", timestamp: daysAgo(1), read: true, leadId: "lead-9" },
+  // Cluster Head notifications
+  { id: "n-19", type: "agent_not_logged_in", title: "Manager Not Logged In", message: "Manager Anjali Kapoor has not logged in today", timestamp: daysAgo(0), read: false },
+  { id: "n-20", type: "nc_escalation", title: "DND Risk Alert", message: "3 DND-registered leads contacted without consent in South Zone", timestamp: daysAgo(0), read: false },
+  { id: "n-21", type: "new_allocation", title: "Unallocated Pool Alert", message: "22 leads from Partner source remain unallocated for 48 hours", timestamp: daysAgo(0), read: false },
+  { id: "n-22", type: "stb_status_update", title: "Stale STB Pool", message: "5 STB submissions pending >7 days across organisation", timestamp: daysAgo(0), read: false },
+  { id: "n-23", type: "lead_reassigned", title: "Config Change Logged", message: "Allocation mode changed from Manual to Round Robin by CH Admin", timestamp: daysAgo(0), read: true },
+  { id: "n-24", type: "lead_reassigned", title: "Staff Deactivated", message: "Agent Karan Singh deactivated. 12 leads need reassignment.", timestamp: daysAgo(1), read: true },
 ];
 
 // Performance mock data

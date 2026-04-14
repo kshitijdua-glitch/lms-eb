@@ -48,8 +48,16 @@ const managerNav = [
 
 const clusterHeadNav = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "All Leads", url: "/leads", icon: Users },
-  { title: "Reports", url: "/reports", icon: BarChart3 },
+  { title: "Org Leads", url: "/org-leads", icon: Users },
+  { title: "Org Follow-Ups", url: "/org-follow-ups", icon: Clock },
+  { title: "Org STB", url: "/org-stb", icon: Send },
+  { title: "Staff Mgmt", url: "/staff-management", icon: UserCog },
+  { title: "System Config", url: "/system-config", icon: Settings },
+  { title: "Lead Allocation", url: "/lead-allocation", icon: Upload },
+  { title: "Lead Report", url: "/org-reports", icon: FileText },
+  { title: "Performance", url: "/performance", icon: TrendingUp },
+  { title: "Audit Trail", url: "/audit-trail", icon: BarChart3 },
+  { title: "MIS & Reports", url: "/reports", icon: BarChart3 },
 ];
 
 const adminNav = [
