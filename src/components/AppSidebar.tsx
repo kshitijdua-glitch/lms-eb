@@ -34,9 +34,16 @@ const tlNav = [
 
 const managerNav = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "All Leads", url: "/leads", icon: Users },
-  { title: "STB Pipeline", url: "/stb", icon: Send },
-  { title: "Reports", url: "/reports", icon: BarChart3 },
+  { title: "My Leads", url: "/leads", icon: Users },
+  { title: "My Follow-Ups", url: "/follow-ups", icon: Clock },
+  { title: "My STB", url: "/stb", icon: Send },
+  { title: "Group Leads", url: "/group-leads", icon: Users },
+  { title: "Group Follow-Ups", url: "/group-follow-ups", icon: Clock },
+  { title: "Group STB", url: "/group-stb", icon: Send },
+  { title: "Group Mgmt", url: "/group-management", icon: UserCog },
+  { title: "Lead Report", url: "/group-reports", icon: FileText },
+  { title: "Performance", url: "/performance", icon: TrendingUp },
+  { title: "MIS Reports", url: "/reports", icon: BarChart3 },
 ];
 
 const clusterHeadNav = [

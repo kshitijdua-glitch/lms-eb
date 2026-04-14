@@ -21,6 +21,11 @@ import TeamFollowUpsPage from "./pages/TeamFollowUpsPage";
 import TeamSTBPage from "./pages/TeamSTBPage";
 import TeamManagementPage from "./pages/TeamManagementPage";
 import TeamReportsPage from "./pages/TeamReportsPage";
+import GroupLeadsPage from "./pages/GroupLeadsPage";
+import GroupFollowUpsPage from "./pages/GroupFollowUpsPage";
+import GroupSTBPage from "./pages/GroupSTBPage";
+import GroupManagementPage from "./pages/GroupManagementPage";
+import GroupReportsPage from "./pages/GroupReportsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +55,11 @@ const App = () => (
               <Route path="/team-stb" element={<TeamSTBPage />} />
               <Route path="/team-management" element={<TeamManagementPage />} />
               <Route path="/team-reports" element={<TeamReportsPage />} />
+              <Route path="/group-leads" element={<GroupLeadsPage />} />
+              <Route path="/group-follow-ups" element={<GroupFollowUpsPage />} />
+              <Route path="/group-stb" element={<GroupSTBPage />} />
+              <Route path="/group-management" element={<GroupManagementPage />} />
+              <Route path="/group-reports" element={<GroupReportsPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AppLayout>
