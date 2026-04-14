@@ -16,6 +16,11 @@ import AgentManagementPage from "./pages/admin/AgentManagementPage";
 import ConfigPage from "./pages/admin/ConfigPage";
 import PartnersPage from "./pages/admin/PartnersPage";
 import PerformancePage from "./pages/PerformancePage";
+import TeamLeadsPage from "./pages/TeamLeadsPage";
+import TeamFollowUpsPage from "./pages/TeamFollowUpsPage";
+import TeamSTBPage from "./pages/TeamSTBPage";
+import TeamManagementPage from "./pages/TeamManagementPage";
+import TeamReportsPage from "./pages/TeamReportsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +45,11 @@ const App = () => (
               <Route path="/admin/agents" element={<AgentManagementPage />} />
               <Route path="/admin/config" element={<ConfigPage />} />
               <Route path="/admin/partners" element={<PartnersPage />} />
+              <Route path="/team-leads" element={<TeamLeadsPage />} />
+              <Route path="/team-follow-ups" element={<TeamFollowUpsPage />} />
+              <Route path="/team-stb" element={<TeamSTBPage />} />
+              <Route path="/team-management" element={<TeamManagementPage />} />
+              <Route path="/team-reports" element={<TeamReportsPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AppLayout>
