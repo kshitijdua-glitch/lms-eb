@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Users, Phone, Send, Clock, BarChart3, Upload, Settings, UserCog, FileText, Building2, ChevronDown,
+  LayoutDashboard, Users, Phone, Send, Clock, BarChart3, Upload, Settings, UserCog, FileText, Building2, ChevronDown, TrendingUp,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -16,6 +16,7 @@ const agentNav = [
   { title: "My Leads", url: "/leads", icon: Users },
   { title: "Follow-Ups", url: "/follow-ups", icon: Clock },
   { title: "My STB", url: "/stb", icon: Send },
+  { title: "Performance", url: "/performance", icon: TrendingUp },
 ];
 
 const tlNav = [

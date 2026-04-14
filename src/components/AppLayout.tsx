@@ -1,9 +1,8 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { useRole, roleLabels } from "@/contexts/RoleContext";
-import { Bell } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { NotificationsDrawer } from "@/components/NotificationsDrawer";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { role } = useRole();
@@ -19,12 +18,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <Badge variant="outline" className="text-xs">
               {roleLabels[role]}
             </Badge>
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-4 w-4" />
-              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-destructive-foreground text-[10px] flex items-center justify-center">
-                3
-              </span>
-            </Button>
+            <NotificationsDrawer />
             <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
               <span className="text-primary-foreground text-xs font-medium">AV</span>
             </div>

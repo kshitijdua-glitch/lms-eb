@@ -4,8 +4,9 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Send, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Send, CheckCircle, XCircle } from "lucide-react";
+import { toast } from "sonner";
 
 const STBPage = () => {
   const { role } = useRole();
@@ -19,6 +20,10 @@ const STBPage = () => {
   const approved = allSubs.filter(s => s.status === "approved").length;
   const disbursed = allSubs.filter(s => s.status === "disbursed").length;
   const declined = allSubs.filter(s => s.status === "declined").length;
+
+  const handleStatusUpdate = (subId: string, newStatus: string) => {
+    toast.success(`Status updated to ${newStatus}`);
+  };
 
   return (
     <div className="space-y-6">
@@ -54,30 +59,55 @@ const STBPage = () => {
                 <TableHead>Product</TableHead>
                 <TableHead>Partner</TableHead>
                 <TableHead>Submitted</TableHead>
+                <TableHead>Days</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
+                <TableHead>Sanction Amt</TableHead>
+                <TableHead>Disbursed Amt</TableHead>
+                <TableHead>Disb. Date</TableHead>
+                {role === "agent" && <TableHead>Update</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {allSubs.map(s => (
-                <TableRow key={s.id} className="cursor-pointer hover:bg-accent/50" onClick={() => navigate(`/leads/${s.leadId}`)}>
-                  <TableCell className="font-medium">{s.leadName}</TableCell>
-                  <TableCell><Badge variant="outline" className="text-xs">{getProductLabel(s.product)}</Badge></TableCell>
-                  <TableCell>{s.partnerName}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{new Date(s.submittedAt).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={s.status === "disbursed" ? "default" : s.status === "approved" ? "default" : s.status === "declined" ? "destructive" : "secondary"}
-                      className="text-xs"
-                    >
-                      {s.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right text-sm">
-                    {s.disbursedAmount ? `₹${s.disbursedAmount.toLocaleString()}` : s.approvedAmount ? `₹${s.approvedAmount.toLocaleString()}` : "—"}
-                  </TableCell>
-                </TableRow>
-              ))}
+              {allSubs.map(s => {
+                const daysSince = Math.floor((Date.now() - new Date(s.submittedAt).getTime()) / 86400000);
+                const isNonApi = s.integrationType !== "api";
+                return (
+                  <TableRow key={s.id} className="cursor-pointer hover:bg-accent/50" onClick={() => navigate(`/leads/${s.leadId}`)}>
+                    <TableCell className="font-medium text-sm">{s.leadName}</TableCell>
+                    <TableCell><Badge variant="outline" className="text-xs">{getProductLabel(s.product)}</Badge></TableCell>
+                    <TableCell className="text-sm">{s.partnerName}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{new Date(s.submittedAt).toLocaleDateString()}</TableCell>
+                    <TableCell className="text-sm">{daysSince}d</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={s.status === "disbursed" ? "default" : s.status === "approved" ? "default" : s.status === "declined" ? "destructive" : "secondary"}
+                        className="text-xs"
+                      >
+                        {s.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm">{s.sanctionAmount ? `₹${s.sanctionAmount.toLocaleString()}` : "—"}</TableCell>
+                    <TableCell className="text-sm">{s.disbursedAmount ? `₹${s.disbursedAmount.toLocaleString()}` : "—"}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{s.disbursementDate ? new Date(s.disbursementDate).toLocaleDateString() : "—"}</TableCell>
+                    {role === "agent" && (
+                      <TableCell onClick={e => e.stopPropagation()}>
+                        {isNonApi && s.status !== "disbursed" ? (
+                          <Select onValueChange={(v) => handleStatusUpdate(s.id, v)}>
+                            <SelectTrigger className="h-7 w-28 text-xs"><SelectValue placeholder="Update" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="approved">Approved</SelectItem>
+                              <SelectItem value="declined">Declined</SelectItem>
+                              <SelectItem value="disbursed">Disbursed</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">{s.integrationType === "api" ? "Auto" : "—"}</span>
+                        )}
+                      </TableCell>
+                    )}
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>
