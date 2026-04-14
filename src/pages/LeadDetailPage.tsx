@@ -131,6 +131,11 @@ const LeadDetailPage = () => {
         <Button size="sm" variant="outline" onClick={handleCheckEligibility}><SearchIcon className="h-4 w-4 mr-1" /> Check Eligibility</Button>
         <Button size="sm" variant="outline" onClick={handleSendToBank}><Send className="h-4 w-4 mr-1" /> Send to Bank</Button>
         <Button size="sm" variant="outline" onClick={() => setShowEMI(true)}><Calculator className="h-4 w-4 mr-1" /> EMI Calc</Button>
+        {role === "team_leader" && lead.assignedAgentId !== "agent-9" && (
+          <Button size="sm" variant="outline" onClick={() => setShowReassign(true)}>
+            <Shuffle className="h-4 w-4 mr-1" /> Reassign
+          </Button>
+        )}
       </div>
 
       {/* Header */}
