@@ -187,18 +187,10 @@ const AdminStaffPage = () => {
             <div><Label>Phone</Label><Input placeholder="10-digit mobile" /></div>
             <div>
               <Label>Manager</Label>
+              <Select>
                 <SelectTrigger><SelectValue placeholder="Select manager" /></SelectTrigger>
                 <SelectContent>
                   {mockManagers.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Team Leader</Label>
-              <Select>
-                <SelectTrigger><SelectValue placeholder="Select TL" /></SelectTrigger>
-                <SelectContent>
-                  {mockTLs.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
