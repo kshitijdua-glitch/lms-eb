@@ -57,6 +57,8 @@ const LeadDetailPage = () => {
   const [callNotes, setCallNotes] = useState("");
   const [callNextAction, setCallNextAction] = useState("");
   const [followUpDate, setFollowUpDate] = useState<Date | undefined>();
+  const [stbSubmitted, setStbSubmitted] = useState(lead?.stbSubmissions?.length ? lead.stbSubmissions.length > 0 : false);
+  const [localStbSubmissions, setLocalStbSubmissions] = useState(lead?.stbSubmissions || []);
 
   if (!lead) return <div className="p-8 text-center text-muted-foreground">Lead not found</div>;
 
@@ -134,6 +136,7 @@ const LeadDetailPage = () => {
     toast.success("Bank removed");
   };
 
+
   const handleSendToBank = () => {
     // Pre-STB checklist
     const checks = [];
@@ -145,7 +148,27 @@ const LeadDetailPage = () => {
       toast.error("Pre-STB checklist failed", { description: checks.join(", ") });
       return;
     }
-    toast.success("STB initiated for " + lead.name);
+
+    // Create STB submissions for each selected pair
+    const newSubmissions = selectedPairs.map((pair, i) => ({
+      id: `stb-new-${Date.now()}-${i}`,
+      partnerId: pair.partnerId,
+      partnerName: pair.partnerName,
+      submittedAt: new Date().toISOString(),
+      status: "submitted" as const,
+      approvedAmount: null,
+      sanctionAmount: null,
+      disbursedAmount: null,
+      disbursementDate: null,
+      remarks: `${getProductLabel(pair.productType as any)} application`,
+      integrationType: "portal" as const,
+    }));
+
+    setLocalStbSubmissions([...localStbSubmissions, ...newSubmissions]);
+    setStbSubmitted(true);
+    toast.success(`STB initiated for ${selectedPairs.length} bank(s)`, {
+      description: selectedPairs.map(p => `${p.partnerName} (${getProductLabel(p.productType as any)})`).join(", "),
+    });
   };
 
   // Build unified timeline
@@ -351,8 +374,8 @@ const LeadDetailPage = () => {
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-sm">STB Status</CardTitle></CardHeader>
             <CardContent className="space-y-2">
-              {lead.stbSubmissions.length > 0 ? (
-                lead.stbSubmissions.map(s => (
+              {localStbSubmissions.length > 0 ? (
+                localStbSubmissions.map(s => (
                   <div key={s.id} className="p-2 rounded border space-y-1">
                     <div className="flex justify-between">
                       <span className="font-medium text-xs">{s.partnerName}</span>
@@ -361,6 +384,7 @@ const LeadDetailPage = () => {
                       </Badge>
                     </div>
                     <div className="text-[10px] text-muted-foreground">Submitted: {new Date(s.submittedAt).toLocaleDateString()}</div>
+                    {s.remarks && <div className="text-[10px] text-muted-foreground">{s.remarks}</div>}
                     {s.sanctionAmount && <div className="text-[10px]">Sanction: ₹{s.sanctionAmount.toLocaleString()}</div>}
                     {s.disbursedAmount && <div className="text-[10px] text-success">Disbursed: ₹{s.disbursedAmount.toLocaleString()}</div>}
                     {s.disbursementDate && <div className="text-[10px] text-muted-foreground">Disbursed on: {new Date(s.disbursementDate).toLocaleDateString()}</div>}
