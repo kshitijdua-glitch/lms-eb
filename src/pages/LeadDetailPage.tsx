@@ -100,6 +100,17 @@ const LeadDetailPage = () => {
     toast.success("Credit score updated");
   };
 
+  const handleSendConsent = () => {
+    setSendingConsent(true);
+    setConsentStatus("sent");
+    toast.success("Consent SMS sent to " + lead.mobile);
+    setTimeout(() => {
+      setConsentStatus("received");
+      setSendingConsent(false);
+      toast.success("Consent received from " + lead.name);
+    }, 3000);
+  };
+
   const handleAddPair = () => {
     if (!selectedProduct || !selectedBank) {
       toast.error("Select both product and bank");
