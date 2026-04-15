@@ -21,11 +21,6 @@ import MISExportPage from "./pages/admin/MISExportPage";
 import BureauCampaignPage from "./pages/admin/BureauCampaignPage";
 import AdminStaffPage from "./pages/admin/AdminStaffPage";
 import PerformancePage from "./pages/PerformancePage";
-import TeamLeadsPage from "./pages/TeamLeadsPage";
-import TeamFollowUpsPage from "./pages/TeamFollowUpsPage";
-import TeamSTBPage from "./pages/TeamSTBPage";
-import TeamManagementPage from "./pages/TeamManagementPage";
-import TeamReportsPage from "./pages/TeamReportsPage";
 import GroupLeadsPage from "./pages/GroupLeadsPage";
 import GroupFollowUpsPage from "./pages/GroupFollowUpsPage";
 import GroupSTBPage from "./pages/GroupSTBPage";
@@ -68,11 +63,6 @@ const App = () => (
               <Route path="/admin/mis" element={<MISExportPage />} />
               <Route path="/admin/bureau" element={<BureauCampaignPage />} />
               <Route path="/admin/staff" element={<AdminStaffPage />} />
-              <Route path="/team-leads" element={<TeamLeadsPage />} />
-              <Route path="/team-follow-ups" element={<TeamFollowUpsPage />} />
-              <Route path="/team-stb" element={<TeamSTBPage />} />
-              <Route path="/team-management" element={<TeamManagementPage />} />
-              <Route path="/team-reports" element={<TeamReportsPage />} />
               <Route path="/group-leads" element={<GroupLeadsPage />} />
               <Route path="/group-follow-ups" element={<GroupFollowUpsPage />} />
               <Route path="/group-stb" element={<GroupSTBPage />} />

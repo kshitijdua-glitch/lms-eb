@@ -50,9 +50,7 @@ const LeadsPage = () => {
   const [newLeadLoanAmt, setNewLeadLoanAmt] = useState("");
   const [newLeadNotes, setNewLeadNotes] = useState("");
 
-  const allLeads = role === "agent" ? getLeadsForAgent("agent-1")
-    : role === "team_leader" ? getLeadsForTeam("team-1")
-    : leads;
+  const allLeads = role === "agent" ? getLeadsForAgent("agent-1") : leads;
 
   const today = new Date().toISOString().split("T")[0];
   const workedToday = allLeads.filter(l => l.lastActivityAt.split("T")[0] === today).length;

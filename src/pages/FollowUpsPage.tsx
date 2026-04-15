@@ -25,7 +25,7 @@ const FollowUpsPage = () => {
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [productFilter, setProductFilter] = useState("all");
 
-  const allLeads = role === "agent" ? getLeadsForAgent("agent-1") : role === "team_leader" ? getLeadsForTeam("team-1") : leads;
+  const allLeads = role === "agent" ? getLeadsForAgent("agent-1") : leads;
 
   // Flatten follow-ups with lead info
   const allFollowUps = allLeads.flatMap(l =>
@@ -126,7 +126,7 @@ const FollowUpsPage = () => {
                     <TableCell className="text-sm">{daysSinceAlloc}d</TableCell>
                     <TableCell className="text-xs text-muted-foreground">
                       {f.retryCount > 0 ? (
-                        <span>{f.retryCount}/5 retries {f.retryCount >= 5 && <Badge variant="destructive" className="text-[9px] ml-1">TL Review</Badge>}</span>
+                        <span>{f.retryCount}/5 retries {f.retryCount >= 5 && <Badge variant="destructive" className="text-[9px] ml-1">Manager Review</Badge>}</span>
                       ) : "—"}
                     </TableCell>
                   </TableRow>

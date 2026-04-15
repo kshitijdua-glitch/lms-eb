@@ -12,7 +12,7 @@ const STBPage = () => {
   const { role } = useRole();
   const navigate = useNavigate();
 
-  const allLeads = role === "agent" ? getLeadsForAgent("agent-1") : role === "team_leader" ? getLeadsForTeam("team-1") : leads;
+  const allLeads = role === "agent" ? getLeadsForAgent("agent-1") : leads;
   const stbLeads = allLeads.filter(l => l.stbSubmissions.length > 0);
   const allSubs = stbLeads.flatMap(l => l.stbSubmissions.map(s => ({ ...s, leadName: l.name, leadId: l.id, product: l.productType })));
 

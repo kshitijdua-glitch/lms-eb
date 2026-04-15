@@ -134,11 +134,6 @@ const LeadDetailPage = () => {
         <Button size="sm" variant="outline" onClick={handleCheckEligibility}><SearchIcon className="h-4 w-4 mr-1" /> Check Eligibility</Button>
         <Button size="sm" variant="outline" onClick={handleSendToBank}><Send className="h-4 w-4 mr-1" /> Send to Bank</Button>
         <Button size="sm" variant="outline" onClick={() => setShowEMI(true)}><Calculator className="h-4 w-4 mr-1" /> EMI Calc</Button>
-        {role === "team_leader" && lead.assignedAgentId !== "agent-9" && (
-          <Button size="sm" variant="outline" onClick={() => setShowReassign(true)}>
-            <Shuffle className="h-4 w-4 mr-1" /> Reassign
-          </Button>
-        )}
         {(role === "manager" || role === "cluster_head") && (
           <Button size="sm" variant="outline" onClick={() => setShowReassign(true)}>
             <Shuffle className="h-4 w-4 mr-1" /> Reassign
@@ -337,7 +332,7 @@ const LeadDetailPage = () => {
               <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-warning" /> Retry Status</CardTitle></CardHeader>
               <CardContent>
                 <div className="text-xs">Retry Count: <strong>{lead.retryCount}</strong>/5</div>
-                {lead.retryCount >= 5 && <Badge variant="destructive" className="mt-1 text-[10px]">Escalated to TL</Badge>}
+                {lead.retryCount >= 5 && <Badge variant="destructive" className="mt-1 text-[10px]">Escalated to Manager</Badge>}
               </CardContent>
             </Card>
           )}
@@ -374,8 +369,7 @@ const LeadDetailPage = () => {
                         return <>
                           <div className="flex items-center gap-1 flex-wrap">
                             <Badge variant="outline" className="text-[9px]">Call</Badge>
-                            {cl.agentId === "agent-9" && <Badge className="text-[9px] bg-primary/20 text-primary">TL</Badge>}
-                            {cl.agentId === "agent-9" && role === "manager" && <Badge className="text-[9px] bg-accent text-accent-foreground">Manager</Badge>}
+                            {cl.agentId === "agent-9" && <Badge className="text-[9px] bg-primary/20 text-primary">Manager</Badge>}
                             {role === "cluster_head" && <Badge className="text-[9px] bg-warning/20 text-warning">Cluster Head</Badge>}
                             <span className="font-medium">{cl.outcome === "connected" ? "Connected" : "Not Connected"}</span>
                             <Badge variant="outline" className="text-[9px]">{getDispositionLabel(cl.disposition)}</Badge>
@@ -682,7 +676,7 @@ const LeadDetailPage = () => {
               <span className="text-muted-foreground">Current Disposition:</span> <strong>{getDispositionLabel(lead.disposition)}</strong>
             </div>
             <p className="text-xs text-muted-foreground">
-              Overriding will reset the lead to its previous active stage, notify the TL and agent, and log this action in the history.
+              Overriding will reset the lead to its previous active stage, notify the agent, and log this action in the history.
             </p>
             <div>
               <Label>Reason *</Label>

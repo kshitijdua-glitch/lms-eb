@@ -127,15 +127,15 @@ const GroupManagementPage = () => {
         <p className="text-muted-foreground text-sm">{teams.length} teams · {agents.filter(a => a.tlId).length} agents</p>
       </div>
 
-      {/* TL Overview Table */}
+      {/* Team Overview Table */}
       <Card>
-        <CardHeader><CardTitle className="text-base flex items-center gap-2"><UserCog className="h-4 w-4" /> Team Leader Overview</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base flex items-center gap-2"><UserCog className="h-4 w-4" /> Team Overview</CardTitle></CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-8"></TableHead>
-                <TableHead>TL / Team</TableHead>
+                <TableHead>Team</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Agents</TableHead>
                 <TableHead>Leads</TableHead>

@@ -26,16 +26,16 @@ const mockAuditLog: AuditEntry[] = [
   { id: "a2", timestamp: "2026-04-14T09:15:00Z", actor: "CH Admin", actorRole: "cluster_head", actionType: "config_change", target: "Allocation Rules", before: "Manual", after: "Round Robin", reason: "Efficiency improvement" },
   { id: "a3", timestamp: "2026-04-13T16:00:00Z", actor: "CH Admin", actorRole: "cluster_head", actionType: "staff_deactivate", target: "Agent: Karan Singh", before: "Active", after: "Inactive", reason: "Resigned" },
   { id: "a4", timestamp: "2026-04-13T14:20:00Z", actor: "Vikram Mehta", actorRole: "manager", actionType: "disposition_override", target: "Lead: Arjun Rao", before: "Declined", after: "Interested", reason: "Wrong bank selected, retry with ICICI" },
-  { id: "a5", timestamp: "2026-04-13T11:00:00Z", actor: "Priya Sharma", actorRole: "team_leader", actionType: "reassignment", target: "Lead: Sunita Devi", before: "Agent: Amit Verma", after: "Agent: Sneha Gupta", reason: "Agent on leave" },
+  { id: "a5", timestamp: "2026-04-13T11:00:00Z", actor: "Priya Sharma", actorRole: "manager", actionType: "reassignment", target: "Lead: Sunita Devi", before: "Agent: Amit Verma", after: "Agent: Sneha Gupta", reason: "Agent on leave" },
   { id: "a6", timestamp: "2026-04-12T17:30:00Z", actor: "CH Admin", actorRole: "cluster_head", actionType: "staff_create", target: "Agent: New Agent", before: "—", after: "Active", reason: "New hire" },
-  { id: "a7", timestamp: "2026-04-12T10:00:00Z", actor: "Ravi Kumar", actorRole: "team_leader", actionType: "disposition", target: "Lead: Mohd Irfan", before: "New", after: "Hot Follow-Up", reason: "" },
+  { id: "a7", timestamp: "2026-04-12T10:00:00Z", actor: "Ravi Kumar", actorRole: "manager", actionType: "disposition", target: "Lead: Mohd Irfan", before: "New", after: "Hot Follow-Up", reason: "" },
   { id: "a8", timestamp: "2026-04-11T15:00:00Z", actor: "CH Admin", actorRole: "cluster_head", actionType: "config_change", target: "Lead Sources", before: "—", after: "Added: TeleCall", reason: "New vendor onboarded" },
   { id: "a9", timestamp: "2026-04-11T09:30:00Z", actor: "System", actorRole: "system", actionType: "login", target: "Vikram Mehta", before: "—", after: "Logged in", reason: "" },
   { id: "a10", timestamp: "2026-04-10T14:00:00Z", actor: "Anjali Kapoor", actorRole: "manager", actionType: "reassignment", target: "Lead: Kavita Mishra", before: "TL: Priya Sharma", after: "TL: Ravi Kumar", reason: "Cross-team balance" },
 ];
 
 const actionTypes = ["All", "disposition_override", "config_change", "staff_deactivate", "staff_create", "reassignment", "disposition", "login"];
-const roles = ["All", "cluster_head", "manager", "team_leader", "system"];
+const roles = ["All", "cluster_head", "manager", "system"];
 
 const AuditTrailPage = () => {
   const { role } = useRole();
