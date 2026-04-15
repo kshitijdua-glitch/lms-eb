@@ -185,7 +185,7 @@ const LeadDetailPage = () => {
             <span className="text-xs text-muted-foreground">Source: {lead.leadSource}</span>
           </div>
         </div>
-        {!isProfileLocked && (
+        {(role === "agent" || role === "manager" || role === "cluster_head") && (
           <Button variant="ghost" size="sm" onClick={() => setIsEditing(!isEditing)}>
             <Edit2 className="h-4 w-4 mr-1" /> {isEditing ? "Done" : "Edit"}
           </Button>
@@ -195,27 +195,27 @@ const LeadDetailPage = () => {
       <div className="grid md:grid-cols-3 gap-4">
         {/* Customer Profile */}
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><User className="h-4 w-4" /> Customer Profile {isProfileLocked && <Lock className="h-3 w-3 text-muted-foreground" />}</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><User className="h-4 w-4" /> Customer Profile</CardTitle></CardHeader>
           <CardContent className="space-y-2 text-sm">
             {[
-              ["Mobile", lead.mobile, false],
+              ["Mobile", lead.mobile, true],
               ["PAN", lead.pan, false],
               ["DOB", new Date(lead.dob).toLocaleDateString(), true],
               ["City", lead.city, true],
-              ["State", lead.state, false],
+              ["State", lead.state, true],
               ["PIN Code", lead.pinCode, true],
               ["Company", lead.companyName, true],
               ["Employment", lead.employmentType.replace(/_/g, " "), true],
               ["Monthly Income", `₹${lead.monthlyIncome.toLocaleString()}`, true],
               ["Obligations", `₹${lead.existingObligations.toLocaleString()}`, true],
-              ["FOIR", `${lead.foir}%`, false],
+              ["FOIR", `${lead.foir}%`, true],
               ["Product", getProductLabel(lead.productType), true],
               ["Loan Amount", `₹${lead.loanAmount.toLocaleString()}`, true],
               ["Days Since Alloc", `${daysSinceAlloc} days`, false],
             ].map(([label, value, editable]) => (
               <div key={label as string} className="flex justify-between items-center">
-                <span className="text-muted-foreground text-xs">{label as string}{editable && !isProfileLocked ? " *" : ""}</span>
-                {isEditing && editable && !isProfileLocked ? (
+                <span className="text-muted-foreground text-xs">{label as string}</span>
+                {isEditing && editable ? (
                   <Input className="w-28 h-6 text-xs" defaultValue={value as string} />
                 ) : (
                   <span className="font-medium text-xs">{value as string}</span>
