@@ -53,7 +53,7 @@ const adminNav = [
   { title: "Lead Allocation", url: "/admin/allocation", icon: Users },
   { title: "Lead Pools", url: "/admin/pools", icon: FileText },
   { title: "MIS Export", url: "/admin/mis", icon: BarChart3 },
-  { title: "Bureau Data", url: "/admin/bureau", icon: Building2 },
+  { title: "System Config", url: "/system-config", icon: Settings },
   { title: "Staff Mgmt", url: "/admin/staff", icon: UserCog },
   { title: "System Config", url: "/system-config", icon: Settings },
   { title: "Audit Trail", url: "/audit-trail", icon: Shield },
