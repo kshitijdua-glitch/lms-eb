@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -136,6 +137,19 @@ const GroupLeadsPage = () => {
         <span className="text-muted-foreground">Worked Today: <strong className="text-success">{workedToday}</strong></span>
       </div>
 
+      <Tabs value={stageFilter} onValueChange={setStageFilter} className="w-full">
+        <TabsList className="w-full justify-start overflow-x-auto h-auto flex-wrap gap-1 bg-transparent p-0">
+          {["all","new","contacted","interested","bre_done","stb_submitted","approved","declined","disbursed","closed_lost"].map(s => {
+            const count = s === "all" ? allLeads.length : allLeads.filter(l => l.stage === s).length;
+            return (
+              <TabsTrigger key={s} value={s} className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs px-3 py-1.5">
+                {s === "all" ? "All" : getStageLabel(s as any)} <Badge variant="secondary" className="ml-1.5 text-[10px] px-1.5 py-0">{count}</Badge>
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
+      </Tabs>
+
       <div className="flex flex-wrap gap-2">
         <div className="relative flex-1 min-w-[180px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -146,15 +160,6 @@ const GroupLeadsPage = () => {
           <SelectContent>
             <SelectItem value="all">All Agents</SelectItem>
             {agents.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={stageFilter} onValueChange={setStageFilter}>
-          <SelectTrigger className="w-32"><SelectValue placeholder="Stage" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Stages</SelectItem>
-            {["new","contacted","interested","bre_done","stb_submitted","approved","declined","disbursed","closed_lost"].map(s =>
-              <SelectItem key={s} value={s}>{getStageLabel(s as any)}</SelectItem>
-            )}
           </SelectContent>
         </Select>
         <Select value={productFilter} onValueChange={setProductFilter}>
