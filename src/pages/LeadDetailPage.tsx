@@ -15,8 +15,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import {
-  ArrowLeft, Phone, Send, Calculator, Clock, CheckCircle, XCircle, AlertTriangle,
-  User, Edit2, Lock, FileText, Shield, CalendarIcon, Search as SearchIcon, Shuffle
+  ArrowLeft, Phone, Send, Calculator, Clock, AlertTriangle,
+  User, Edit2, Lock, FileText, Shield, CalendarIcon, Shuffle
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
