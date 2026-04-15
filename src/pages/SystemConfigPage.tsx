@@ -49,7 +49,6 @@ const SystemConfigPage = () => {
           <TabsTrigger value="allocation">Allocation Rules</TabsTrigger>
           <TabsTrigger value="retry">Retry Logic</TabsTrigger>
           <TabsTrigger value="aging">Aging & Expiry</TabsTrigger>
-          <TabsTrigger value="bureau">Bureau & STB</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
         </TabsList>
 
@@ -146,22 +145,6 @@ const SystemConfigPage = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="bureau" className="mt-4">
-          <Card>
-            <CardHeader><CardTitle className="text-base">Bureau & STB Configuration</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div><Label>Bureau Report Freshness Window (days)</Label><Input type="number" value={bureauWindow} onChange={e => setBureauWindow(e.target.value)} /></div>
-                <div><Label>Consent SMS Expiry (days)</Label><Input type="number" value={consentExpiry} onChange={e => setConsentExpiry(e.target.value)} /></div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div><Label>Max Bureau Pull Attempts</Label><Input type="number" defaultValue="3" /></div>
-                <div><Label>Bureau Consent Cooldown (days)</Label><Input type="number" defaultValue="30" /></div>
-              </div>
-              <Button onClick={() => toast.success("Bureau & STB config saved. Change logged.")}><Save className="h-4 w-4 mr-1" /> Save</Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         <TabsContent value="notifications" className="mt-4">
           <Card>
