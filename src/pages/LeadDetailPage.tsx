@@ -259,9 +259,16 @@ const LeadDetailPage = () => {
               </div>
               <div className="flex items-center justify-between text-xs mb-2">
                 <span className="text-muted-foreground">Consent SMS</span>
-                <Badge variant={lead.consentStatus === "received" ? "default" : "secondary"} className="text-[10px]">
-                  {lead.consentStatus.replace("_", " ")}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant={consentStatus === "received" ? "default" : consentStatus === "sent" ? "secondary" : "outline"} className="text-[10px]">
+                    {consentStatus.replace("_", " ")}
+                  </Badge>
+                  {consentStatus !== "received" && (
+                    <Button size="sm" variant="outline" className="h-6 text-[10px] px-2" onClick={handleSendConsent} disabled={sendingConsent}>
+                      {sendingConsent ? "Waiting..." : consentStatus === "sent" ? "Resend" : "Send SMS"}
+                    </Button>
+                  )}
+                </div>
               </div>
               <div className="text-xs font-medium mt-2">Existing Loans</div>
               {lead.existingLoans.length > 0 ? (
