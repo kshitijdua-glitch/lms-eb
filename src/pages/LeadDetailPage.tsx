@@ -615,36 +615,37 @@ const LeadDetailPage = () => {
               </Select>
             </div>
             {callNextAction === "follow_up" && (
-              <div>
-                <Label className="text-xs">Follow-Up Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-8 text-xs", !followUpDate && "text-muted-foreground")}>
-                      <CalendarIcon className="mr-1 h-3 w-3" />
-                      {followUpDate ? format(followUpDate, "PPP") : "Pick follow-up date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={followUpDate}
-                      onSelect={setFollowUpDate}
-                      disabled={(d) => d < new Date()}
-                      className={cn("p-3 pointer-events-auto")}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div>
-                <Label className="text-xs">Follow-Up Time (optional)</Label>
-                <Input
-                  type="time"
-                  value={followUpTime}
-                  onChange={e => setFollowUpTime(e.target.value)}
-                  className="h-8 text-xs"
-                  placeholder="HH:MM"
-                />
-              </div>
+              <>
+                <div>
+                  <Label className="text-xs">Follow-Up Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-8 text-xs", !followUpDate && "text-muted-foreground")}>
+                        <CalendarIcon className="mr-1 h-3 w-3" />
+                        {followUpDate ? format(followUpDate, "PPP") : "Pick follow-up date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={followUpDate}
+                        onSelect={setFollowUpDate}
+                        disabled={(d) => d < new Date()}
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div>
+                  <Label className="text-xs">Follow-Up Time (optional)</Label>
+                  <Input
+                    type="time"
+                    value={followUpTime}
+                    onChange={e => setFollowUpTime(e.target.value)}
+                    className="h-8 text-xs"
+                  />
+                </div>
+              </>
             )}
           </div>
           <DialogFooter>
