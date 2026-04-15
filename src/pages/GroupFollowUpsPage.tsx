@@ -3,8 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useState, useMemo } from "react";
+import { ConfigurableTable } from "@/components/ConfigurableTable";
+import type { ColumnDef } from "@/types/table";
+
+type GFUItem = {
+  id: string; scheduledAt: string; type: string; status: string; notes: string;
+  leadId: string; leadName: string; priority: string; productType: string;
+  allocatedAt: string; retryCount: number; disposition: string;
+  assignedAgentId: string; assignedTeamId: string;
+};
 
 function getFollowUpStatus(scheduledAt: string, status: string) {
   if (status === "missed") return { label: "Overdue", variant: "destructive" as const };
@@ -23,8 +31,7 @@ const GroupFollowUpsPage = () => {
   const allFollowUps = useMemo(() => {
     return leads.flatMap(l =>
       l.followUps.filter(f => f.status !== "completed").map(f => ({
-        ...f,
-        leadId: l.id, leadName: l.name, priority: l.priority,
+        ...f, leadId: l.id, leadName: l.name, priority: l.priority,
         productType: l.productType, allocatedAt: l.allocatedAt,
         retryCount: l.retryCount, disposition: l.disposition,
         assignedAgentId: l.assignedAgentId, assignedTeamId: l.assignedTeamId,
@@ -40,6 +47,22 @@ const GroupFollowUpsPage = () => {
   }, [priorityFilter, agentFilter]);
 
   const overdue = allFollowUps.filter(f => getFollowUpStatus(f.scheduledAt, f.status).label === "Overdue");
+
+  const columns: ColumnDef<GFUItem>[] = [
+    { id: "lead", label: "Lead", render: (f) => <span className="font-medium text-sm">{f.leadName}</span> },
+    { id: "agent", label: "Agent", render: (f) => <span className="text-xs text-muted-foreground">{agents.find(a => a.id === f.assignedAgentId)?.name}</span> },
+    { id: "team", label: "Team", render: (f) => <span className="text-xs text-muted-foreground">{teams.find(t => t.id === f.assignedTeamId)?.name || "—"}</span> },
+    { id: "type", label: "Type", render: (f) => <span className="text-sm capitalize">{f.type.replace(/_/g, " ")}</span> },
+    { id: "scheduled", label: "Scheduled", render: (f) => <span className="text-sm text-muted-foreground">{new Date(f.scheduledAt).toLocaleString()}</span> },
+    { id: "status", label: "Status", render: (f) => { const s = getFollowUpStatus(f.scheduledAt, f.status); return <Badge variant={s.variant} className="text-xs">{s.label}</Badge>; }},
+    { id: "priority", label: "Priority", render: (f) => <Badge variant={f.priority === "hot" ? "destructive" : f.priority === "warm" ? "default" : "secondary"} className="text-xs">{f.priority}</Badge> },
+    { id: "days", label: "Days", render: (f) => <span className="text-sm">{Math.floor((Date.now() - new Date(f.allocatedAt).getTime()) / 86400000)}d</span> },
+    { id: "retry", label: "Retry", render: (f) => (
+      <span className="text-xs">{f.retryCount > 0 ? <span>{f.retryCount}/5 {f.retryCount >= 5 && <Badge variant="destructive" className="text-[9px] ml-1">Escalate</Badge>}</span> : "—"}</span>
+    )},
+    { id: "disposition", label: "Disposition", defaultVisible: false, render: (f) => <span className="text-xs">{getDispositionLabel(f.disposition)}</span> },
+    { id: "product", label: "Product", defaultVisible: false, render: (f) => <Badge variant="outline" className="text-xs">{getProductLabel(f.productType as any)}</Badge> },
+  ];
 
   return (
     <div className="space-y-6">
@@ -72,44 +95,12 @@ const GroupFollowUpsPage = () => {
 
       <Card>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Lead</TableHead>
-                <TableHead>Agent</TableHead>
-                <TableHead>Team</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Scheduled</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Priority</TableHead>
-                <TableHead>Days</TableHead>
-                <TableHead>Retry</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {allFollowUps.map(f => {
-                const status = getFollowUpStatus(f.scheduledAt, f.status);
-                const agent = agents.find(a => a.id === f.assignedAgentId);
-                const team = teams.find(t => t.id === f.assignedTeamId);
-                const daysSince = Math.floor((Date.now() - new Date(f.allocatedAt).getTime()) / 86400000);
-                return (
-                  <TableRow key={f.id} className="cursor-pointer hover:bg-accent/50" onClick={() => navigate(`/leads/${f.leadId}`)}>
-                    <TableCell className="font-medium text-sm">{f.leadName}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{agent?.name}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{team?.name || "—"}</TableCell>
-                    <TableCell className="text-sm capitalize">{f.type.replace(/_/g, " ")}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{new Date(f.scheduledAt).toLocaleString()}</TableCell>
-                    <TableCell><Badge variant={status.variant} className="text-xs">{status.label}</Badge></TableCell>
-                    <TableCell><Badge variant={f.priority === "hot" ? "destructive" : f.priority === "warm" ? "default" : "secondary"} className="text-xs">{f.priority}</Badge></TableCell>
-                    <TableCell className="text-sm">{daysSince}d</TableCell>
-                    <TableCell className="text-xs">
-                      {f.retryCount > 0 ? <span>{f.retryCount}/5 {f.retryCount >= 5 && <Badge variant="destructive" className="text-[9px] ml-1">Escalate</Badge>}</span> : "—"}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+          <ConfigurableTable
+            tableId="group-follow-ups"
+            columns={columns}
+            data={allFollowUps}
+            onRowClick={(f) => navigate(`/leads/${f.leadId}`)}
+          />
         </CardContent>
       </Card>
     </div>

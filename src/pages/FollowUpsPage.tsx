@@ -1,19 +1,23 @@
-import { leads, getLeadsForAgent, getLeadsForTeam, getDispositionLabel, getProductLabel } from "@/data/mockData";
+import { leads, getLeadsForAgent, getDispositionLabel, getProductLabel } from "@/data/mockData";
 import { useRole } from "@/contexts/RoleContext";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Clock, AlertTriangle, Phone } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { ConfigurableTable } from "@/components/ConfigurableTable";
+import type { ColumnDef } from "@/types/table";
+
+type FUItem = {
+  id: string; scheduledAt: string; type: string; status: string; notes: string;
+  leadId: string; leadName: string; leadMobile: string; priority: string;
+  productType: string; allocatedAt: string; retryCount: number; disposition: string;
+};
 
 function getFollowUpStatus(scheduledAt: string, status: string): { label: string; variant: "destructive" | "default" | "secondary" } {
   if (status === "missed") return { label: "Overdue", variant: "destructive" };
   if (status === "completed") return { label: "Completed", variant: "default" };
-  const now = Date.now();
-  const scheduled = new Date(scheduledAt).getTime();
-  const diff = scheduled - now;
+  const diff = new Date(scheduledAt).getTime() - Date.now();
   if (diff < 0) return { label: "Overdue", variant: "destructive" };
   if (diff < 3600000) return { label: "Due Now", variant: "default" };
   return { label: "Upcoming", variant: "secondary" };
@@ -27,36 +31,45 @@ const FollowUpsPage = () => {
 
   const allLeads = role === "agent" ? getLeadsForAgent("agent-1") : leads;
 
-  // Flatten follow-ups with lead info
-  const allFollowUps = allLeads.flatMap(l =>
-    l.followUps
-      .filter(f => f.status !== "completed")
-      .map(f => ({
-        ...f,
-        leadId: l.id,
-        leadName: l.name,
-        leadMobile: l.mobile,
-        priority: l.priority,
-        productType: l.productType,
-        allocatedAt: l.allocatedAt,
-        retryCount: l.retryCount,
-        disposition: l.disposition,
+  const allFollowUps = useMemo(() => {
+    return allLeads.flatMap(l =>
+      l.followUps.filter(f => f.status !== "completed").map(f => ({
+        ...f, leadId: l.id, leadName: l.name, leadMobile: l.mobile,
+        priority: l.priority, productType: l.productType, allocatedAt: l.allocatedAt,
+        retryCount: l.retryCount, disposition: l.disposition,
       }))
-  ).filter(f => {
-    if (priorityFilter !== "all" && f.priority !== priorityFilter) return false;
-    if (productFilter !== "all" && f.productType !== productFilter) return false;
-    return true;
-  }).sort((a, b) => {
-    // Overdue first, then Due Now, then Upcoming
-    const aStatus = getFollowUpStatus(a.scheduledAt, a.status);
-    const bStatus = getFollowUpStatus(b.scheduledAt, b.status);
-    const order = { "Overdue": 0, "Due Now": 1, "Upcoming": 2, "Completed": 3 };
-    return (order[aStatus.label] ?? 3) - (order[bStatus.label] ?? 3);
-  });
+    ).filter(f => {
+      if (priorityFilter !== "all" && f.priority !== priorityFilter) return false;
+      if (productFilter !== "all" && f.productType !== productFilter) return false;
+      return true;
+    }).sort((a, b) => {
+      const order = { "Overdue": 0, "Due Now": 1, "Upcoming": 2, "Completed": 3 };
+      return (order[getFollowUpStatus(a.scheduledAt, a.status).label as keyof typeof order] ?? 3) - (order[getFollowUpStatus(b.scheduledAt, b.status).label as keyof typeof order] ?? 3);
+    });
+  }, [allLeads, priorityFilter, productFilter]);
 
   const overdue = allFollowUps.filter(f => getFollowUpStatus(f.scheduledAt, f.status).label === "Overdue");
   const dueNow = allFollowUps.filter(f => getFollowUpStatus(f.scheduledAt, f.status).label === "Due Now");
   const upcoming = allFollowUps.filter(f => getFollowUpStatus(f.scheduledAt, f.status).label === "Upcoming");
+
+  const columns: ColumnDef<FUItem>[] = [
+    { id: "leadId", label: "Lead ID", render: (f) => <span className="text-xs text-muted-foreground">{f.leadId}</span> },
+    { id: "name", label: "Name", render: (f) => (
+      <span className="font-medium text-sm">{f.leadName}<span className="text-muted-foreground text-xs ml-1">{f.leadMobile}</span></span>
+    )},
+    { id: "type", label: "Type", render: (f) => <span className="text-sm capitalize">{f.type.replace(/_/g, " ")}</span> },
+    { id: "scheduled", label: "Scheduled Time", render: (f) => <span className="text-sm text-muted-foreground">{new Date(f.scheduledAt).toLocaleString()}</span> },
+    { id: "status", label: "Status", render: (f) => { const s = getFollowUpStatus(f.scheduledAt, f.status); return <Badge variant={s.variant} className="text-xs">{s.label}</Badge>; }},
+    { id: "priority", label: "Priority", render: (f) => <Badge variant={f.priority === "hot" ? "destructive" : f.priority === "warm" ? "default" : "secondary"} className="text-xs">{f.priority}</Badge> },
+    { id: "daysSinceAlloc", label: "Days Since Alloc", render: (f) => <span className="text-sm">{Math.floor((Date.now() - new Date(f.allocatedAt).getTime()) / 86400000)}d</span> },
+    { id: "retry", label: "Retry Info", render: (f) => (
+      <span className="text-xs text-muted-foreground">
+        {f.retryCount > 0 ? <span>{f.retryCount}/5 retries {f.retryCount >= 5 && <Badge variant="destructive" className="text-[9px] ml-1">Manager Review</Badge>}</span> : "—"}
+      </span>
+    )},
+    { id: "disposition", label: "Disposition", defaultVisible: false, render: (f) => <span className="text-xs">{getDispositionLabel(f.disposition)}</span> },
+    { id: "product", label: "Product", defaultVisible: false, render: (f) => <Badge variant="outline" className="text-xs">{getProductLabel(f.productType as any)}</Badge> },
+  ];
 
   return (
     <div className="space-y-6">
@@ -91,49 +104,12 @@ const FollowUpsPage = () => {
 
       <Card>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Lead ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Scheduled Time</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Priority</TableHead>
-                <TableHead>Days Since Alloc</TableHead>
-                <TableHead>Retry Info</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {allFollowUps.map(f => {
-                const status = getFollowUpStatus(f.scheduledAt, f.status);
-                const daysSinceAlloc = Math.floor((Date.now() - new Date(f.allocatedAt).getTime()) / 86400000);
-                return (
-                  <TableRow key={f.id} className="cursor-pointer hover:bg-accent/50" onClick={() => navigate(`/leads/${f.leadId}`)}>
-                    <TableCell className="text-xs text-muted-foreground">{f.leadId}</TableCell>
-                    <TableCell className="font-medium text-sm">
-                      {f.leadName}
-                      <span className="text-muted-foreground text-xs ml-1">{f.leadMobile}</span>
-                    </TableCell>
-                    <TableCell className="text-sm capitalize">{f.type.replace(/_/g, " ")}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{new Date(f.scheduledAt).toLocaleString()}</TableCell>
-                    <TableCell>
-                      <Badge variant={status.variant} className="text-xs">{status.label}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={f.priority === "hot" ? "destructive" : f.priority === "warm" ? "default" : "secondary"} className="text-xs">{f.priority}</Badge>
-                    </TableCell>
-                    <TableCell className="text-sm">{daysSinceAlloc}d</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {f.retryCount > 0 ? (
-                        <span>{f.retryCount}/5 retries {f.retryCount >= 5 && <Badge variant="destructive" className="text-[9px] ml-1">Manager Review</Badge>}</span>
-                      ) : "—"}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+          <ConfigurableTable
+            tableId="follow-ups"
+            columns={columns}
+            data={allFollowUps}
+            onRowClick={(f) => navigate(`/leads/${f.leadId}`)}
+          />
         </CardContent>
       </Card>
     </div>
