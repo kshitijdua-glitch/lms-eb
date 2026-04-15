@@ -1,25 +1,31 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { leads, teams, agents, getStageLabel, getLeadsForTeam, lendingPartners } from "@/data/mockData";
+import { Progress } from "@/components/ui/progress";
+import { leads, teams, agents, getStageLabel, getLeadsForTeam, getLeadsForAgent, getAgentsForTeam, lendingPartners } from "@/data/mockData";
 import { useRole } from "@/contexts/RoleContext";
 import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Users, Clock, Send, TrendingUp, BarChart3, UserCog,
-  FileText, AlertTriangle, CheckCircle, Target,
+  FileText, AlertTriangle, CheckCircle, Target, Phone, Calendar,
 } from "lucide-react";
 
 export function ManagerDashboard() {
   const navigate = useNavigate();
   const { currentAgentId } = useRole();
+  const today = new Date().toISOString().split("T")[0];
+  const now = Date.now();
 
   // --- Own Production (agent-style) ---
   const myLeads = leads.filter(l => l.assignedAgentId === currentAgentId);
-  const today = new Date().toISOString().split("T")[0];
   const myWorkedToday = myLeads.filter(l => l.lastActivityAt.split("T")[0] === today).length;
   const myPendingFU = myLeads.filter(l => l.followUps.some(f => f.status === "pending")).length;
+  const myMissedFU = myLeads.filter(l => l.followUps.some(f => f.status === "missed")).length;
   const mySTB = myLeads.filter(l => l.stbSubmissions.length > 0).length;
   const myDisbursed = myLeads.filter(l => l.stage === "disbursed").length;
+  const myCallsToday = myLeads.reduce((s, l) => s + l.callLogs.filter(c => c.timestamp.split("T")[0] === today).length, 0);
+  const myDailyTarget = 10;
+  const myTargetPct = Math.min(100, Math.round((myCallsToday / myDailyTarget) * 100));
 
   // --- Group (all teams) ---
   const allLeads = leads;
@@ -30,25 +36,26 @@ export function ManagerDashboard() {
   const totalDisbursed = allLeads.filter(l => l.stage === "disbursed").length;
 
   const groupMissedFUs = allLeads.filter(l => l.followUps.some(f => f.status === "missed")).length;
-  const groupPendingFUs = allLeads.filter(l => l.followUps.some(f => f.status === "pending")).length;
   const groupFUCompliance = totalAllocated > 0
     ? Math.round(((totalAllocated - groupMissedFUs) / totalAllocated) * 100) : 100;
 
-  // TL Activity
-  const tlAgents = teams.map(t => {
-    const tl = agents.find(a => a.id === t.tlId);
-    const tLeads = getLeadsForTeam(t.id);
-    const workedToday = tLeads.filter(l => l.lastActivityAt.split("T")[0] === today).length;
-    const teamAgents = agents.filter(a => a.teamId === t.id && a.id !== t.tlId);
-    const loggedIn = workedToday > 0;
-    const missedFUs = tLeads.filter(l => l.followUps.some(f => f.status === "missed")).length;
-    const stb = tLeads.filter(l => l.stbSubmissions.length > 0).length;
-    const disbursed = tLeads.filter(l => l.stage === "disbursed").length;
-    return {
-      id: t.id, name: t.name, tlName: tl?.name || "—", tlId: t.tlId,
-      agentCount: teamAgents.length, leadsCount: tLeads.length,
-      workedToday, loggedIn, missedFUs, stb, disbursed,
-    };
+  // Agent activity status (all agents across all teams)
+  const allAgents = agents.filter(a => !teams.some(t => t.tlId === a.id));
+  const agentStatus = allAgents.map(a => {
+    const agentLeads = allLeads.filter(l => l.assignedAgentId === a.id);
+    const workedToday = agentLeads.filter(l => l.lastActivityAt.split("T")[0] === today).length;
+    const callsToday = agentLeads.reduce((s, l) => s + l.callLogs.filter(c => c.timestamp.split("T")[0] === today).length, 0);
+    const missedFUs = agentLeads.filter(l => l.followUps.some(f => f.status === "missed")).length;
+    const loggedIn = workedToday > 0 || callsToday > 0;
+    return { ...a, agentLeads: agentLeads.length, workedToday, callsToday, missedFUs, loggedIn };
+  });
+
+  const zeroActivityAgents = agentStatus.filter(a => !a.loggedIn);
+
+  // Expiring leads (within 3 days)
+  const expiringLeads = allLeads.filter(l => {
+    const exp = new Date(l.expiresAt).getTime();
+    return exp > now && exp - now <= 3 * 86400000;
   });
 
   // Business Performance Strip
@@ -90,28 +97,43 @@ export function ManagerDashboard() {
 
       {/* Own Production */}
       <div>
-        <h2 className="text-sm font-semibold text-muted-foreground mb-2">My Production</h2>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <h2 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-2"><Phone className="h-4 w-4" /> My Production</h2>
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
           {[
-            { label: "My Leads", value: myLeads.length },
-            { label: "Worked Today", value: myWorkedToday },
-            { label: "Pending F/U", value: myPendingFU },
-            { label: "My STB", value: mySTB },
-            { label: "My Disbursed", value: myDisbursed },
+            { label: "My Leads", value: myLeads.length, icon: Users, color: "text-primary" },
+            { label: "Missed F/U", value: myMissedFU, icon: AlertTriangle, color: "text-destructive" },
+            { label: "Pending F/U", value: myPendingFU, icon: Calendar, color: "text-warning" },
+            { label: "Worked Today", value: myWorkedToday, icon: Phone, color: "text-info" },
+            { label: "My STB", value: mySTB, icon: Send, color: "text-primary" },
+            { label: "My Disbursed", value: myDisbursed, icon: CheckCircle, color: "text-success" },
           ].map(k => (
             <Card key={k.label}>
               <CardContent className="p-3">
+                <k.icon className={`h-4 w-4 ${k.color} mb-1`} />
                 <div className="text-xl font-bold">{k.value}</div>
                 <div className="text-[10px] text-muted-foreground">{k.label}</div>
               </CardContent>
             </Card>
           ))}
         </div>
+        <Card className="mt-3">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Target className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium">My Daily Call Target</span>
+              </div>
+              <span className="text-sm text-muted-foreground">{myCallsToday}/{myDailyTarget} calls</span>
+            </div>
+            <Progress value={myTargetPct} className="h-2" />
+            {myTargetPct >= 100 && <p className="text-xs text-success mt-1">🎉 Target achieved!</p>}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Group Health */}
       <div>
-        <h2 className="text-sm font-semibold text-muted-foreground mb-2">Group Health</h2>
+        <h2 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-2"><Users className="h-4 w-4" /> Group Health</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
             { label: "Total Leads", value: totalAllocated },
@@ -127,35 +149,52 @@ export function ManagerDashboard() {
             </Card>
           ))}
         </div>
+      </div>
 
-        {/* TL Activity Status */}
-        <Card className="mt-3">
-          <CardHeader className="pb-2"><CardTitle className="text-sm">TL Activity Status</CardTitle></CardHeader>
-          <CardContent className="space-y-2">
-            {tlAgents.map(tl => (
-              <div key={tl.id} className="flex items-center gap-3 p-2 rounded border text-sm">
-                <div className={`h-2.5 w-2.5 rounded-full ${tl.loggedIn ? "bg-success" : "bg-destructive"}`} />
-                <div className="flex-1">
-                  <span className="font-medium">{tl.tlName}</span>
-                  <span className="text-xs text-muted-foreground ml-2">({tl.name} · {tl.agentCount} agents)</span>
+      {/* Agent Activity Status */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2"><UserCog className="h-4 w-4" /> Agent Activity Status</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {agentStatus.map(a => (
+              <div key={a.id} className="flex items-center justify-between p-2 rounded border">
+                <div className="flex items-center gap-2">
+                  <div className={`h-2 w-2 rounded-full ${a.loggedIn ? "bg-success" : "bg-destructive"}`} />
+                  <span className="text-sm font-medium">{a.name}</span>
+                  <span className="text-xs text-muted-foreground">({a.teamName})</span>
                 </div>
-                <div className="flex gap-3 text-xs text-muted-foreground">
-                  <span>Leads: {tl.leadsCount}</span>
-                  <span>Worked: {tl.workedToday}</span>
-                  <span>STB: {tl.stb}</span>
-                  <span>Disbursed: {tl.disbursed}</span>
-                  {tl.missedFUs > 0 && <Badge variant="destructive" className="text-[9px]">{tl.missedFUs} missed F/U</Badge>}
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                  <span>Leads: {a.agentLeads}</span>
+                  <span>Calls: {a.callsToday}</span>
+                  <span>Worked: {a.workedToday}</span>
+                  {a.missedFUs > 0 && <Badge variant="destructive" className="text-[9px]">{a.missedFUs} missed</Badge>}
+                  {!a.loggedIn && <Badge variant="secondary" className="text-[9px]">Inactive</Badge>}
                 </div>
-                {!tl.loggedIn && (
-                  <Badge variant="secondary" className="text-[9px]">
-                    <AlertTriangle className="h-3 w-3 mr-1" /> Not Active
-                  </Badge>
-                )}
               </div>
             ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Zero Activity Alerts */}
+      {zeroActivityAgents.length > 0 && (
+        <Card className="border-warning/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2 text-warning">
+              <AlertTriangle className="h-4 w-4" /> Zero Activity Today ({zeroActivityAgents.length} agents)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {zeroActivityAgents.map(a => (
+                <Badge key={a.id} variant="outline" className="text-xs">{a.name}</Badge>
+              ))}
+            </div>
           </CardContent>
         </Card>
-      </div>
+      )}
 
       {/* Business Performance Strip */}
       <div>
@@ -181,6 +220,34 @@ export function ManagerDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Expiring Leads */}
+      {expiringLeads.length > 0 && (
+        <Card className="border-warning/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2 text-warning">
+              <Clock className="h-4 w-4" /> Leads Expiring Soon ({expiringLeads.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {expiringLeads.slice(0, 5).map(l => {
+                const daysLeft = Math.ceil((new Date(l.expiresAt).getTime() - now) / 86400000);
+                const agent = agents.find(a => a.id === l.assignedAgentId);
+                return (
+                  <div key={l.id} className="flex items-center justify-between p-2 rounded border cursor-pointer hover:bg-accent/50" onClick={() => navigate(`/leads/${l.id}`)}>
+                    <div>
+                      <span className="font-medium text-sm">{l.name}</span>
+                      <span className="text-muted-foreground text-xs ml-2">Agent: {agent?.name}</span>
+                    </div>
+                    <Badge variant="outline" className="text-xs text-warning">{daysLeft}d left</Badge>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Bank Pipeline Summary */}
       <Card>
