@@ -1,41 +1,21 @@
 
 
-# Plan: Separate Product & Bank Selection with Filtering
+# Plan: Add Optional Follow-Up Time to Scheduling
 
 ## Summary
-Replace the current checkbox list of banks with two separate dropdowns: **Product Type** first, then **Bank/NBFC** (filtered to only show banks offering that product). Users can add multiple product+bank pairs.
+Add an optional time picker alongside the mandatory follow-up date picker in the call log dialog. When scheduling a follow-up, the agent must pick a date but can optionally specify a time (hour + minute).
 
 ## What Changes
 
-The Bank/NBFC Selection card gets redesigned:
-
-```text
-┌─ Bank / NBFC Selection ─────────────────────┐
-│ ┌─────────────────┐  ┌──────────────────┐    │
-│ │ Product Type  ▾ │  │ Bank / NBFC    ▾ │ [+Add] │
-│ └─────────────────┘  └──────────────────┘    │
-│                                               │
-│  Personal Loan → HDFC Bank              [×]  │
-│  Credit Card   → ICICI Bank             [×]  │
-│  Business Loan → Bajaj Finserv          [×]  │
-└───────────────────────────────────────────────┘
-```
-
-- **Product dropdown**: Lists all product types from `lendingPartners`
-- **Bank dropdown**: Filtered — only shows active banks that offer the selected product
-- **Add button**: Adds the product+bank pair to the list
-- **Selected pairs** shown as removable rows below
-- Duplicate pairs prevented
-
-## Technical Changes
-
 ### `src/pages/LeadDetailPage.tsx`
-- Replace `selectedBankIds: Set<string>` state with `selectedPairs: Array<{partnerId, partnerName, productType}>` state
-- Add `selectedProduct` and `selectedBank` dropdown states
-- Replace checkbox list with two `<Select>` dropdowns + Add button
-- Bank dropdown filters `lendingPartners` by `selectedProduct`
-- Show selected pairs as a list with remove buttons
-- Update `handleToggleBank` → `handleAddPair` / `handleRemovePair`
 
-### No other files change — types already support `SelectedBank` with `productType` field.
+**State**: Add `followUpTime` state (`string`, default `""`) for storing selected time (e.g. `"14:30"`).
+
+**UI**: Below the existing Follow-Up Date calendar popover (line ~636), add an optional time input:
+- An `<Input type="time" />` field labeled "Follow-Up Time (optional)"
+- Same compact styling as other fields (`h-8 text-xs`)
+
+**Logic**: In `handleLogCall`, when building the follow-up date string, combine `followUpDate` with `followUpTime` if provided. If no time is set, default to start of day. Reset `followUpTime` when dialog closes.
+
+No other files change.
 
