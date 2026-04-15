@@ -1,45 +1,74 @@
 
 
-# Plan: Remove TL Role, Make Manager Directly Manage Agents
+# Plan: Configurable & Reorderable Table Columns
 
 ## Summary
-The current data model still has a TL (Team Leader) abstraction: `teams` have a `tlId`, agents have `tlId`/`tlName` fields, and the GroupManagementPage shows a TL-level overview with expandable agent rows. Since TL no longer exists, the Manager directly manages all agents. The page should show a flat agent table with direct notes, flags, and target management per agent.
+Build a reusable system that lets users show/hide columns and drag-reorder them on every table in the app. Column preferences persist in localStorage per table.
 
-## Changes
+## What the User Gets
+- A **gear/columns icon button** above each table that opens a popover
+- In the popover: checkboxes to toggle column visibility, drag handles to reorder columns
+- A "Reset to Default" button to restore original column order/visibility
+- Preferences saved per table and persist across sessions
 
-### 1. Data Model (`src/types/lms.ts`)
-- **Agent**: Remove `tlId` and `tlName` fields. Keep `teamId`/`teamName` (team = the manager's group).
-- **Team**: Remove `tlId` and `tlName`. Rename concept to "Group" -- fields become `id`, `name`, `managerId`, `managerName`, `agentCount`.
+## Architecture
 
-### 2. Mock Data (`src/data/mockData.ts`)
-- Update `teams` array: replace `tlId`/`tlName` with `managerId`/`managerName`.
-- Update `agents` array: remove `tlId`/`tlName` fields. agent-9 and agent-10 become regular agents or the manager identity.
-- Update helper functions `getLeadsForTeam`, `getAgentsForTeam` accordingly.
+### 1. Column Definition Type (`src/types/lms.ts`)
+```typescript
+interface ColumnDef<T> {
+  id: string;
+  label: string;
+  defaultVisible?: boolean; // defaults true
+  locked?: boolean; // e.g. checkbox column, actions -- can't hide/move
+  render: (item: T, index: number) => React.ReactNode;
+  headerClassName?: string;
+  sortable?: boolean;
+  sortKey?: string;
+}
+```
 
-### 3. GroupManagementPage -- Complete Rewrite
-- Remove TL-level grouping. Show a **flat agent table** with columns: Agent Name, Status, Leads, Worked Today, Calls Today, Missed F/U, STB, Disbursed, Last Activity, Actions.
-- Actions per agent: Set Targets (target icon), Profile/Notes/Flags (message icon), View Leads.
-- **Agent Profile Dialog**: flags (add/remove from predefined list), notes (add/view), quick stats for that agent.
-- **Agent Targets Dialog**: set Calls, Follow-Ups, STBs, Leads to Work per agent.
-- Remove all TL-specific state variables and data structures.
+### 2. `useConfigurableColumns` Hook (`src/hooks/use-configurable-columns.ts`)
+- Input: `tableId: string`, `columns: ColumnDef[]`
+- Reads/writes localStorage key `table-columns-${tableId}`
+- Returns: `{ visibleColumns, allColumns, toggleColumn, moveColumn, resetColumns }`
+- `moveColumn(fromIndex, toIndex)` for drag reorder
 
-### 4. Update All TL References Across Pages
-- **GroupLeadsPage**: Remove TL filter dropdown. Show agent filter only.
-- **GroupFollowUpsPage**: Same -- remove TL filter.
-- **GroupSTBPage**: Remove TL filter, remove TL column from table.
-- **GroupReportsPage**: Remove TL column and TL summary rows. Report by Agent only.
-- **ManagerDashboard**: Remove any TL references in agent activity section.
-- **OrgLeadsPage, OrgFollowUpsPage, OrgSTBPage, OrgReportsPage**: Replace TL filter/column with Manager filter/column (Manager → Agent cascading instead of Manager → TL → Agent).
-- **StaffManagementPage**: Remove TL tab if present.
-- **AdminStaffPage**: Remove TL tab.
-- **LeadDetailPage**: Remove TL references in reassignment and timeline.
-- **AuditTrailPage**: Remove TL from actor role filters.
+### 3. `ColumnConfigurator` Component (`src/components/ColumnConfigurator.tsx`)
+- Popover triggered by a `Settings2` icon button
+- Lists all non-locked columns with checkboxes and drag handles
+- Uses HTML drag-and-drop (no external library needed) for reordering
+- "Reset" button at bottom
 
-### 5. Sidebar & Context
-- **AppSidebar.tsx**: Remove any remaining TL label references.
-- **RoleContext.tsx**: Ensure no TL references remain.
+### 4. `ConfigurableTable` Component (`src/components/ConfigurableTable.tsx`)
+- Wraps `<Table>` with the hook and configurator
+- Takes `tableId`, `columns`, `data`, `onRowClick`, `renderActions` props
+- Renders only visible columns in the saved order
+- Keeps locked columns (checkbox, actions) pinned at start/end
 
-## Files Touched
-- **Edit**: ~15 files (types, mockData, GroupManagementPage, GroupLeadsPage, GroupFollowUpsPage, GroupSTBPage, GroupReportsPage, ManagerDashboard, OrgLeadsPage, OrgFollowUpsPage, OrgSTBPage, OrgReportsPage, StaffManagementPage, AdminStaffPage, LeadDetailPage, AuditTrailPage, AppSidebar, RoleContext)
-- **Delete**: None
+### 5. Migrate All Tables (~20 tables across 17 files)
+Convert each table from inline `<TableHead>`/`<TableCell>` to a `columns` array definition and use `ConfigurableTable`. Files:
+
+**Lead tables**: `LeadsPage`, `GroupLeadsPage`, `OrgLeadsPage`
+**Follow-up tables**: `FollowUpsPage`, `GroupFollowUpsPage`, `OrgFollowUpsPage`
+**STB tables**: `STBPage`, `GroupSTBPage`, `OrgSTBPage`
+**Report tables**: `ReportsPage`, `GroupReportsPage`, `OrgReportsPage`
+**Staff tables**: `StaffManagementPage`, `AdminStaffPage`, `AgentManagementPage`
+**Other tables**: `AuditTrailPage`, `LeadPoolsPage`, `GroupManagementPage`, `LeadAllocationPage`
+
+## Implementation Steps
+
+1. **Create types and hook** -- `ColumnDef` type, `useConfigurableColumns` hook with localStorage persistence
+2. **Create ColumnConfigurator component** -- Popover UI with checkboxes and drag-to-reorder
+3. **Create ConfigurableTable wrapper** -- Combines hook + configurator + table rendering
+4. **Migrate lead tables** -- LeadsPage, GroupLeadsPage, OrgLeadsPage
+5. **Migrate follow-up tables** -- FollowUpsPage, GroupFollowUpsPage, OrgFollowUpsPage
+6. **Migrate STB tables** -- STBPage, GroupSTBPage, OrgSTBPage
+7. **Migrate report/audit/staff tables** -- All remaining tables
+
+## Technical Notes
+- HTML5 drag-and-drop for column reorder (no new dependencies)
+- localStorage key pattern: `table-cols-{tableId}` stores `{ order: string[], hidden: string[] }`
+- Locked columns (checkbox, actions) are excluded from configurator and stay pinned
+- Sort functionality preserved -- sortable columns still clickable
+- ~3 new files, ~17 modified files
 
