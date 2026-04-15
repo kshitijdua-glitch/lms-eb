@@ -1,6 +1,5 @@
 import { agents, teams } from "@/data/mockData";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -10,9 +9,26 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Edit } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { ConfigurableTable } from "@/components/ConfigurableTable";
+import type { ColumnDef } from "@/types/table";
+import type { Agent } from "@/types/lms";
 
 const AgentManagementPage = () => {
   const [showCreate, setShowCreate] = useState(false);
+
+  const columns: ColumnDef<Agent>[] = [
+    { id: "name", label: "Name", render: (a) => <span className="font-medium">{a.name}</span> },
+    { id: "email", label: "Email", render: (a) => <span className="text-sm text-muted-foreground">{a.email}</span> },
+    { id: "team", label: "Team", render: (a) => <Badge variant="outline" className="text-xs">{a.teamName}</Badge> },
+    { id: "manager", label: "Manager", render: (a) => <span className="text-sm">{a.managerName || "—"}</span> },
+    { id: "status", label: "Status", render: (a) => <Badge variant={a.status === "active" ? "default" : "secondary"} className="text-xs">{a.status}</Badge> },
+    { id: "leads", label: "Leads", headerClassName: "text-right", render: (a) => <span className="text-right block">{a.leadsAssigned}</span> },
+    { id: "converted", label: "Converted", headerClassName: "text-right", render: (a) => <span className="text-right block">{a.leadsConverted}</span> },
+    { id: "rate", label: "Rate", headerClassName: "text-right", render: (a) => <span className="text-right block">{a.leadsAssigned > 0 ? `${Math.round((a.leadsConverted / a.leadsAssigned) * 100)}%` : "—"}</span> },
+    { id: "actions", label: "", locked: "end", render: (a) => (
+      <Button variant="ghost" size="icon" onClick={() => toast.info("Edit agent: " + a.name)}><Edit className="h-3 w-3" /></Button>
+    )},
+  ];
 
   return (
     <div className="space-y-6">
@@ -26,44 +42,7 @@ const AgentManagementPage = () => {
 
       <Card>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Team</TableHead>
-                <TableHead>Manager</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Leads</TableHead>
-                <TableHead className="text-right">Converted</TableHead>
-                <TableHead className="text-right">Rate</TableHead>
-                <TableHead></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {agents.map(a => (
-                <TableRow key={a.id}>
-                  <TableCell className="font-medium">{a.name}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{a.email}</TableCell>
-                  <TableCell><Badge variant="outline" className="text-xs">{a.teamName}</Badge></TableCell>
-                  <TableCell className="text-sm">{a.managerName || "—"}</TableCell>
-                  <TableCell>
-                    <Badge variant={a.status === "active" ? "default" : "secondary"} className="text-xs">{a.status}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right">{a.leadsAssigned}</TableCell>
-                  <TableCell className="text-right">{a.leadsConverted}</TableCell>
-                  <TableCell className="text-right">
-                    {a.leadsAssigned > 0 ? `${Math.round((a.leadsConverted / a.leadsAssigned) * 100)}%` : "—"}
-                  </TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="icon" onClick={() => toast.info("Edit agent: " + a.name)}>
-                      <Edit className="h-3 w-3" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <ConfigurableTable tableId="agent-mgmt" columns={columns} data={agents} />
         </CardContent>
       </Card>
 
@@ -74,15 +53,7 @@ const AgentManagementPage = () => {
             <div><Label>Full Name</Label><Input placeholder="Agent name" /></div>
             <div><Label>Email</Label><Input type="email" placeholder="agent@lms.com" /></div>
             <div><Label>Phone</Label><Input placeholder="10-digit mobile" /></div>
-            <div>
-              <Label>Team</Label>
-              <Select>
-                <SelectTrigger><SelectValue placeholder="Select team" /></SelectTrigger>
-                <SelectContent>
-                  {teams.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
+            <div><Label>Team</Label><Select><SelectTrigger><SelectValue placeholder="Select team" /></SelectTrigger><SelectContent>{teams.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent></Select></div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
