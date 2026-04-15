@@ -61,7 +61,15 @@ const LeadDetailPage = () => {
   const [stbSubmitted, setStbSubmitted] = useState(lead?.stbSubmissions?.length ? lead.stbSubmissions.length > 0 : false);
   const [localStbSubmissions, setLocalStbSubmissions] = useState(lead?.stbSubmissions || []);
 
+  const [showLeadList, setShowLeadList] = useState(false);
+  const [leadListSearch, setLeadListSearch] = useState("");
+
   if (!lead) return <div className="p-8 text-center text-muted-foreground">Lead not found</div>;
+
+  const allLeads = role === "agent" ? getLeadsForAgent("agent-1") : leads;
+  const filteredLeads = allLeads
+    .filter(l => l.name.toLowerCase().includes(leadListSearch.toLowerCase()))
+    .slice(0, 50);
 
   const daysSinceAlloc = Math.floor((Date.now() - new Date(lead.allocatedAt).getTime()) / 86400000);
   const isProfileLocked = lead.stbSubmissions.length > 0;
