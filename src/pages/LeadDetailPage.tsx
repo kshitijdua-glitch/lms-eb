@@ -134,6 +134,9 @@ const LeadDetailPage = () => {
     toast.success("Bank removed");
   };
 
+  const [stbSubmitted, setStbSubmitted] = useState(lead.stbSubmissions.length > 0);
+  const [localStbSubmissions, setLocalStbSubmissions] = useState(lead.stbSubmissions);
+
   const handleSendToBank = () => {
     // Pre-STB checklist
     const checks = [];
@@ -145,7 +148,27 @@ const LeadDetailPage = () => {
       toast.error("Pre-STB checklist failed", { description: checks.join(", ") });
       return;
     }
-    toast.success("STB initiated for " + lead.name);
+
+    // Create STB submissions for each selected pair
+    const newSubmissions = selectedPairs.map((pair, i) => ({
+      id: `stb-new-${Date.now()}-${i}`,
+      partnerId: pair.partnerId,
+      partnerName: pair.partnerName,
+      submittedAt: new Date().toISOString(),
+      status: "submitted" as const,
+      approvedAmount: null,
+      sanctionAmount: null,
+      disbursedAmount: null,
+      disbursementDate: null,
+      remarks: `${getProductLabel(pair.productType as any)} application`,
+      integrationType: "portal" as const,
+    }));
+
+    setLocalStbSubmissions([...localStbSubmissions, ...newSubmissions]);
+    setStbSubmitted(true);
+    toast.success(`STB initiated for ${selectedPairs.length} bank(s)`, {
+      description: selectedPairs.map(p => `${p.partnerName} (${getProductLabel(p.productType as any)})`).join(", "),
+    });
   };
 
   // Build unified timeline
