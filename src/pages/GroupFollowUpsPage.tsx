@@ -18,14 +18,7 @@ function getFollowUpStatus(scheduledAt: string, status: string) {
 const GroupFollowUpsPage = () => {
   const navigate = useNavigate();
   const [priorityFilter, setPriorityFilter] = useState("all");
-  const [tlFilter, setTlFilter] = useState("all");
   const [agentFilter, setAgentFilter] = useState("all");
-
-  const availableAgents = useMemo(() => {
-    if (tlFilter === "all") return agents.filter(a => a.tlId);
-    const team = teams.find(t => t.tlId === tlFilter);
-    return team ? agents.filter(a => a.teamId === team.id && a.id !== team.tlId) : [];
-  }, [tlFilter]);
 
   const allFollowUps = useMemo(() => {
     return leads.flatMap(l =>
@@ -39,16 +32,12 @@ const GroupFollowUpsPage = () => {
     ).filter(f => {
       if (priorityFilter !== "all" && f.priority !== priorityFilter) return false;
       if (agentFilter !== "all" && f.assignedAgentId !== agentFilter) return false;
-      if (tlFilter !== "all") {
-        const team = teams.find(t => t.tlId === tlFilter);
-        if (!team || f.assignedTeamId !== team.id) return false;
-      }
       return true;
     }).sort((a, b) => {
       const order: Record<string, number> = { "Overdue": 0, "Due Now": 1, "Upcoming": 2 };
       return (order[getFollowUpStatus(a.scheduledAt, a.status).label] ?? 3) - (order[getFollowUpStatus(b.scheduledAt, b.status).label] ?? 3);
     });
-  }, [priorityFilter, tlFilter, agentFilter]);
+  }, [priorityFilter, agentFilter]);
 
   const overdue = allFollowUps.filter(f => getFollowUpStatus(f.scheduledAt, f.status).label === "Overdue");
 
@@ -62,18 +51,11 @@ const GroupFollowUpsPage = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <Select value={tlFilter} onValueChange={v => { setTlFilter(v); setAgentFilter("all"); }}>
-            <SelectTrigger className="w-36"><SelectValue placeholder="TL" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All TLs</SelectItem>
-              {teams.map(t => <SelectItem key={t.tlId} value={t.tlId}>{t.tlName}</SelectItem>)}
-            </SelectContent>
-          </Select>
           <Select value={agentFilter} onValueChange={setAgentFilter}>
             <SelectTrigger className="w-36"><SelectValue placeholder="Agent" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Agents</SelectItem>
-              {availableAgents.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+              {agents.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={priorityFilter} onValueChange={setPriorityFilter}>
@@ -94,8 +76,8 @@ const GroupFollowUpsPage = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Lead</TableHead>
-                <TableHead>TL</TableHead>
                 <TableHead>Agent</TableHead>
+                <TableHead>Team</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Scheduled</TableHead>
                 <TableHead>Status</TableHead>
@@ -113,8 +95,8 @@ const GroupFollowUpsPage = () => {
                 return (
                   <TableRow key={f.id} className="cursor-pointer hover:bg-accent/50" onClick={() => navigate(`/leads/${f.leadId}`)}>
                     <TableCell className="font-medium text-sm">{f.leadName}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{team?.tlName || "—"}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{agent?.name}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{team?.name || "—"}</TableCell>
                     <TableCell className="text-sm capitalize">{f.type.replace(/_/g, " ")}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{new Date(f.scheduledAt).toLocaleString()}</TableCell>
                     <TableCell><Badge variant={status.variant} className="text-xs">{status.label}</Badge></TableCell>

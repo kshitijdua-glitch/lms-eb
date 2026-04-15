@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 const GroupSTBPage = () => {
   const navigate = useNavigate();
-  const [tlFilter, setTlFilter] = useState("all");
+  const [agentFilter, setAgentFilter] = useState("all");
 
   const stbLeads = leads.filter(l => l.stbSubmissions.length > 0);
   const allSubs = useMemo(() => {
@@ -18,13 +18,10 @@ const GroupSTBPage = () => {
       ...s, leadName: l.name, leadId: l.id, product: l.productType,
       assignedAgentId: l.assignedAgentId, assignedTeamId: l.assignedTeamId,
     }))).filter(s => {
-      if (tlFilter !== "all") {
-        const team = teams.find(t => t.tlId === tlFilter);
-        if (!team || s.assignedTeamId !== team.id) return false;
-      }
+      if (agentFilter !== "all" && s.assignedAgentId !== agentFilter) return false;
       return true;
     });
-  }, [stbLeads, tlFilter]);
+  }, [stbLeads, agentFilter]);
 
   const submitted = allSubs.filter(s => s.status === "submitted").length;
   const approved = allSubs.filter(s => s.status === "approved").length;
@@ -38,11 +35,11 @@ const GroupSTBPage = () => {
           <h1 className="text-2xl font-bold">Group STB Pipeline</h1>
           <p className="text-muted-foreground text-sm">{allSubs.length} total submissions</p>
         </div>
-        <Select value={tlFilter} onValueChange={setTlFilter}>
-          <SelectTrigger className="w-36"><SelectValue placeholder="TL" /></SelectTrigger>
+        <Select value={agentFilter} onValueChange={setAgentFilter}>
+          <SelectTrigger className="w-36"><SelectValue placeholder="Agent" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All TLs</SelectItem>
-            {teams.map(t => <SelectItem key={t.tlId} value={t.tlId}>{t.tlName}</SelectItem>)}
+            <SelectItem value="all">All Agents</SelectItem>
+            {agents.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
@@ -71,8 +68,8 @@ const GroupSTBPage = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Lead</TableHead>
-                <TableHead>TL</TableHead>
                 <TableHead>Agent</TableHead>
+                <TableHead>Team</TableHead>
                 <TableHead>Product</TableHead>
                 <TableHead>Partner</TableHead>
                 <TableHead>Submitted</TableHead>
@@ -92,8 +89,8 @@ const GroupSTBPage = () => {
                 return (
                   <TableRow key={s.id} className="cursor-pointer hover:bg-accent/50" onClick={() => navigate(`/leads/${s.leadId}`)}>
                     <TableCell className="font-medium text-sm">{s.leadName}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{team?.tlName || "—"}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{agent?.name}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{team?.name || "—"}</TableCell>
                     <TableCell><Badge variant="outline" className="text-xs">{getProductLabel(s.product)}</Badge></TableCell>
                     <TableCell className="text-sm">{s.partnerName}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{new Date(s.submittedAt).toLocaleDateString()}</TableCell>
