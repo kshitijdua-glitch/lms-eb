@@ -147,7 +147,7 @@ const LeadsPage = () => {
 
       <Tabs value={stageFilter} onValueChange={setStageFilter} className="w-full">
         <TabsList className="w-full justify-start overflow-x-auto h-auto flex-wrap gap-1 bg-transparent p-0">
-          {["all","new","contacted","interested","bre_done","stb_submitted","approved","declined","disbursed","closed_lost"].map(s => {
+          {["all","new","contacted","interested","bank_selected","stb_submitted","approved","declined","disbursed","closed_lost"].map(s => {
             const count = s === "all" ? allLeads.length : allLeads.filter(l => l.stage === s).length;
             return (
               <TabsTrigger key={s} value={s} className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs px-3 py-1.5">

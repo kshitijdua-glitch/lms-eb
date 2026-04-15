@@ -96,7 +96,7 @@ export const dispositionConfigs: DispositionConfig[] = [
 
 export const dispositionGroups = (): { group: string; items: DispositionConfig[] }[] => {
   const groups: { group: string; items: DispositionConfig[] }[] = [];
-  const primaryGroups = ["Follow-Up", "Not Contactable", "Not Interested", "Negative", "BRE Ineligible", "Compliance", "Documents Pending", "Outcome", "Closed"];
+  const primaryGroups = ["Follow-Up", "Not Contactable", "Not Interested", "Negative", "Compliance", "Documents Pending", "Outcome", "Closed"];
   for (const g of primaryGroups) {
     const items = dispositionConfigs.filter(d => d.group === g);
     if (items.length) groups.push({ group: g, items });
@@ -112,7 +112,7 @@ function maskPan(p: string) { return p.slice(0, 4) + "XXXX" + p.slice(-2); }
 function randomFrom<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
 function randomInt(min: number, max: number) { return Math.floor(Math.random() * (max - min + 1)) + min; }
 
-const stages: LeadStage[] = ["new","contacted","interested","bre_done","stb_submitted","approved","declined","disbursed","closed_lost"];
+const stages: LeadStage[] = ["new","contacted","interested","bank_selected","stb_submitted","approved","declined","disbursed","closed_lost"];
 const products: ProductType[] = ["personal_loan","home_loan","business_loan","credit_card","loan_against_property"];
 const empTypes: EmploymentType[] = ["salaried","self_employed","business_owner"];
 const priorities: Priority[] = ["hot","warm","cold"];
@@ -188,16 +188,24 @@ function generateLeads(): Lead[] {
       subType: fi === 0 ? "hot_follow_up" : undefined,
     }));
 
-    const breResult = ["bre_done", "stb_submitted", "approved", "disbursed"].includes(stage) ? {
-      timestamp: daysAgo(randomInt(1, 20)),
-      mode: (Math.random() > 0.5 ? "bureau" : "basic") as "basic" | "bureau",
-      eligiblePartners: lendingPartners.filter(lp => creditScore >= lp.minCreditScore && foir <= lp.maxFoir && income >= lp.minIncome && lp.status === "active").map(lp => ({
-        partnerId: lp.id, partnerName: lp.name, maxAmount: randomInt(100000, 2000000), minRate: randomInt(9, 16), tenure: randomInt(12, 60),
-      })),
-      ineligiblePartners: lendingPartners.filter(lp => creditScore < lp.minCreditScore || foir > lp.maxFoir || income < lp.minIncome).map(lp => ({
-        partnerId: lp.id, partnerName: lp.name, reason: creditScore < lp.minCreditScore ? `Credit score ${creditScore} below minimum ${lp.minCreditScore}` : foir > lp.maxFoir ? `FOIR ${foir}% exceeds maximum ${lp.maxFoir}%` : `Income ₹${income.toLocaleString()} below minimum ₹${lp.minIncome.toLocaleString()}`,
-      })),
-    } : null;
+    const existingLoans = Array.from({ length: randomInt(0, 3) }, (_, li) => ({
+      id: `loan-${i}-${li}`,
+      bankName: randomFrom(["SBI", "HDFC Bank", "ICICI Bank", "Axis Bank", "Kotak"]),
+      loanType: randomFrom(["Personal Loan", "Home Loan", "Car Loan", "Credit Card"]),
+      outstandingAmount: randomInt(50000, 2000000),
+      emi: randomInt(3000, 50000),
+      tenure: randomInt(6, 60),
+    }));
+
+    const selectedBanks = ["bank_selected", "stb_submitted", "approved", "disbursed"].includes(stage)
+      ? lendingPartners.filter(lp => lp.status === "active").slice(0, randomInt(1, 3)).map(lp => ({
+          partnerId: lp.id,
+          partnerName: lp.name,
+          productType: randomFrom(lp.products),
+          selectedAt: daysAgo(randomInt(1, 20)),
+          selectedBy: `agent-${agentIdx}`,
+        }))
+      : [];
 
     const stbSubmissions = ["stb_submitted", "approved", "disbursed"].includes(stage) ? [{
       id: `stb-${i}-1`,
@@ -248,9 +256,8 @@ function generateLeads(): Lead[] {
       assignedAgentId: `agent-${agentIdx}`,
       assignedTeamId: teamId,
       creditScore,
-      bureauStatus: creditScore ? "pulled" : "not_pulled",
-      bureauPulledAt: creditScore ? daysAgo(randomInt(1, 30)) : null,
-      breResult,
+      existingLoans,
+      selectedBanks,
       stbSubmissions,
       callLogs,
       followUps,
@@ -272,7 +279,7 @@ export const getLeadsForTeam = (teamId: string) => leads.filter(l => l.assignedT
 export const getAgentsForTeam = (teamId: string) => agents.filter(a => a.teamId === teamId);
 export const getDispositionLabel = (d: DispositionType) => dispositionConfigs.find(c => c.type === d)?.label ?? d.replace(/_/g, " ");
 export const getStageLabel = (s: LeadStage) => ({
-  new: "New", contacted: "Contacted", interested: "Interested", bre_done: "BRE Done",
+  new: "New", contacted: "Contacted", interested: "Interested", bank_selected: "Bank Selected",
   stb_submitted: "STB Submitted", approved: "Approved", declined: "Declined",
   disbursed: "Disbursed", closed_lost: "Closed Lost",
 }[s]);
