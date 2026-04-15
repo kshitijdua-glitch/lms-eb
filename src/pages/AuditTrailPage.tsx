@@ -31,7 +31,7 @@ const mockAuditLog: AuditEntry[] = [
   { id: "a7", timestamp: "2026-04-12T10:00:00Z", actor: "Ravi Kumar", actorRole: "manager", actionType: "disposition", target: "Lead: Mohd Irfan", before: "New", after: "Hot Follow-Up", reason: "" },
   { id: "a8", timestamp: "2026-04-11T15:00:00Z", actor: "CH Admin", actorRole: "cluster_head", actionType: "config_change", target: "Lead Sources", before: "—", after: "Added: TeleCall", reason: "New vendor onboarded" },
   { id: "a9", timestamp: "2026-04-11T09:30:00Z", actor: "System", actorRole: "system", actionType: "login", target: "Vikram Mehta", before: "—", after: "Logged in", reason: "" },
-  { id: "a10", timestamp: "2026-04-10T14:00:00Z", actor: "Anjali Kapoor", actorRole: "manager", actionType: "reassignment", target: "Lead: Kavita Mishra", before: "TL: Priya Sharma", after: "TL: Ravi Kumar", reason: "Cross-team balance" },
+  { id: "a10", timestamp: "2026-04-10T14:00:00Z", actor: "Anjali Kapoor", actorRole: "manager", actionType: "reassignment", target: "Lead: Kavita Mishra", before: "Agent: Amit Verma", after: "Agent: Pooja Reddy", reason: "Cross-team balance" },
 ];
 
 const actionTypes = ["All", "disposition_override", "config_change", "staff_deactivate", "staff_create", "reassignment", "disposition", "login"];

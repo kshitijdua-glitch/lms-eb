@@ -183,8 +183,8 @@ export interface Agent {
   phone: string;
   teamId: string;
   teamName: string;
-  tlId: string;
-  tlName: string;
+  managerId: string;
+  managerName: string;
   status: "active" | "inactive";
   joinedAt: string;
   leadsAssigned: number;
@@ -194,8 +194,8 @@ export interface Agent {
 export interface Team {
   id: string;
   name: string;
-  tlId: string;
-  tlName: string;
+  managerId: string;
+  managerName: string;
   agentCount: number;
 }
 

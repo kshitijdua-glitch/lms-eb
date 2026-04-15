@@ -2,22 +2,22 @@ import { Lead, Agent, Team, LendingPartner, DispositionConfig, Notification, typ
 
 // Teams
 export const teams: Team[] = [
-  { id: "team-1", name: "Alpha Squad", tlId: "agent-9", tlName: "Priya Sharma", agentCount: 5 },
-  { id: "team-2", name: "Beta Force", tlId: "agent-10", tlName: "Ravi Kumar", agentCount: 5 },
+  { id: "team-1", name: "Alpha Squad", managerId: "mgr-1", managerName: "Vikram Mehta", agentCount: 5 },
+  { id: "team-2", name: "Beta Force", managerId: "mgr-2", managerName: "Anjali Kapoor", agentCount: 5 },
 ];
 
 // Agents
 export const agents: Agent[] = [
-  { id: "agent-1", name: "Amit Verma", email: "amit@lms.com", phone: "9876543210", teamId: "team-1", teamName: "Alpha Squad", tlId: "agent-9", tlName: "Priya Sharma", status: "active", joinedAt: "2024-01-15", leadsAssigned: 120, leadsConverted: 28 },
-  { id: "agent-2", name: "Sneha Gupta", email: "sneha@lms.com", phone: "9876543211", teamId: "team-1", teamName: "Alpha Squad", tlId: "agent-9", tlName: "Priya Sharma", status: "active", joinedAt: "2024-02-01", leadsAssigned: 95, leadsConverted: 22 },
-  { id: "agent-3", name: "Rahul Jain", email: "rahul@lms.com", phone: "9876543212", teamId: "team-1", teamName: "Alpha Squad", tlId: "agent-9", tlName: "Priya Sharma", status: "active", joinedAt: "2024-03-10", leadsAssigned: 80, leadsConverted: 15 },
-  { id: "agent-4", name: "Meera Patel", email: "meera@lms.com", phone: "9876543213", teamId: "team-1", teamName: "Alpha Squad", tlId: "agent-9", tlName: "Priya Sharma", status: "active", joinedAt: "2024-01-20", leadsAssigned: 110, leadsConverted: 30 },
-  { id: "agent-5", name: "Karan Singh", email: "karan@lms.com", phone: "9876543214", teamId: "team-1", teamName: "Alpha Squad", tlId: "agent-9", tlName: "Priya Sharma", status: "inactive", joinedAt: "2024-04-05", leadsAssigned: 45, leadsConverted: 8 },
-  { id: "agent-6", name: "Pooja Reddy", email: "pooja@lms.com", phone: "9876543215", teamId: "team-2", teamName: "Beta Force", tlId: "agent-10", tlName: "Ravi Kumar", status: "active", joinedAt: "2024-02-15", leadsAssigned: 100, leadsConverted: 25 },
-  { id: "agent-7", name: "Deepak Nair", email: "deepak@lms.com", phone: "9876543216", teamId: "team-2", teamName: "Beta Force", tlId: "agent-10", tlName: "Ravi Kumar", status: "active", joinedAt: "2024-03-01", leadsAssigned: 88, leadsConverted: 20 },
-  { id: "agent-8", name: "Anita Desai", email: "anita@lms.com", phone: "9876543217", teamId: "team-2", teamName: "Beta Force", tlId: "agent-10", tlName: "Ravi Kumar", status: "active", joinedAt: "2024-01-10", leadsAssigned: 130, leadsConverted: 35 },
-  { id: "agent-9", name: "Priya Sharma", email: "priya@lms.com", phone: "9876543218", teamId: "team-1", teamName: "Alpha Squad", tlId: "", tlName: "", status: "active", joinedAt: "2023-06-01", leadsAssigned: 0, leadsConverted: 0 },
-  { id: "agent-10", name: "Ravi Kumar", email: "ravi@lms.com", phone: "9876543219", teamId: "team-2", teamName: "Beta Force", tlId: "", tlName: "", status: "active", joinedAt: "2023-07-15", leadsAssigned: 0, leadsConverted: 0 },
+  { id: "agent-1", name: "Amit Verma", email: "amit@lms.com", phone: "9876543210", teamId: "team-1", teamName: "Alpha Squad", managerId: "mgr-1", managerName: "Vikram Mehta", status: "active", joinedAt: "2024-01-15", leadsAssigned: 120, leadsConverted: 28 },
+  { id: "agent-2", name: "Sneha Gupta", email: "sneha@lms.com", phone: "9876543211", teamId: "team-1", teamName: "Alpha Squad", managerId: "mgr-1", managerName: "Vikram Mehta", status: "active", joinedAt: "2024-02-01", leadsAssigned: 95, leadsConverted: 22 },
+  { id: "agent-3", name: "Rahul Jain", email: "rahul@lms.com", phone: "9876543212", teamId: "team-1", teamName: "Alpha Squad", managerId: "mgr-1", managerName: "Vikram Mehta", status: "active", joinedAt: "2024-03-10", leadsAssigned: 80, leadsConverted: 15 },
+  { id: "agent-4", name: "Meera Patel", email: "meera@lms.com", phone: "9876543213", teamId: "team-1", teamName: "Alpha Squad", managerId: "mgr-1", managerName: "Vikram Mehta", status: "active", joinedAt: "2024-01-20", leadsAssigned: 110, leadsConverted: 30 },
+  { id: "agent-5", name: "Karan Singh", email: "karan@lms.com", phone: "9876543214", teamId: "team-1", teamName: "Alpha Squad", managerId: "mgr-1", managerName: "Vikram Mehta", status: "inactive", joinedAt: "2024-04-05", leadsAssigned: 45, leadsConverted: 8 },
+  { id: "agent-6", name: "Pooja Reddy", email: "pooja@lms.com", phone: "9876543215", teamId: "team-2", teamName: "Beta Force", managerId: "mgr-2", managerName: "Anjali Kapoor", status: "active", joinedAt: "2024-02-15", leadsAssigned: 100, leadsConverted: 25 },
+  { id: "agent-7", name: "Deepak Nair", email: "deepak@lms.com", phone: "9876543216", teamId: "team-2", teamName: "Beta Force", managerId: "mgr-2", managerName: "Anjali Kapoor", status: "active", joinedAt: "2024-03-01", leadsAssigned: 88, leadsConverted: 20 },
+  { id: "agent-8", name: "Anita Desai", email: "anita@lms.com", phone: "9876543217", teamId: "team-2", teamName: "Beta Force", managerId: "mgr-2", managerName: "Anjali Kapoor", status: "active", joinedAt: "2024-01-10", leadsAssigned: 130, leadsConverted: 35 },
+  { id: "agent-9", name: "Priya Sharma", email: "priya@lms.com", phone: "9876543218", teamId: "team-1", teamName: "Alpha Squad", managerId: "mgr-1", managerName: "Vikram Mehta", status: "active", joinedAt: "2023-06-01", leadsAssigned: 50, leadsConverted: 12 },
+  { id: "agent-10", name: "Ravi Kumar", email: "ravi@lms.com", phone: "9876543219", teamId: "team-2", teamName: "Beta Force", managerId: "mgr-2", managerName: "Anjali Kapoor", status: "active", joinedAt: "2023-07-15", leadsAssigned: 60, leadsConverted: 15 },
 ];
 
 // Lending Partners
@@ -301,7 +301,7 @@ export const mockNotifications: Notification[] = [
   // Group-level notifications
   { id: "n-15", type: "agent_not_logged_in", title: "Agent Not Logged In", message: "Agent Ravi Kumar (Beta Force) has not logged in today", timestamp: daysAgo(0), read: false },
   { id: "n-16", type: "nc_escalation", title: "Team Missed F/U Threshold", message: "Alpha Squad has exceeded 10 missed follow-ups this week", timestamp: daysAgo(0), read: false },
-  { id: "n-17", type: "stb_status_update", title: "Group STB Update", message: "Bajaj Finserv declined loan for Manoj Tiwari — TL: Priya Sharma, Agent: Meera Patel", timestamp: daysAgo(0), read: false, leadId: "lead-15" },
+  { id: "n-17", type: "stb_status_update", title: "Group STB Update", message: "Bajaj Finserv declined loan for Manoj Tiwari — Manager: Vikram Mehta, Agent: Meera Patel", timestamp: daysAgo(0), read: false, leadId: "lead-15" },
   { id: "n-18", type: "lead_reassigned", title: "Override Confirmation", message: "You overrode a Closed/Lost disposition on lead Arjun Rao — lead moved to Contacted", timestamp: daysAgo(1), read: true, leadId: "lead-9" },
   // Cluster Head notifications
   { id: "n-19", type: "agent_not_logged_in", title: "Manager Not Logged In", message: "Manager Anjali Kapoor has not logged in today", timestamp: daysAgo(0), read: false },

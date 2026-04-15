@@ -608,7 +608,7 @@ const LeadDetailPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Reassign Dialog (TL: same team, Manager: cross-team) */}
+      {/* Reassign Dialog (Manager: cross-team) */}
       <Dialog open={showReassign} onOpenChange={setShowReassign}>
         <DialogContent>
           <DialogHeader><DialogTitle>Reassign Lead — {lead.name}</DialogTitle></DialogHeader>
@@ -620,11 +620,11 @@ const LeadDetailPage = () => {
             )}
             {(role === "manager" || role === "cluster_head") && (
               <div>
-                <Label>Target TL / Team</Label>
+                <Label>Target Team</Label>
                 <Select value={reassignTL} onValueChange={v => { setReassignTL(v); setReassignAgent(""); }}>
-                  <SelectTrigger><SelectValue placeholder="Select TL (for cross-team)" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Select team (for cross-team)" /></SelectTrigger>
                   <SelectContent>
-                    {teams.map(t => <SelectItem key={t.tlId} value={t.id}>{t.tlName} ({t.name})</SelectItem>)}
+                    {teams.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -635,8 +635,8 @@ const LeadDetailPage = () => {
                 <SelectTrigger><SelectValue placeholder="Select agent" /></SelectTrigger>
                 <SelectContent>
                   {((role === "manager" || role === "cluster_head") && reassignTL
-                    ? getAgentsForTeam(reassignTL).filter(a => a.id !== lead.assignedAgentId && !teams.some(t => t.tlId === a.id))
-                    : getAgentsForTeam(lead.assignedTeamId).filter(a => a.id !== lead.assignedAgentId && !teams.some(t => t.tlId === a.id))
+                    ? getAgentsForTeam(reassignTL).filter(a => a.id !== lead.assignedAgentId)
+                    : getAgentsForTeam(lead.assignedTeamId).filter(a => a.id !== lead.assignedAgentId)
                   ).map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
                 </SelectContent>
               </Select>
