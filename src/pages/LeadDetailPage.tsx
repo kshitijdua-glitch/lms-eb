@@ -137,7 +137,7 @@ const LeadDetailPage = () => {
   const handleSendToBank = () => {
     // Pre-STB checklist
     const checks = [];
-    if (lead.consentStatus !== "received") checks.push("Customer consent not received");
+    if (consentStatus !== "received") checks.push("Customer consent not received");
     if (!lead.pan || lead.pan.includes("XXXX")) checks.push("PAN verification pending");
     if (selectedPairs.length === 0) checks.push("No banks selected");
 
