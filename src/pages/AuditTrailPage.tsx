@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -8,17 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Shield, Search, Download } from "lucide-react";
 import { useRole } from "@/contexts/RoleContext";
 import { toast } from "sonner";
+import { ConfigurableTable } from "@/components/ConfigurableTable";
+import type { ColumnDef } from "@/types/table";
 
 type AuditEntry = {
-  id: string;
-  timestamp: string;
-  actor: string;
-  actorRole: string;
-  actionType: string;
-  target: string;
-  before: string;
-  after: string;
-  reason: string;
+  id: string; timestamp: string; actor: string; actorRole: string;
+  actionType: string; target: string; before: string; after: string; reason: string;
 };
 
 const mockAuditLog: AuditEntry[] = [
@@ -36,6 +30,7 @@ const mockAuditLog: AuditEntry[] = [
 
 const actionTypes = ["All", "disposition_override", "config_change", "staff_deactivate", "staff_create", "reassignment", "disposition", "login"];
 const roles = ["All", "cluster_head", "manager", "system"];
+const actionLabel = (a: string) => a.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 
 const AuditTrailPage = () => {
   const { role } = useRole();
@@ -52,19 +47,28 @@ const AuditTrailPage = () => {
     });
   }, [search, actionFilter, roleFilter]);
 
-  const actionLabel = (a: string) => a.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+  const columns: ColumnDef<AuditEntry>[] = [
+    { id: "timestamp", label: "Timestamp", render: (e) => <span className="text-xs text-muted-foreground whitespace-nowrap">{new Date(e.timestamp).toLocaleString()}</span> },
+    { id: "actor", label: "Actor", render: (e) => <span className="font-medium text-sm">{e.actor}</span> },
+    { id: "role", label: "Role", render: (e) => (
+      <Badge variant={e.actorRole === "cluster_head" ? "default" : e.actorRole === "manager" ? "default" : "secondary"} className="text-[10px]">{actionLabel(e.actorRole)}</Badge>
+    )},
+    { id: "action", label: "Action", render: (e) => <Badge variant="outline" className="text-[10px]">{actionLabel(e.actionType)}</Badge> },
+    { id: "target", label: "Target", render: (e) => <span className="text-sm">{e.target}</span> },
+    { id: "before", label: "Before", render: (e) => <span className="text-xs text-muted-foreground">{e.before}</span> },
+    { id: "after", label: "After", render: (e) => <span className="text-xs font-medium">{e.after}</span> },
+    { id: "reason", label: "Reason", render: (e) => <span className="text-xs text-muted-foreground max-w-[200px] truncate block">{e.reason || "—"}</span> },
+  ];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2"><Shield className="h-6 w-6" /> Audit Trail</h1>
-          <p className="text-muted-foreground text-sm">
-            Immutable log of all system actions.{role !== "data_admin" && " No export available."}
-          </p>
+          <p className="text-muted-foreground text-sm">Immutable log of all system actions.{role !== "data_admin" && " No export available."}</p>
         </div>
         {role === "data_admin" && (
-          <Button variant="outline" onClick={() => { toast.success("Audit trail CSV exported. Action logged."); }}>
+          <Button variant="outline" onClick={() => toast.success("Audit trail CSV exported. Action logged.")}>
             <Download className="h-4 w-4 mr-1" /> Export CSV
           </Button>
         )}
@@ -91,40 +95,7 @@ const AuditTrailPage = () => {
 
       <Card>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Timestamp</TableHead>
-                <TableHead>Actor</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Action</TableHead>
-                <TableHead>Target</TableHead>
-                <TableHead>Before</TableHead>
-                <TableHead>After</TableHead>
-                <TableHead>Reason</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map(e => (
-                <TableRow key={e.id}>
-                  <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{new Date(e.timestamp).toLocaleString()}</TableCell>
-                  <TableCell className="font-medium text-sm">{e.actor}</TableCell>
-                  <TableCell>
-                    <Badge variant={e.actorRole === "cluster_head" ? "default" : e.actorRole === "manager" ? "default" : "secondary"} className="text-[10px]">
-                      {actionLabel(e.actorRole)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="text-[10px]">{actionLabel(e.actionType)}</Badge>
-                  </TableCell>
-                  <TableCell className="text-sm">{e.target}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{e.before}</TableCell>
-                  <TableCell className="text-xs font-medium">{e.after}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">{e.reason || "—"}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <ConfigurableTable tableId="audit-trail" columns={columns} data={filtered} />
         </CardContent>
       </Card>
 

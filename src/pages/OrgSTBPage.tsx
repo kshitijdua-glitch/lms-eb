@@ -2,16 +2,27 @@ import { leads, agents, teams, getProductLabel } from "@/data/mockData";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Send, CheckCircle, XCircle } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
+import { ConfigurableTable } from "@/components/ConfigurableTable";
+import type { ColumnDef } from "@/types/table";
 
 const managers = [
   { id: "mgr-1", name: "Vikram Mehta", teams: ["team-1"] },
   { id: "mgr-2", name: "Anjali Kapoor", teams: ["team-2"] },
 ];
+
+type OSTBItem = {
+  id: string; partnerId: string; partnerName: string; submittedAt: string;
+  status: "submitted" | "approved" | "declined" | "disbursed";
+  sanctionAmount: number | null; disbursedAmount: number | null;
+  disbursementDate: string | null; integrationType: "api" | "portal" | "email";
+  leadName: string; leadId: string; product: string;
+  assignedAgentId: string; assignedTeamId: string;
+  approvedAmount: number | null; remarks: string;
+};
 
 const OrgSTBPage = () => {
   const navigate = useNavigate();
@@ -36,6 +47,39 @@ const OrgSTBPage = () => {
   const disbursed = allSubs.filter(s => s.status === "disbursed").length;
   const declined = allSubs.filter(s => s.status === "declined").length;
   const getManagerForTeam = (teamId: string) => managers.find(m => m.teams.includes(teamId))?.name || "—";
+
+  const columns: ColumnDef<OSTBItem>[] = [
+    { id: "lead", label: "Lead", render: (s) => <span className="font-medium text-sm">{s.leadName}</span> },
+    { id: "manager", label: "Manager", render: (s) => <span className="text-xs text-muted-foreground">{getManagerForTeam(s.assignedTeamId)}</span> },
+    { id: "agent", label: "Agent", render: (s) => <span className="text-xs text-muted-foreground">{agents.find(a => a.id === s.assignedAgentId)?.name}</span> },
+    { id: "team", label: "Team", render: (s) => <span className="text-xs text-muted-foreground">{teams.find(t => t.id === s.assignedTeamId)?.name || "—"}</span> },
+    { id: "product", label: "Product", render: (s) => <Badge variant="outline" className="text-xs">{getProductLabel(s.product as any)}</Badge> },
+    { id: "partner", label: "Partner", render: (s) => <span className="text-sm">{s.partnerName}</span> },
+    { id: "submitted", label: "Submitted", render: (s) => <span className="text-sm text-muted-foreground">{new Date(s.submittedAt).toLocaleDateString()}</span> },
+    { id: "days", label: "Days", render: (s) => <span className="text-sm">{Math.floor((Date.now() - new Date(s.submittedAt).getTime()) / 86400000)}d</span> },
+    { id: "status", label: "Status", render: (s) => (
+      <Badge variant={s.status === "disbursed" ? "default" : s.status === "approved" ? "default" : s.status === "declined" ? "destructive" : "secondary"} className="text-xs">{s.status}</Badge>
+    )},
+    { id: "sanction", label: "Sanction", render: (s) => <span className="text-sm">{s.sanctionAmount ? `₹${s.sanctionAmount.toLocaleString()}` : "—"}</span> },
+    { id: "disbursedAmt", label: "Disbursed", render: (s) => <span className="text-sm">{s.disbursedAmount ? `₹${s.disbursedAmount.toLocaleString()}` : "—"}</span> },
+    { id: "update", label: "Update", locked: "end", render: (s) => {
+      const isNonApi = s.integrationType !== "api";
+      return (
+        <div onClick={e => e.stopPropagation()}>
+          {isNonApi && s.status !== "disbursed" ? (
+            <Select onValueChange={(v) => toast.success(`Status updated to ${v}`)}>
+              <SelectTrigger className="h-7 w-28 text-xs"><SelectValue placeholder="Update" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="declined">Declined</SelectItem>
+                <SelectItem value="disbursed">Disbursed</SelectItem>
+              </SelectContent>
+            </Select>
+          ) : <span className="text-xs text-muted-foreground">{s.integrationType === "api" ? "Auto" : "—"}</span>}
+        </div>
+      );
+    }},
+  ];
 
   return (
     <div className="space-y-6">
@@ -73,63 +117,7 @@ const OrgSTBPage = () => {
       <Card>
         <CardHeader><CardTitle className="text-base">Organisation STB Submissions</CardTitle></CardHeader>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Lead</TableHead>
-                <TableHead>Manager</TableHead>
-                <TableHead>Agent</TableHead>
-                <TableHead>Team</TableHead>
-                <TableHead>Product</TableHead>
-                <TableHead>Partner</TableHead>
-                <TableHead>Submitted</TableHead>
-                <TableHead>Days</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Sanction</TableHead>
-                <TableHead>Disbursed</TableHead>
-                <TableHead>Update</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {allSubs.map(s => {
-                const daysSince = Math.floor((Date.now() - new Date(s.submittedAt).getTime()) / 86400000);
-                const agent = agents.find(a => a.id === s.assignedAgentId);
-                const team = teams.find(t => t.id === s.assignedTeamId);
-                const isNonApi = s.integrationType !== "api";
-                return (
-                  <TableRow key={s.id} className="cursor-pointer hover:bg-accent/50" onClick={() => navigate(`/leads/${s.leadId}`)}>
-                    <TableCell className="font-medium text-sm">{s.leadName}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{getManagerForTeam(s.assignedTeamId)}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{agent?.name}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{team?.name || "—"}</TableCell>
-                    <TableCell><Badge variant="outline" className="text-xs">{getProductLabel(s.product)}</Badge></TableCell>
-                    <TableCell className="text-sm">{s.partnerName}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{new Date(s.submittedAt).toLocaleDateString()}</TableCell>
-                    <TableCell className="text-sm">{daysSince}d</TableCell>
-                    <TableCell>
-                      <Badge variant={s.status === "disbursed" ? "default" : s.status === "approved" ? "default" : s.status === "declined" ? "destructive" : "secondary"} className="text-xs">
-                        {s.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm">{s.sanctionAmount ? `₹${s.sanctionAmount.toLocaleString()}` : "—"}</TableCell>
-                    <TableCell className="text-sm">{s.disbursedAmount ? `₹${s.disbursedAmount.toLocaleString()}` : "—"}</TableCell>
-                    <TableCell onClick={e => e.stopPropagation()}>
-                      {isNonApi && s.status !== "disbursed" ? (
-                        <Select onValueChange={(v) => toast.success(`Status updated to ${v}`)}>
-                          <SelectTrigger className="h-7 w-28 text-xs"><SelectValue placeholder="Update" /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="approved">Approved</SelectItem>
-                            <SelectItem value="declined">Declined</SelectItem>
-                            <SelectItem value="disbursed">Disbursed</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      ) : <span className="text-xs text-muted-foreground">{s.integrationType === "api" ? "Auto" : "—"}</span>}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+          <ConfigurableTable tableId="org-stb" columns={columns} data={allSubs} onRowClick={(s) => navigate(`/leads/${s.leadId}`)} />
         </CardContent>
       </Card>
     </div>

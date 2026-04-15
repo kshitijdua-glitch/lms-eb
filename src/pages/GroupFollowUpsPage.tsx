@@ -60,7 +60,7 @@ const GroupFollowUpsPage = () => {
     { id: "retry", label: "Retry", render: (f) => (
       <span className="text-xs">{f.retryCount > 0 ? <span>{f.retryCount}/5 {f.retryCount >= 5 && <Badge variant="destructive" className="text-[9px] ml-1">Escalate</Badge>}</span> : "—"}</span>
     )},
-    { id: "disposition", label: "Disposition", defaultVisible: false, render: (f) => <span className="text-xs">{getDispositionLabel(f.disposition)}</span> },
+    { id: "disposition", label: "Disposition", defaultVisible: false, render: (f) => <span className="text-xs">{getDispositionLabel(f.disposition as any)}</span> },
     { id: "product", label: "Product", defaultVisible: false, render: (f) => <Badge variant="outline" className="text-xs">{getProductLabel(f.productType as any)}</Badge> },
   ];
 

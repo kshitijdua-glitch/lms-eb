@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { leads, agents, teams, getDispositionLabel, getStageLabel, getProductLabel } from "@/data/mockData";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,8 +10,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, ArrowUpDown, Shuffle, Download } from "lucide-react";
+import { Search, Shuffle, Download } from "lucide-react";
 import { toast } from "sonner";
+import { ConfigurableTable } from "@/components/ConfigurableTable";
+import type { ColumnDef } from "@/types/table";
+import type { Lead } from "@/types/lms";
 
 const managers = [
   { id: "mgr-1", name: "Vikram Mehta", teams: ["team-1"] },
@@ -34,8 +36,6 @@ const OrgLeadsPage = () => {
   const [productFilter, setProductFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
   const [followUpFilter, setFollowUpFilter] = useState("all");
-  const [sortField, setSortField] = useState("lastActivity");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showReassign, setShowReassign] = useState(false);
   const [reassignManager, setReassignManager] = useState("");
@@ -59,7 +59,7 @@ const OrgLeadsPage = () => {
   }, [reassignManager]);
 
   const filtered = useMemo(() => {
-    let result = leads.filter(l => {
+    return leads.filter(l => {
       if (search && !l.name.toLowerCase().includes(search.toLowerCase()) && !l.id.includes(search)) return false;
       if (managerFilter !== "all") {
         const mgr = managers.find(m => m.id === managerFilter);
@@ -73,20 +73,7 @@ const OrgLeadsPage = () => {
       if (followUpFilter === "has_missed" && !l.followUps.some(f => f.status === "missed")) return false;
       return true;
     });
-    result.sort((a, b) => {
-      let cmp = 0;
-      if (sortField === "name") cmp = a.name.localeCompare(b.name);
-      else if (sortField === "stage") cmp = a.stage.localeCompare(b.stage);
-      else cmp = new Date(a.lastActivityAt).getTime() - new Date(b.lastActivityAt).getTime();
-      return sortDir === "asc" ? cmp : -cmp;
-    });
-    return result;
-  }, [leads, search, managerFilter, agentFilter, stageFilter, productFilter, sourceFilter, followUpFilter, sortField, sortDir]);
-
-  const toggleSort = (field: string) => {
-    if (sortField === field) setSortDir(d => d === "asc" ? "desc" : "asc");
-    else { setSortField(field); setSortDir("asc"); }
-  };
+  }, [search, managerFilter, agentFilter, stageFilter, productFilter, sourceFilter, followUpFilter]);
 
   const toggleSelect = (id: string) => {
     const next = new Set(selectedIds);
@@ -101,17 +88,47 @@ const OrgLeadsPage = () => {
 
   const handleBulkReassign = () => {
     if (!reassignAgent) { toast.error("Select target agent"); return; }
-    const stbLocked = [...selectedIds].filter(id => leads.find(l => l.id === id)?.stbSubmissions.length);
-    if (stbLocked.length > 0) {
-      toast.error(`${stbLocked.length} leads have active STB and cannot be reassigned`);
-      return;
-    }
     toast.success(`${selectedIds.size} leads reassigned to ${agents.find(a => a.id === reassignAgent)?.name}`);
     setShowReassign(false); setSelectedIds(new Set());
     setReassignManager(""); setReassignAgent(""); setReassignReason("");
   };
 
   const getManagerForTeam = (teamId: string) => managers.find(m => m.teams.includes(teamId))?.name || "—";
+
+  const columns: ColumnDef<Lead>[] = [
+    { id: "checkbox", label: "", locked: "start", headerClassName: "w-10", render: (lead) => (
+      <div onClick={e => e.stopPropagation()}>
+        <Checkbox checked={selectedIds.has(lead.id)} onCheckedChange={() => toggleSelect(lead.id)} />
+      </div>
+    )},
+    { id: "name", label: "Name", render: (lead) => (
+      <span className="font-medium">
+        {lead.name}
+        {lead.dndStatus === "dnd_registered" && <Badge variant="destructive" className="text-[9px] ml-1 px-1">DND</Badge>}
+      </span>
+    )},
+    { id: "manager", label: "Manager", render: (lead) => <span className="text-xs text-muted-foreground">{getManagerForTeam(lead.assignedTeamId)}</span> },
+    { id: "agent", label: "Agent", render: (lead) => <span className="text-xs text-muted-foreground">{agents.find(a => a.id === lead.assignedAgentId)?.name || "—"}</span> },
+    { id: "team", label: "Team", render: (lead) => <span className="text-xs text-muted-foreground">{teams.find(t => t.id === lead.assignedTeamId)?.name || "—"}</span> },
+    { id: "source", label: "Source", render: (lead) => <span className="text-xs text-muted-foreground">{lead.leadSource}</span> },
+    { id: "product", label: "Product", render: (lead) => <Badge variant="outline" className="text-xs">{getProductLabel(lead.productType)}</Badge> },
+    { id: "stage", label: "Stage", render: (lead) => <Badge variant={stageBadgeVariant(lead.stage)} className="text-xs">{getStageLabel(lead.stage)}</Badge> },
+    { id: "disposition", label: "Disposition", render: (lead) => <span className="text-sm">{getDispositionLabel(lead.disposition)}</span> },
+    { id: "followUp", label: "Follow-Up", render: (lead) => {
+      const hasMissed = lead.followUps.some(f => f.status === "missed");
+      const nextFU = lead.followUps.find(f => f.status === "pending");
+      return hasMissed ? <Badge variant="destructive" className="text-[10px]">Missed</Badge>
+        : nextFU ? <span className="text-xs text-muted-foreground">{new Date(nextFU.scheduledAt).toLocaleDateString()}</span>
+        : <span className="text-xs text-muted-foreground">—</span>;
+    }},
+    { id: "days", label: "Days", headerClassName: "text-right", render: (lead) => {
+      const d = Math.floor((Date.now() - new Date(lead.lastActivityAt).getTime()) / 86400000);
+      return <span className={`text-right text-sm font-medium ${d <= 3 ? "text-success" : d <= 7 ? "text-warning" : "text-destructive"}`}>{d}d</span>;
+    }},
+    { id: "city", label: "City", defaultVisible: false, render: (lead) => <span className="text-xs">{lead.city}</span> },
+    { id: "income", label: "Income", defaultVisible: false, render: (lead) => <span className="text-xs">₹{lead.monthlyIncome.toLocaleString()}</span> },
+    { id: "priority", label: "Priority", defaultVisible: false, render: (lead) => <Badge variant={lead.priority === "hot" ? "destructive" : lead.priority === "warm" ? "default" : "secondary"} className="text-xs">{lead.priority}</Badge> },
+  ];
 
   return (
     <div className="space-y-4">
@@ -188,56 +205,7 @@ const OrgLeadsPage = () => {
 
       <Card>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-10"><Checkbox checked={selectedIds.size === filtered.length && filtered.length > 0} onCheckedChange={toggleAll} /></TableHead>
-                <TableHead className="cursor-pointer" onClick={() => toggleSort("name")}>Name <ArrowUpDown className="inline h-3 w-3" /></TableHead>
-                <TableHead>Manager</TableHead>
-                <TableHead>Agent</TableHead>
-                <TableHead>Team</TableHead>
-                <TableHead>Source</TableHead>
-                <TableHead>Product</TableHead>
-                <TableHead className="cursor-pointer" onClick={() => toggleSort("stage")}>Stage <ArrowUpDown className="inline h-3 w-3" /></TableHead>
-                <TableHead>Disposition</TableHead>
-                <TableHead>Follow-Up</TableHead>
-                <TableHead className="text-right cursor-pointer" onClick={() => toggleSort("days")}>Days <ArrowUpDown className="inline h-3 w-3" /></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.slice(0, 50).map(lead => {
-                const daysSince = Math.floor((Date.now() - new Date(lead.lastActivityAt).getTime()) / 86400000);
-                const agent = agents.find(a => a.id === lead.assignedAgentId);
-                const team = teams.find(t => t.id === lead.assignedTeamId);
-                const nextFU = lead.followUps.find(f => f.status === "pending");
-                const hasMissed = lead.followUps.some(f => f.status === "missed");
-                return (
-                  <TableRow key={lead.id} className="cursor-pointer hover:bg-accent/50">
-                    <TableCell onClick={e => e.stopPropagation()}>
-                      <Checkbox checked={selectedIds.has(lead.id)} onCheckedChange={() => toggleSelect(lead.id)} />
-                    </TableCell>
-                    <TableCell className="font-medium" onClick={() => navigate(`/leads/${lead.id}`)}>
-                      {lead.name}
-                      {lead.dndStatus === "dnd_registered" && <Badge variant="destructive" className="text-[9px] ml-1 px-1">DND</Badge>}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{getManagerForTeam(lead.assignedTeamId)}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{agent?.name || "—"}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{team?.name || "—"}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{lead.leadSource}</TableCell>
-                    <TableCell><Badge variant="outline" className="text-xs">{getProductLabel(lead.productType)}</Badge></TableCell>
-                    <TableCell onClick={() => navigate(`/leads/${lead.id}`)}><Badge variant={stageBadgeVariant(lead.stage)} className="text-xs">{getStageLabel(lead.stage)}</Badge></TableCell>
-                    <TableCell className="text-sm" onClick={() => navigate(`/leads/${lead.id}`)}>{getDispositionLabel(lead.disposition)}</TableCell>
-                    <TableCell onClick={() => navigate(`/leads/${lead.id}`)}>
-                      {hasMissed ? <Badge variant="destructive" className="text-[10px]">Missed</Badge>
-                        : nextFU ? <span className="text-xs text-muted-foreground">{new Date(nextFU.scheduledAt).toLocaleDateString()}</span>
-                        : <span className="text-xs text-muted-foreground">—</span>}
-                    </TableCell>
-                    <TableCell className={`text-right text-sm font-medium ${daysSince <= 3 ? "text-success" : daysSince <= 7 ? "text-warning" : "text-destructive"}`} onClick={() => navigate(`/leads/${lead.id}`)}>{daysSince}d</TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+          <ConfigurableTable tableId="org-leads" columns={columns} data={filtered.slice(0, 50)} onRowClick={(lead) => navigate(`/leads/${lead.id}`)} />
         </CardContent>
       </Card>
 

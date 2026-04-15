@@ -3,9 +3,12 @@ import { leads, agents, getDispositionLabel, getProductLabel, dispositionConfigs
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Download, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
+import { ConfigurableTable } from "@/components/ConfigurableTable";
+import type { ColumnDef } from "@/types/table";
+
+type ReportRow = { agent: string; agentName: string; disposition: string; dispositionLabel: string; count: number };
 
 const GroupReportsPage = () => {
   const [agentFilter, setAgentFilter] = useState("all");
@@ -22,20 +25,14 @@ const GroupReportsPage = () => {
   }, [agentFilter, productFilter, dispositionFilter]);
 
   const reportData = useMemo(() => {
-    const map = new Map<string, { agent: string; agentName: string; disposition: string; dispositionLabel: string; count: number }>();
+    const map = new Map<string, ReportRow>();
     filtered.forEach(l => {
       const agent = agents.find(a => a.id === l.assignedAgentId);
       const config = dispositionConfigs.find(c => c.type === l.disposition);
       const key = `${l.assignedAgentId}__${l.disposition}`;
       const existing = map.get(key);
-      if (existing) { existing.count++; }
-      else {
-        map.set(key, {
-          agent: l.assignedAgentId, agentName: agent?.name || "Unknown",
-          disposition: l.disposition, dispositionLabel: config?.label || l.disposition,
-          count: 1,
-        });
-      }
+      if (existing) existing.count++;
+      else map.set(key, { agent: l.assignedAgentId, agentName: agent?.name || "Unknown", disposition: l.disposition, dispositionLabel: config?.label || l.disposition, count: 1 });
     });
     return [...map.values()].sort((a, b) => a.agentName.localeCompare(b.agentName) || b.count - a.count);
   }, [filtered]);
@@ -54,6 +51,12 @@ const GroupReportsPage = () => {
 
   const dispositions = [...new Set(leads.map(l => l.disposition))];
 
+  const columns: ColumnDef<ReportRow>[] = [
+    { id: "agent", label: "Agent", render: (r) => <span className="font-medium text-sm">{r.agentName}</span> },
+    { id: "disposition", label: "Disposition", render: (r) => <span className="text-sm">{r.dispositionLabel}</span> },
+    { id: "count", label: "Count", headerClassName: "text-right", render: (r) => <span className="text-right font-bold block">{r.count}</span> },
+  ];
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -61,9 +64,7 @@ const GroupReportsPage = () => {
           <h1 className="text-2xl font-bold">Group Lead Report</h1>
           <p className="text-muted-foreground text-sm">Agent × Disposition breakdown</p>
         </div>
-        <Button size="sm" onClick={handleExportCSV}>
-          <Download className="h-4 w-4 mr-1" /> Export CSV
-        </Button>
+        <Button size="sm" onClick={handleExportCSV}><Download className="h-4 w-4 mr-1" /> Export CSV</Button>
       </div>
 
       <div className="flex flex-wrap gap-3">
@@ -99,28 +100,7 @@ const GroupReportsPage = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Agent</TableHead>
-                <TableHead>Disposition</TableHead>
-                <TableHead className="text-right">Count</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {reportData.map((r, i) => (
-                <TableRow key={i}>
-                  <TableCell className="font-medium text-sm">{r.agentName}</TableCell>
-                  <TableCell className="text-sm">{r.dispositionLabel}</TableCell>
-                  <TableCell className="text-right font-bold">{r.count}</TableCell>
-                </TableRow>
-              ))}
-              <TableRow className="bg-muted/50 font-bold">
-                <TableCell colSpan={2}>Grand Total</TableCell>
-                <TableCell className="text-right">{totalCount}</TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
+          <ConfigurableTable tableId="group-reports" columns={columns} data={reportData} />
         </CardContent>
       </Card>
     </div>
