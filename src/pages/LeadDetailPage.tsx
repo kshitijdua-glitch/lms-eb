@@ -45,8 +45,6 @@ const LeadDetailPage = () => {
   );
   const [selectedProduct, setSelectedProduct] = useState("");
   const [selectedBank, setSelectedBank] = useState("");
-  const [consentStatus, setConsentStatus] = useState(lead?.consentStatus || "not_sent");
-  const [sendingConsent, setSendingConsent] = useState(false);
 
   // Call log form state
   const [callDate, setCallDate] = useState<Date | undefined>(new Date());
@@ -102,16 +100,6 @@ const LeadDetailPage = () => {
     toast.success("Credit score updated");
   };
 
-  const handleSendConsent = () => {
-    setSendingConsent(true);
-    setConsentStatus("sent");
-    toast.success("Consent SMS sent to " + lead.mobile);
-    setTimeout(() => {
-      setConsentStatus("received");
-      setSendingConsent(false);
-      toast.success("Consent received from " + lead.name);
-    }, 3000);
-  };
 
   const handleAddPair = () => {
     if (!selectedProduct || !selectedBank) {
@@ -140,7 +128,7 @@ const LeadDetailPage = () => {
   const handleSendToBank = () => {
     // Pre-STB checklist
     const checks = [];
-    if (consentStatus !== "received") checks.push("Customer consent not received");
+    if (lead.consentStatus !== "received") checks.push("Customer consent not received");
     if (!lead.pan || lead.pan.includes("XXXX")) checks.push("PAN verification pending");
     if (selectedPairs.length === 0) checks.push("No banks selected");
 
@@ -278,19 +266,6 @@ const LeadDetailPage = () => {
                     placeholder="—"
                   />
                   <Button size="sm" variant="outline" className="h-7 text-[10px] px-2" onClick={handleSaveCreditScore}>Save</Button>
-                </div>
-              </div>
-              <div className="flex items-center justify-between text-xs mb-2">
-                <span className="text-muted-foreground">Consent SMS</span>
-                <div className="flex items-center gap-2">
-                  <Badge variant={consentStatus === "received" ? "default" : consentStatus === "sent" ? "secondary" : "outline"} className="text-[10px]">
-                    {consentStatus.replace("_", " ")}
-                  </Badge>
-                  {consentStatus !== "received" && (
-                    <Button size="sm" variant="outline" className="h-6 text-[10px] px-2" onClick={handleSendConsent} disabled={sendingConsent}>
-                      {sendingConsent ? "Waiting..." : consentStatus === "sent" ? "Resend" : "Send SMS"}
-                    </Button>
-                  )}
                 </div>
               </div>
               <div className="text-xs font-medium mt-2">Existing Loans</div>
