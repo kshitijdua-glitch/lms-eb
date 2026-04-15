@@ -185,6 +185,9 @@ const LeadDetailPage = () => {
         <Button variant="ghost" size="sm" onClick={() => navigate("/leads")}>
           <ArrowLeft className="h-4 w-4 mr-1" /> Back to Leads
         </Button>
+        <Button variant="outline" size="sm" onClick={() => setShowLeadList(true)}>
+          <List className="h-4 w-4 mr-1" /> Browse Leads
+        </Button>
         <div className="flex-1" />
         <Button size="sm" onClick={() => setShowCallLog(true)}><Phone className="h-4 w-4 mr-1" /> Log Call</Button>
         <Button size="sm" variant="outline" onClick={handleSendToBank}><Send className="h-4 w-4 mr-1" /> Send to Bank</Button>
