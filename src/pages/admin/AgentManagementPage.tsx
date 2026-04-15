@@ -32,7 +32,7 @@ const AgentManagementPage = () => {
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Team</TableHead>
-                <TableHead>TL</TableHead>
+                <TableHead>Manager</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Leads</TableHead>
                 <TableHead className="text-right">Converted</TableHead>
@@ -46,7 +46,7 @@ const AgentManagementPage = () => {
                   <TableCell className="font-medium">{a.name}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{a.email}</TableCell>
                   <TableCell><Badge variant="outline" className="text-xs">{a.teamName}</Badge></TableCell>
-                  <TableCell className="text-sm">{a.tlName || "—"}</TableCell>
+                  <TableCell className="text-sm">{a.managerName || "—"}</TableCell>
                   <TableCell>
                     <Badge variant={a.status === "active" ? "default" : "secondary"} className="text-xs">{a.status}</Badge>
                   </TableCell>

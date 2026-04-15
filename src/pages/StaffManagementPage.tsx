@@ -51,7 +51,7 @@ const StaffManagementPage = () => {
 
       <Tabs defaultValue="agents">
         <TabsList>
-          <TabsTrigger value="agents">Agents ({agents.filter(a => !teams.some(t => t.tlId === a.id)).length})</TabsTrigger>
+          <TabsTrigger value="agents">Agents ({agents.length})</TabsTrigger>
           <TabsTrigger value="managers">Managers ({managers.length})</TabsTrigger>
         </TabsList>
 
@@ -65,7 +65,7 @@ const StaffManagementPage = () => {
                     <TableHead>Email</TableHead>
                     <TableHead>Phone</TableHead>
                     <TableHead>Team</TableHead>
-                    <TableHead>TL</TableHead>
+                    <TableHead>Manager</TableHead>
                     <TableHead>Leads</TableHead>
                     <TableHead>Converted</TableHead>
                     <TableHead>Status</TableHead>
@@ -73,13 +73,13 @@ const StaffManagementPage = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {agents.filter(a => !teams.some(t => t.tlId === a.id)).map(a => (
+                  {agents.map(a => (
                     <TableRow key={a.id}>
                       <TableCell className="font-medium">{a.name}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{a.email}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{a.phone}</TableCell>
                       <TableCell className="text-xs">{a.teamName}</TableCell>
-                      <TableCell className="text-xs">{a.tlName}</TableCell>
+                      <TableCell className="text-xs">{a.managerName}</TableCell>
                       <TableCell className="text-right">{a.leadsAssigned}</TableCell>
                       <TableCell className="text-right">{a.leadsConverted}</TableCell>
                       <TableCell><Badge variant={a.status === "active" ? "default" : "secondary"}>{a.status}</Badge></TableCell>
@@ -169,7 +169,7 @@ const StaffManagementPage = () => {
                 <Select value={formTeam} onValueChange={setFormTeam}>
                   <SelectTrigger><SelectValue placeholder="Select team" /></SelectTrigger>
                   <SelectContent>
-                    {teams.map(t => <SelectItem key={t.id} value={t.id}>{t.name} ({t.tlName})</SelectItem>)}
+                    {teams.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
