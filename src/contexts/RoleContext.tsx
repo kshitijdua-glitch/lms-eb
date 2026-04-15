@@ -13,8 +13,8 @@ const RoleContext = createContext<RoleContextType | undefined>(undefined);
 export function RoleProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<UserRole>("agent");
 
-  const currentAgentId = role === "agent" ? "agent-1" : role === "team_leader" ? "agent-9" : "agent-9";
-  const currentTeamId = role === "agent" ? "team-1" : "team-1";
+  const currentAgentId = role === "agent" ? "agent-1" : "agent-9";
+  const currentTeamId = "team-1";
 
   return (
     <RoleContext.Provider value={{ role, setRole, currentAgentId, currentTeamId }}>
@@ -31,7 +31,6 @@ export function useRole() {
 
 export const roleLabels: Record<UserRole, string> = {
   agent: "Agent",
-  team_leader: "Team Leader",
   manager: "Manager",
   cluster_head: "Cluster Head",
   data_admin: "Data Admin",

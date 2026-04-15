@@ -1,4 +1,4 @@
-export type UserRole = "agent" | "team_leader" | "manager" | "cluster_head" | "data_admin";
+export type UserRole = "agent" | "manager" | "cluster_head" | "data_admin";
 
 export type LeadStage = "new" | "contacted" | "interested" | "bre_done" | "stb_submitted" | "approved" | "declined" | "disbursed" | "closed_lost";
 
