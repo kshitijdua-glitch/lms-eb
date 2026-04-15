@@ -126,7 +126,7 @@ const LeadDetailPage = () => {
     const checks = [];
     if (lead.consentStatus !== "received") checks.push("Customer consent not received");
     if (!lead.pan || lead.pan.includes("XXXX")) checks.push("PAN verification pending");
-    if (selectedBankIds.size === 0) checks.push("No banks selected");
+    if (selectedPairs.length === 0) checks.push("No banks selected");
 
     if (checks.length > 0) {
       toast.error("Pre-STB checklist failed", { description: checks.join(", ") });
