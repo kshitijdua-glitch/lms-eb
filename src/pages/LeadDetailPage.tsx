@@ -98,11 +98,27 @@ const LeadDetailPage = () => {
     toast.success("Credit score updated");
   };
 
-  const handleToggleBank = (partnerId: string) => {
-    const next = new Set(selectedBankIds);
-    next.has(partnerId) ? next.delete(partnerId) : next.add(partnerId);
-    setSelectedBankIds(next);
-    toast.success(next.has(partnerId) ? "Bank added" : "Bank removed");
+  const handleAddPair = () => {
+    if (!selectedProduct || !selectedBank) {
+      toast.error("Select both product and bank");
+      return;
+    }
+    const partner = lendingPartners.find(lp => lp.id === selectedBank);
+    if (!partner) return;
+    const exists = selectedPairs.some(p => p.partnerId === selectedBank && p.productType === selectedProduct);
+    if (exists) {
+      toast.error("This product + bank combination already added");
+      return;
+    }
+    setSelectedPairs([...selectedPairs, { partnerId: partner.id, partnerName: partner.name, productType: selectedProduct }]);
+    setSelectedProduct("");
+    setSelectedBank("");
+    toast.success("Bank added");
+  };
+
+  const handleRemovePair = (index: number) => {
+    setSelectedPairs(selectedPairs.filter((_, i) => i !== index));
+    toast.success("Bank removed");
   };
 
   const handleSendToBank = () => {
