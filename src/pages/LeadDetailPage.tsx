@@ -320,7 +320,8 @@ const LeadDetailPage = () => {
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground">No banks selected yet</p>
-              )
+              )}
+
             </CardContent>
           </Card>
         </div>
