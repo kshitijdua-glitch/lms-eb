@@ -39,7 +39,8 @@ const LeadDetailPage = () => {
   const [emiTenure, setEmiTenure] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [newNote, setNewNote] = useState("");
-  const [breMode, setBreMode] = useState<"basic" | "bureau">("basic");
+  const [editCreditScore, setEditCreditScore] = useState(lead?.creditScore?.toString() || "");
+  const [selectedBankIds, setSelectedBankIds] = useState<Set<string>>(new Set(lead?.selectedBanks?.map(b => b.partnerId) || []));
 
   // Call log form state
   const [callDate, setCallDate] = useState<Date | undefined>(new Date());
@@ -55,9 +56,6 @@ const LeadDetailPage = () => {
 
   const daysSinceAlloc = Math.floor((Date.now() - new Date(lead.allocatedAt).getTime()) / 86400000);
   const isProfileLocked = lead.stbSubmissions.length > 0;
-  const bureauFreshness = lead.bureauPulledAt
-    ? (Date.now() - new Date(lead.bureauPulledAt).getTime()) / 86400000 < 30 ? "Fresh" : "Stale"
-    : "Not Pulled";
 
   const emi = emiAmount && emiRate && emiTenure ? (() => {
     const p = parseFloat(emiAmount);
@@ -92,17 +90,23 @@ const LeadDetailPage = () => {
     setNewNote("");
   };
 
-  const handleCheckEligibility = () => {
-    toast.success(`BRE check triggered (${breMode} mode)`);
+  const handleSaveCreditScore = () => {
+    toast.success("Credit score updated");
+  };
+
+  const handleToggleBank = (partnerId: string) => {
+    const next = new Set(selectedBankIds);
+    next.has(partnerId) ? next.delete(partnerId) : next.add(partnerId);
+    setSelectedBankIds(next);
+    toast.success(next.has(partnerId) ? "Bank added" : "Bank removed");
   };
 
   const handleSendToBank = () => {
     // Pre-STB checklist
     const checks = [];
-    if (!lead.creditScore) checks.push("Bureau report not pulled");
-    if (!lead.breResult) checks.push("BRE not run");
     if (lead.consentStatus !== "received") checks.push("Customer consent not received");
     if (!lead.pan || lead.pan.includes("XXXX")) checks.push("PAN verification pending");
+    if (selectedBankIds.size === 0) checks.push("No banks selected");
 
     if (checks.length > 0) {
       toast.error("Pre-STB checklist failed", { description: checks.join(", ") });
@@ -117,7 +121,6 @@ const LeadDetailPage = () => {
     ...lead.followUps.map(fu => ({ type: "followup" as const, timestamp: fu.scheduledAt, data: fu })),
     ...lead.stbSubmissions.map(s => ({ type: "stb" as const, timestamp: s.submittedAt, data: s })),
     ...(lead.notes || []).map(n => ({ type: "note" as const, timestamp: n.createdAt, data: n })),
-    ...(lead.bureauPulledAt ? [{ type: "bureau" as const, timestamp: lead.bureauPulledAt, data: { score: lead.creditScore } }] : []),
   ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
   const groups = dispositionGroups();
@@ -131,7 +134,6 @@ const LeadDetailPage = () => {
         </Button>
         <div className="flex-1" />
         <Button size="sm" onClick={() => setShowCallLog(true)}><Phone className="h-4 w-4 mr-1" /> Log Call</Button>
-        <Button size="sm" variant="outline" onClick={handleCheckEligibility}><SearchIcon className="h-4 w-4 mr-1" /> Check Eligibility</Button>
         <Button size="sm" variant="outline" onClick={handleSendToBank}><Send className="h-4 w-4 mr-1" /> Send to Bank</Button>
         <Button size="sm" variant="outline" onClick={() => setShowEMI(true)}><Calculator className="h-4 w-4 mr-1" /> EMI Calc</Button>
         {(role === "manager" || role === "cluster_head") && (
@@ -204,22 +206,23 @@ const LeadDetailPage = () => {
           </CardContent>
         </Card>
 
-        {/* Bureau + BRE */}
+        {/* Credit & Obligations + Bank Selection */}
         <div className="space-y-4">
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><Shield className="h-4 w-4" /> Bureau Report</CardTitle></CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between mb-3">
+            <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><Shield className="h-4 w-4" /> Credit & Obligations</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between">
                 <span className="text-xs text-muted-foreground">Credit Score</span>
-                <span className={`text-2xl font-bold ${(lead.creditScore || 0) >= 700 ? "text-success" : (lead.creditScore || 0) >= 650 ? "text-warning" : "text-destructive"}`}>
-                  {lead.creditScore || "N/A"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between mb-2">
-                <Badge variant={bureauFreshness === "Fresh" ? "default" : bureauFreshness === "Stale" ? "secondary" : "destructive"} className="text-[10px]">
-                  {bureauFreshness}
-                </Badge>
-                {lead.bureauPulledAt && <span className="text-[10px] text-muted-foreground">Pulled: {new Date(lead.bureauPulledAt).toLocaleDateString()}</span>}
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    className="w-20 h-7 text-xs"
+                    value={editCreditScore}
+                    onChange={e => setEditCreditScore(e.target.value)}
+                    placeholder="—"
+                  />
+                  <Button size="sm" variant="outline" className="h-7 text-[10px] px-2" onClick={handleSaveCreditScore}>Save</Button>
+                </div>
               </div>
               <div className="flex items-center justify-between text-xs mb-2">
                 <span className="text-muted-foreground">Consent SMS</span>
@@ -227,52 +230,51 @@ const LeadDetailPage = () => {
                   {lead.consentStatus.replace("_", " ")}
                 </Badge>
               </div>
-              <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => toast.success("Bureau pull initiated / Consent SMS sent")}>
-                {lead.bureauStatus === "not_pulled" ? "Send Consent & Pull Bureau" : "Re-Pull Bureau"}
+              <div className="text-xs font-medium mt-2">Existing Loans</div>
+              {lead.existingLoans.length > 0 ? (
+                <div className="space-y-1">
+                  {lead.existingLoans.map(loan => (
+                    <div key={loan.id} className="p-2 rounded border text-xs flex justify-between">
+                      <div>
+                        <div className="font-medium">{loan.bankName} — {loan.loanType}</div>
+                        <div className="text-muted-foreground">Outstanding: ₹{loan.outstandingAmount.toLocaleString()} · EMI: ₹{loan.emi.toLocaleString()} · {loan.tenure}mo</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">No existing loans recorded</p>
+              )}
+              <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => toast.info("Add loan form — coming soon")}>
+                + Add Existing Loan
               </Button>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm">BRE Eligibility</CardTitle>
-                <div className="flex gap-1">
-                  <Button size="sm" variant={breMode === "basic" ? "default" : "outline"} className="h-6 text-[10px] px-2" onClick={() => setBreMode("basic")}>Basic</Button>
-                  <Button size="sm" variant={breMode === "bureau" ? "default" : "outline"} className="h-6 text-[10px] px-2" onClick={() => setBreMode("bureau")}>Bureau</Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {lead.breResult ? (
-                <div className="space-y-2">
-                  <div className="text-xs font-medium text-success flex items-center gap-1">
-                    <CheckCircle className="h-3 w-3" /> Eligible ({lead.breResult.eligiblePartners.length})
+            <CardHeader className="pb-2"><CardTitle className="text-sm">Bank / NBFC Selection</CardTitle></CardHeader>
+            <CardContent className="space-y-2">
+              <p className="text-xs text-muted-foreground mb-2">Select banks to send this lead to:</p>
+              {lendingPartners.filter(lp => lp.status === "active").map(lp => (
+                <div key={lp.id} className="flex items-center justify-between p-2 rounded border text-xs">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedBankIds.has(lp.id)}
+                      onChange={() => handleToggleBank(lp.id)}
+                      className="rounded"
+                    />
+                    <span className="font-medium">{lp.name}</span>
                   </div>
-                  {lead.breResult.eligiblePartners.map(p => (
-                    <div key={p.partnerId} className="p-2 rounded border text-xs">
-                      <div className="font-medium">{p.partnerName}</div>
-                      <div className="text-muted-foreground">Up to ₹{(p.maxAmount / 100000).toFixed(1)}L @ {p.minRate}% for {p.tenure}mo</div>
-                    </div>
-                  ))}
-                  {lead.breResult.ineligiblePartners.length > 0 && (
-                    <>
-                      <div className="text-xs font-medium text-destructive flex items-center gap-1 mt-2">
-                        <XCircle className="h-3 w-3" /> Ineligible ({lead.breResult.ineligiblePartners.length})
-                      </div>
-                      {lead.breResult.ineligiblePartners.map(p => (
-                        <div key={p.partnerId} className="p-2 rounded border border-destructive/20 text-xs">
-                          <div className="font-medium">{p.partnerName}</div>
-                          <div className="text-destructive text-[10px]">{p.reason}</div>
-                        </div>
-                      ))}
-                    </>
-                  )}
+                  <Badge variant="outline" className="text-[10px]">{lp.products.map(p => getProductLabel(p)).join(", ")}</Badge>
                 </div>
-              ) : (
-                <div className="text-center py-4">
-                  <p className="text-xs text-muted-foreground mb-2">BRE not yet run</p>
-                  <Button size="sm" onClick={handleCheckEligibility}>Run BRE Check</Button>
+              ))}
+              {selectedBankIds.size > 0 && (
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {[...selectedBankIds].map(id => {
+                    const lp = lendingPartners.find(p => p.id === id);
+                    return lp ? <Badge key={id} className="text-[10px]">{lp.name}</Badge> : null;
+                  })}
                 </div>
               )}
             </CardContent>

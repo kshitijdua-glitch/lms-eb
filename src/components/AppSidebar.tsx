@@ -55,7 +55,6 @@ const adminNav = [
   { title: "MIS Export", url: "/admin/mis", icon: BarChart3 },
   { title: "System Config", url: "/system-config", icon: Settings },
   { title: "Staff Mgmt", url: "/admin/staff", icon: UserCog },
-  { title: "System Config", url: "/system-config", icon: Settings },
   { title: "Audit Trail", url: "/audit-trail", icon: Shield },
   { title: "Performance", url: "/performance", icon: TrendingUp },
 ];
