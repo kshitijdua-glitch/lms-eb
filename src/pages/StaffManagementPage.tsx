@@ -116,7 +116,7 @@ const StaffManagementPage = () => {
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Group</TableHead>
-                    <TableHead className="text-right">TL Capacity</TableHead>
+                    <TableHead className="text-right">Agent Capacity</TableHead>
                     <TableHead>Teams</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Actions</TableHead>
