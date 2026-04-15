@@ -25,7 +25,7 @@ const FollowUpsPage = () => {
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [productFilter, setProductFilter] = useState("all");
 
-  const allLeads = role === "agent" ? getLeadsForAgent("agent-1") : role === "team_leader" ? getLeadsForTeam("team-1") : leads;
+  const allLeads = role === "agent" ? getLeadsForAgent("agent-1") : leads;
 
   // Flatten follow-ups with lead info
   const allFollowUps = allLeads.flatMap(l =>
