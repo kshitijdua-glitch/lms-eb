@@ -40,7 +40,11 @@ const LeadDetailPage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [newNote, setNewNote] = useState("");
   const [editCreditScore, setEditCreditScore] = useState(lead?.creditScore?.toString() || "");
-  const [selectedBankIds, setSelectedBankIds] = useState<Set<string>>(new Set(lead?.selectedBanks?.map(b => b.partnerId) || []));
+  const [selectedPairs, setSelectedPairs] = useState<Array<{partnerId: string, partnerName: string, productType: string}>>(
+    lead?.selectedBanks?.map(b => ({ partnerId: b.partnerId, partnerName: b.partnerName, productType: b.productType })) || []
+  );
+  const [selectedProduct, setSelectedProduct] = useState("");
+  const [selectedBank, setSelectedBank] = useState("");
 
   // Call log form state
   const [callDate, setCallDate] = useState<Date | undefined>(new Date());
