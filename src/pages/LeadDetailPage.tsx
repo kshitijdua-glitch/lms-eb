@@ -332,7 +332,7 @@ const LeadDetailPage = () => {
               <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-warning" /> Retry Status</CardTitle></CardHeader>
               <CardContent>
                 <div className="text-xs">Retry Count: <strong>{lead.retryCount}</strong>/5</div>
-                {lead.retryCount >= 5 && <Badge variant="destructive" className="mt-1 text-[10px]">Escalated to TL</Badge>}
+                {lead.retryCount >= 5 && <Badge variant="destructive" className="mt-1 text-[10px]">Escalated to Manager</Badge>}
               </CardContent>
             </Card>
           )}

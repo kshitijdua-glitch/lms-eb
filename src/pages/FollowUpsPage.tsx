@@ -126,7 +126,7 @@ const FollowUpsPage = () => {
                     <TableCell className="text-sm">{daysSinceAlloc}d</TableCell>
                     <TableCell className="text-xs text-muted-foreground">
                       {f.retryCount > 0 ? (
-                        <span>{f.retryCount}/5 retries {f.retryCount >= 5 && <Badge variant="destructive" className="text-[9px] ml-1">TL Review</Badge>}</span>
+                        <span>{f.retryCount}/5 retries {f.retryCount >= 5 && <Badge variant="destructive" className="text-[9px] ml-1">Manager Review</Badge>}</span>
                       ) : "—"}
                     </TableCell>
                   </TableRow>
