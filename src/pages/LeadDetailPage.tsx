@@ -136,8 +136,6 @@ const LeadDetailPage = () => {
     toast.success("Bank removed");
   };
 
-  const [stbSubmitted, setStbSubmitted] = useState(lead.stbSubmissions.length > 0);
-  const [localStbSubmissions, setLocalStbSubmissions] = useState(lead.stbSubmissions);
 
   const handleSendToBank = () => {
     // Pre-STB checklist
