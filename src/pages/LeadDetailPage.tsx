@@ -359,11 +359,11 @@ const LeadDetailPage = () => {
                     <div className={`h-6 w-6 rounded-full flex items-center justify-center shrink-0 ${
                       ev.type === "call" ? ((ev.data as any).outcome === "connected" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive")
                       : ev.type === "stb" ? "bg-primary/10 text-primary"
-                      : ev.type === "bureau" ? "bg-info/10 text-info"
+                      : ev.type === "note" ? "bg-muted text-muted-foreground"
                       : ev.type === "note" ? "bg-muted text-muted-foreground"
                       : "bg-warning/10 text-warning"
                     }`}>
-                      {ev.type === "call" ? <Phone className="h-3 w-3" /> : ev.type === "stb" ? <Send className="h-3 w-3" /> : ev.type === "bureau" ? <Shield className="h-3 w-3" /> : ev.type === "note" ? <FileText className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+                      {ev.type === "call" ? <Phone className="h-3 w-3" /> : ev.type === "stb" ? <Send className="h-3 w-3" /> : ev.type === "note" ? <FileText className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       {ev.type === "call" && (() => {
@@ -403,16 +403,6 @@ const LeadDetailPage = () => {
                           <div className="text-[10px] text-muted-foreground mt-0.5">{new Date(s.submittedAt).toLocaleString()}</div>
                         </>;
                       })()}
-                      {ev.type === "bureau" && (
-                        <>
-                          <div className="flex items-center gap-1">
-                            <Badge variant="outline" className="text-[9px]">Bureau</Badge>
-                            <span className="font-medium">Bureau Report Pulled</span>
-                            <span>Score: {(ev.data as any).score}</span>
-                          </div>
-                          <div className="text-[10px] text-muted-foreground mt-0.5">{new Date(ev.timestamp).toLocaleString()}</div>
-                        </>
-                      )}
                       {ev.type === "note" && (() => {
                         const n = ev.data as typeof lead.notes[0];
                         return <>
