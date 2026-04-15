@@ -20,7 +20,7 @@ const managers = [
 
 const StaffManagementPage = () => {
   const [showCreate, setShowCreate] = useState(false);
-  const [createTab, setCreateTab] = useState<"agent" | "tl" | "manager">("agent");
+  const [createTab, setCreateTab] = useState<"agent" | "manager">("agent");
   const [deactivateTarget, setDeactivateTarget] = useState<string | null>(null);
   const [formName, setFormName] = useState("");
   const [formEmail, setFormEmail] = useState("");
@@ -29,7 +29,7 @@ const StaffManagementPage = () => {
 
   const handleCreate = () => {
     if (!formName || !formEmail) { toast.error("Name and email required"); return; }
-    toast.success(`${createTab === "agent" ? "Agent" : createTab === "tl" ? "Team Leader" : "Manager"} "${formName}" created`);
+    toast.success(`${createTab === "agent" ? "Agent" : "Manager"} "${formName}" created`);
     setShowCreate(false);
     setFormName(""); setFormEmail(""); setFormPhone(""); setFormTeam("");
   };
@@ -44,7 +44,7 @@ const StaffManagementPage = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Staff Management</h1>
-          <p className="text-muted-foreground text-sm">Create, edit, and manage agents, TLs, and managers</p>
+          <p className="text-muted-foreground text-sm">Create, edit, and manage agents and managers</p>
         </div>
         <Button onClick={() => setShowCreate(true)}><Plus className="h-4 w-4 mr-1" /> Create Staff</Button>
       </div>
@@ -52,7 +52,6 @@ const StaffManagementPage = () => {
       <Tabs defaultValue="agents">
         <TabsList>
           <TabsTrigger value="agents">Agents ({agents.filter(a => !teams.some(t => t.tlId === a.id)).length})</TabsTrigger>
-          <TabsTrigger value="tls">Team Leaders ({teams.length})</TabsTrigger>
           <TabsTrigger value="managers">Managers ({managers.length})</TabsTrigger>
         </TabsList>
 
@@ -108,46 +107,6 @@ const StaffManagementPage = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="tls">
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Team</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead className="text-right">Team Size</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {teams.map(t => {
-                    const tl = agents.find(a => a.id === t.tlId);
-                    return (
-                      <TableRow key={t.id}>
-                        <TableCell className="font-medium">{t.tlName}</TableCell>
-                        <TableCell className="text-xs">{t.name}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{tl?.email}</TableCell>
-                        <TableCell className="text-right">{t.agentCount}</TableCell>
-                        <TableCell><Badge variant="default">Active</Badge></TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => toast.success("Password reset link sent")}>
-                              <Key className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
         <TabsContent value="managers">
           <Card>
             <CardContent className="p-0">
@@ -197,7 +156,6 @@ const StaffManagementPage = () => {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="agent">Agent</SelectItem>
-                  <SelectItem value="tl">Team Leader</SelectItem>
                   <SelectItem value="manager">Manager</SelectItem>
                 </SelectContent>
               </Select>

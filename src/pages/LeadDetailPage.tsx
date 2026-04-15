@@ -676,7 +676,7 @@ const LeadDetailPage = () => {
               <span className="text-muted-foreground">Current Disposition:</span> <strong>{getDispositionLabel(lead.disposition)}</strong>
             </div>
             <p className="text-xs text-muted-foreground">
-              Overriding will reset the lead to its previous active stage, notify the TL and agent, and log this action in the history.
+              Overriding will reset the lead to its previous active stage, notify the agent, and log this action in the history.
             </p>
             <div>
               <Label>Reason *</Label>

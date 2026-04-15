@@ -12,15 +12,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Edit, Search, AlertTriangle, Key } from "lucide-react";
 import { toast } from "sonner";
 
-const mockTLs = [
-  { id: "tl-1", name: "Priya Sharma", email: "priya@lms.com", phone: "9876543218", team: "Alpha Squad", teamSizeLimit: 8, managerId: "mgr-1", managerName: "Vikram Mehta", agentCount: 5, status: "active" },
-  { id: "tl-2", name: "Ravi Kumar", email: "ravi@lms.com", phone: "9876543219", team: "Beta Force", teamSizeLimit: 8, managerId: "mgr-1", managerName: "Vikram Mehta", agentCount: 5, status: "active" },
+const mockManagers = [
+  { id: "mgr-1", name: "Priya Sharma", email: "priya@lms.com", phone: "9876543218", groupName: "North Zone", agentCapacity: 10, agentCount: 5, status: "active" },
+  { id: "mgr-2", name: "Ravi Kumar", email: "ravi@lms.com", phone: "9876543219", groupName: "South Zone", agentCapacity: 10, agentCount: 5, status: "active" },
+  { id: "mgr-3", name: "Vikram Mehta", email: "vikram@lms.com", phone: "9876543220", groupName: "West Zone", agentCapacity: 15, agentCount: 8, status: "active" },
+  { id: "mgr-4", name: "Anjali Kapoor", email: "anjali@lms.com", phone: "9876543221", groupName: "East Zone", agentCapacity: 15, agentCount: 0, status: "active" },
 ];
 
-const mockManagers = [
-  { id: "mgr-1", name: "Vikram Mehta", email: "vikram@lms.com", phone: "9876543220", groupName: "North Zone", tlCapacity: 5, tlCount: 2, status: "active" },
-  { id: "mgr-2", name: "Anjali Kapoor", email: "anjali@lms.com", phone: "9876543221", groupName: "South Zone", tlCapacity: 5, tlCount: 0, status: "active" },
-];
 
 const mockCHs = [
   { id: "ch-1", name: "CH Admin", email: "ch@lms.com", phone: "9876543222", orgScope: "All India", status: "active" },
@@ -54,7 +52,6 @@ const AdminStaffPage = () => {
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
           <TabsTrigger value="agents">Agents ({agents.length})</TabsTrigger>
-          <TabsTrigger value="tls">Team Leaders ({mockTLs.length})</TabsTrigger>
           <TabsTrigger value="managers">Managers ({mockManagers.length})</TabsTrigger>
           <TabsTrigger value="chs">Cluster Heads ({mockCHs.length})</TabsTrigger>
         </TabsList>
@@ -100,44 +97,6 @@ const AdminStaffPage = () => {
           </CardContent></Card>
         </TabsContent>
 
-        <TabsContent value="tls">
-          <Card><CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Team</TableHead>
-                  <TableHead>Manager</TableHead>
-                  <TableHead>Agents</TableHead>
-                  <TableHead>Size Limit</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {mockTLs.map(t => (
-                  <TableRow key={t.id}>
-                    <TableCell className="font-medium">{t.name}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{t.email}</TableCell>
-                    <TableCell><Badge variant="outline" className="text-xs">{t.team}</Badge></TableCell>
-                    <TableCell className="text-sm">{t.managerName}</TableCell>
-                    <TableCell className="text-center">{t.agentCount}</TableCell>
-                    <TableCell className="text-center">{t.teamSizeLimit}</TableCell>
-                    <TableCell><Badge variant="default" className="text-xs">{t.status}</Badge></TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => toast.info("Edit TL: " + t.name)}><Edit className="h-3 w-3" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => toast.info("Password reset sent")}><Key className="h-3 w-3" /></Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent></Card>
-        </TabsContent>
-
         <TabsContent value="managers">
           <Card><CardContent className="p-0">
             <Table>
@@ -146,8 +105,8 @@ const AdminStaffPage = () => {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Group</TableHead>
-                  <TableHead>TL Capacity</TableHead>
-                  <TableHead>TLs</TableHead>
+                  <TableHead>Agent Capacity</TableHead>
+                  <TableHead>Agents</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
@@ -158,8 +117,8 @@ const AdminStaffPage = () => {
                     <TableCell className="font-medium">{m.name}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{m.email}</TableCell>
                     <TableCell><Badge variant="outline" className="text-xs">{m.groupName}</Badge></TableCell>
-                    <TableCell className="text-center">{m.tlCapacity}</TableCell>
-                    <TableCell className="text-center">{m.tlCount}</TableCell>
+                    <TableCell className="text-center">{m.agentCapacity}</TableCell>
+                    <TableCell className="text-center">{m.agentCount}</TableCell>
                     <TableCell><Badge variant="default" className="text-xs">{m.status}</Badge></TableCell>
                     <TableCell>
                       <div className="flex gap-1">
@@ -218,7 +177,6 @@ const AdminStaffPage = () => {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="agent">Agent</SelectItem>
-                  <SelectItem value="tl">Team Leader</SelectItem>
                   <SelectItem value="manager">Manager</SelectItem>
                   <SelectItem value="ch">Cluster Head</SelectItem>
                 </SelectContent>
@@ -229,7 +187,6 @@ const AdminStaffPage = () => {
             <div><Label>Phone</Label><Input placeholder="10-digit mobile" /></div>
             <div>
               <Label>Manager</Label>
-              <Select>
                 <SelectTrigger><SelectValue placeholder="Select manager" /></SelectTrigger>
                 <SelectContent>
                   {mockManagers.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
