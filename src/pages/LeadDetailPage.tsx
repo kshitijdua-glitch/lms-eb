@@ -55,6 +55,7 @@ const LeadDetailPage = () => {
   const [callNotes, setCallNotes] = useState("");
   const [callNextAction, setCallNextAction] = useState("");
   const [followUpDate, setFollowUpDate] = useState<Date | undefined>();
+  const [followUpTime, setFollowUpTime] = useState("");
   const [stbSubmitted, setStbSubmitted] = useState(lead?.stbSubmissions?.length ? lead.stbSubmissions.length > 0 : false);
   const [localStbSubmissions, setLocalStbSubmissions] = useState(lead?.stbSubmissions || []);
 
@@ -87,7 +88,7 @@ const LeadDetailPage = () => {
     setShowCallLog(false);
     toast.success("Call logged successfully");
     // Reset
-    setCallOutcome(""); setCallDisposition(""); setCallNotes(""); setCallNextAction(""); setCallDuration("120");
+    setCallOutcome(""); setCallDisposition(""); setCallNotes(""); setCallNextAction(""); setCallDuration("120"); setFollowUpDate(undefined); setFollowUpTime("");
   };
 
   const handleAddNote = () => {
@@ -633,6 +634,16 @@ const LeadDetailPage = () => {
                     />
                   </PopoverContent>
                 </Popover>
+              </div>
+              <div>
+                <Label className="text-xs">Follow-Up Time (optional)</Label>
+                <Input
+                  type="time"
+                  value={followUpTime}
+                  onChange={e => setFollowUpTime(e.target.value)}
+                  className="h-8 text-xs"
+                  placeholder="HH:MM"
+                />
               </div>
             )}
           </div>
