@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Users, Phone, Send, Clock, BarChart3, Upload, Settings, UserCog, FileText, Building2, ChevronDown, TrendingUp, Shield,
+  LayoutDashboard, Users, Phone, Send, Clock, BarChart3, Upload, Settings, UserCog, FileText, ChevronDown, TrendingUp, Shield,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -53,9 +53,8 @@ const adminNav = [
   { title: "Lead Allocation", url: "/admin/allocation", icon: Users },
   { title: "Lead Pools", url: "/admin/pools", icon: FileText },
   { title: "MIS Export", url: "/admin/mis", icon: BarChart3 },
-  { title: "Bureau Data", url: "/admin/bureau", icon: Building2 },
-  { title: "Staff Mgmt", url: "/admin/staff", icon: UserCog },
   { title: "System Config", url: "/system-config", icon: Settings },
+  { title: "Staff Mgmt", url: "/admin/staff", icon: UserCog },
   { title: "Audit Trail", url: "/audit-trail", icon: Shield },
   { title: "Performance", url: "/performance", icon: TrendingUp },
 ];

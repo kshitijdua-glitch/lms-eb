@@ -1,6 +1,6 @@
 export type UserRole = "agent" | "manager" | "cluster_head" | "data_admin";
 
-export type LeadStage = "new" | "contacted" | "interested" | "bre_done" | "stb_submitted" | "approved" | "declined" | "disbursed" | "closed_lost";
+export type LeadStage = "new" | "contacted" | "interested" | "bank_selected" | "stb_submitted" | "approved" | "declined" | "disbursed" | "closed_lost";
 
 export type DispositionType =
   // Follow-Up
@@ -118,9 +118,8 @@ export interface Lead {
   assignedAgentId: string;
   assignedTeamId: string;
   creditScore: number | null;
-  bureauStatus: "not_pulled" | "pulled" | "expired";
-  bureauPulledAt: string | null;
-  breResult: BREResult | null;
+  existingLoans: ExistingLoan[];
+  selectedBanks: SelectedBank[];
   stbSubmissions: STBSubmission[];
   callLogs: CallLog[];
   followUps: FollowUp[];
@@ -133,11 +132,21 @@ export interface Lead {
   expiresAt: string;
 }
 
-export interface BREResult {
-  timestamp: string;
-  mode: "basic" | "bureau";
-  eligiblePartners: { partnerId: string; partnerName: string; maxAmount: number; minRate: number; tenure: number }[];
-  ineligiblePartners: { partnerId: string; partnerName: string; reason: string }[];
+export interface ExistingLoan {
+  id: string;
+  bankName: string;
+  loanType: string;
+  outstandingAmount: number;
+  emi: number;
+  tenure: number;
+}
+
+export interface SelectedBank {
+  partnerId: string;
+  partnerName: string;
+  productType: ProductType;
+  selectedAt: string;
+  selectedBy: string;
 }
 
 export interface STBSubmission {

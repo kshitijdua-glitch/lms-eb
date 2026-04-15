@@ -18,7 +18,7 @@ import PartnersPage from "./pages/admin/PartnersPage";
 import AdminAllocationPage from "./pages/admin/AdminAllocationPage";
 import LeadPoolsPage from "./pages/admin/LeadPoolsPage";
 import MISExportPage from "./pages/admin/MISExportPage";
-import BureauCampaignPage from "./pages/admin/BureauCampaignPage";
+
 import AdminStaffPage from "./pages/admin/AdminStaffPage";
 import PerformancePage from "./pages/PerformancePage";
 import GroupLeadsPage from "./pages/GroupLeadsPage";
@@ -61,7 +61,7 @@ const App = () => (
               <Route path="/admin/allocation" element={<AdminAllocationPage />} />
               <Route path="/admin/pools" element={<LeadPoolsPage />} />
               <Route path="/admin/mis" element={<MISExportPage />} />
-              <Route path="/admin/bureau" element={<BureauCampaignPage />} />
+              
               <Route path="/admin/staff" element={<AdminStaffPage />} />
               <Route path="/group-leads" element={<GroupLeadsPage />} />
               <Route path="/group-follow-ups" element={<GroupFollowUpsPage />} />
