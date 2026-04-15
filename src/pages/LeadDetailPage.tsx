@@ -360,7 +360,6 @@ const LeadDetailPage = () => {
                       ev.type === "call" ? ((ev.data as any).outcome === "connected" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive")
                       : ev.type === "stb" ? "bg-primary/10 text-primary"
                       : ev.type === "note" ? "bg-muted text-muted-foreground"
-                      : ev.type === "note" ? "bg-muted text-muted-foreground"
                       : "bg-warning/10 text-warning"
                     }`}>
                       {ev.type === "call" ? <Phone className="h-3 w-3" /> : ev.type === "stb" ? <Send className="h-3 w-3" /> : ev.type === "note" ? <FileText className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
