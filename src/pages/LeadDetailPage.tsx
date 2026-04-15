@@ -776,6 +776,53 @@ const LeadDetailPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Browse Leads Sheet */}
+      <Sheet open={showLeadList} onOpenChange={setShowLeadList}>
+        <SheetContent side="left" className="w-80 sm:max-w-sm p-0">
+          <SheetHeader className="p-4 pb-2 border-b border-dashed">
+            <SheetTitle className="text-sm">Browse Leads</SheetTitle>
+            <Input
+              placeholder="Search by name..."
+              value={leadListSearch}
+              onChange={e => setLeadListSearch(e.target.value)}
+              className="h-8 text-xs"
+            />
+          </SheetHeader>
+          <ScrollArea className="h-[calc(100vh-120px)]">
+            <div className="divide-y divide-dashed">
+              {filteredLeads.map(l => {
+                const daysSince = Math.floor((Date.now() - new Date(l.lastActivityAt || l.allocatedAt).getTime()) / 86400000);
+                const isCurrent = l.id === id;
+                return (
+                  <button
+                    key={l.id}
+                    className={cn(
+                      "w-full text-left px-4 py-3 hover:bg-muted/50 transition-colors",
+                      isCurrent && "bg-muted border-l-2 border-primary"
+                    )}
+                    onClick={() => {
+                      navigate(`/leads/${l.id}`);
+                      setShowLeadList(false);
+                      setLeadListSearch("");
+                    }}
+                  >
+                    <div className="text-xs font-medium truncate">{l.name}</div>
+                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                      <Badge variant="outline" className="text-[10px] px-1 py-0">{getStageLabel(l.stage)}</Badge>
+                      <Badge variant="secondary" className="text-[10px] px-1 py-0">{getProductLabel(l.productType)}</Badge>
+                      <span className="text-[10px] text-muted-foreground ml-auto">{daysSince}d ago</span>
+                    </div>
+                  </button>
+                );
+              })}
+              {filteredLeads.length === 0 && (
+                <div className="p-4 text-xs text-muted-foreground text-center">No leads found</div>
+              )}
+            </div>
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
