@@ -273,30 +273,54 @@ const LeadDetailPage = () => {
 
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-sm">Bank / NBFC Selection</CardTitle></CardHeader>
-            <CardContent className="space-y-2">
-              <p className="text-xs text-muted-foreground mb-2">Select banks to send this lead to:</p>
-              {lendingPartners.filter(lp => lp.status === "active").map(lp => (
-                <div key={lp.id} className="flex items-center justify-between p-2 rounded border text-xs">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={selectedBankIds.has(lp.id)}
-                      onChange={() => handleToggleBank(lp.id)}
-                      className="rounded"
-                    />
-                    <span className="font-medium">{lp.name}</span>
-                  </div>
-                  <Badge variant="outline" className="text-[10px]">{lp.products.map(p => getProductLabel(p)).join(", ")}</Badge>
+            <CardContent className="space-y-3">
+              <div className="flex gap-2 items-end">
+                <div className="flex-1 space-y-1">
+                  <Label className="text-[10px]">Product Type</Label>
+                  <Select value={selectedProduct} onValueChange={(v) => { setSelectedProduct(v); setSelectedBank(""); }}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Select product" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[...new Set(lendingPartners.filter(lp => lp.status === "active").flatMap(lp => lp.products))].map(p => (
+                        <SelectItem key={p} value={p} className="text-xs">{getProductLabel(p)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              ))}
-              {selectedBankIds.size > 0 && (
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {[...selectedBankIds].map(id => {
-                    const lp = lendingPartners.find(p => p.id === id);
-                    return lp ? <Badge key={id} className="text-[10px]">{lp.name}</Badge> : null;
-                  })}
+                <div className="flex-1 space-y-1">
+                  <Label className="text-[10px]">Bank / NBFC</Label>
+                  <Select value={selectedBank} onValueChange={setSelectedBank} disabled={!selectedProduct}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder={selectedProduct ? "Select bank" : "Pick product first"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {lendingPartners
+                        .filter(lp => lp.status === "active" && lp.products.includes(selectedProduct as any))
+                        .map(lp => (
+                          <SelectItem key={lp.id} value={lp.id} className="text-xs">{lp.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              )}
+                <Button size="sm" className="h-8 text-xs px-3" onClick={handleAddPair}>+ Add</Button>
+              </div>
+              {selectedPairs.length > 0 ? (
+                <div className="space-y-1">
+                  {selectedPairs.map((pair, i) => (
+                    <div key={`${pair.partnerId}-${pair.productType}`} className="flex items-center justify-between p-2 rounded border text-xs">
+                      <span>
+                        <span className="font-medium">{getProductLabel(pair.productType as any)}</span>
+                        <span className="text-muted-foreground"> → </span>
+                        <span>{pair.partnerName}</span>
+                      </span>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive" onClick={() => handleRemovePair(i)}>×</Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">No banks selected yet</p>
+              )
             </CardContent>
           </Card>
         </div>
