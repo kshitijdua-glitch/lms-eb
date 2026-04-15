@@ -57,6 +57,8 @@ const LeadDetailPage = () => {
   const [callNotes, setCallNotes] = useState("");
   const [callNextAction, setCallNextAction] = useState("");
   const [followUpDate, setFollowUpDate] = useState<Date | undefined>();
+  const [stbSubmitted, setStbSubmitted] = useState(lead?.stbSubmissions?.length ? lead.stbSubmissions.length > 0 : false);
+  const [localStbSubmissions, setLocalStbSubmissions] = useState(lead?.stbSubmissions || []);
 
   if (!lead) return <div className="p-8 text-center text-muted-foreground">Lead not found</div>;
 
