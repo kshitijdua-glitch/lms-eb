@@ -57,7 +57,6 @@ export function AdminDashboard() {
           { label: "Lead Allocation", icon: Users, path: "/admin/allocation" },
           { label: "Lead Pools", icon: Database, path: "/admin/pools" },
           { label: "MIS Export", icon: BarChart3, path: "/admin/mis" },
-          { label: "Bureau Data", icon: Building2, path: "/admin/bureau" },
           { label: "Staff Mgmt", icon: UserCog, path: "/admin/staff" },
           { label: "System Config", icon: Settings, path: "/system-config" },
           { label: "Audit Trail", icon: Shield, path: "/audit-trail" },
