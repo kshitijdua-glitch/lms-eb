@@ -1,21 +1,32 @@
 
 
-# Plan: Add Optional Follow-Up Time to Scheduling
+# Plan: Add Lead List Shortcut Panel on Lead Detail Page
 
 ## Summary
-Add an optional time picker alongside the mandatory follow-up date picker in the call log dialog. When scheduling a follow-up, the agent must pick a date but can optionally specify a time (hour + minute).
+Add a collapsible/popover lead list panel on the lead detail page that lets users quickly browse and switch between leads without going back to the leads list page. Shows basic info (name, stage, product, days since activity) for each lead.
 
 ## What Changes
 
 ### `src/pages/LeadDetailPage.tsx`
 
-**State**: Add `followUpTime` state (`string`, default `""`) for storing selected time (e.g. `"14:30"`).
+1. **Add a "Browse Leads" button** in the header area (next to the Back button) that opens a Sheet (slide-out panel) from the left side.
 
-**UI**: Below the existing Follow-Up Date calendar popover (line ~636), add an optional time input:
-- An `<Input type="time" />` field labeled "Follow-Up Time (optional)"
-- Same compact styling as other fields (`h-8 text-xs`)
+2. **Sheet content**: 
+   - Search input at top to filter leads by name
+   - Scrollable list of leads (same dataset as LeadsPage — role-filtered)
+   - Each list item shows: Name, Stage badge, Product badge, Days since last activity
+   - Current lead is highlighted
+   - Clicking a lead navigates to `/leads/{id}` (closing the sheet)
 
-**Logic**: In `handleLogCall`, when building the follow-up date string, combine `followUpDate` with `followUpTime` if provided. If no time is set, default to start of day. Reset `followUpTime` when dialog closes.
+3. **Imports**: Add `Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger` from UI, `List` icon from lucide, and `getLeadsForAgent` from mockData.
 
-No other files change.
+4. **State**: Add `leadListSearch` state for filtering the lead list, and `showLeadList` for sheet open state.
+
+### No other files change.
+
+## Technical Notes
+- Uses the existing `Sheet` component for the slide-out panel
+- Filters leads by role (agent sees only their leads, others see all)
+- List is capped at ~50 items for performance
+- Current lead gets a distinct background highlight
 
