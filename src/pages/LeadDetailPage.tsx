@@ -45,6 +45,8 @@ const LeadDetailPage = () => {
   );
   const [selectedProduct, setSelectedProduct] = useState("");
   const [selectedBank, setSelectedBank] = useState("");
+  const [consentStatus, setConsentStatus] = useState(lead?.consentStatus || "not_sent");
+  const [sendingConsent, setSendingConsent] = useState(false);
 
   // Call log form state
   const [callDate, setCallDate] = useState<Date | undefined>(new Date());
