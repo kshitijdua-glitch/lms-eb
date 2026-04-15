@@ -16,13 +16,6 @@ const managers = [
 const OrgSTBPage = () => {
   const navigate = useNavigate();
   const [managerFilter, setManagerFilter] = useState("all");
-  const [tlFilter, setTlFilter] = useState("all");
-
-  const availableTeams = useMemo(() => {
-    if (managerFilter === "all") return teams;
-    const mgr = managers.find(m => m.id === managerFilter);
-    return mgr ? teams.filter(t => mgr.teams.includes(t.id)) : [];
-  }, [managerFilter]);
 
   const stbLeads = leads.filter(l => l.stbSubmissions.length > 0);
   const allSubs = useMemo(() => {
@@ -34,13 +27,9 @@ const OrgSTBPage = () => {
         const mgr = managers.find(m => m.id === managerFilter);
         if (!mgr || !mgr.teams.includes(s.assignedTeamId)) return false;
       }
-      if (tlFilter !== "all") {
-        const team = teams.find(t => t.tlId === tlFilter);
-        if (!team || s.assignedTeamId !== team.id) return false;
-      }
       return true;
     });
-  }, [stbLeads, managerFilter, tlFilter]);
+  }, [stbLeads, managerFilter]);
 
   const submitted = allSubs.filter(s => s.status === "submitted").length;
   const approved = allSubs.filter(s => s.status === "approved").length;
@@ -55,22 +44,13 @@ const OrgSTBPage = () => {
           <h1 className="text-2xl font-bold">Organisation STB Pipeline</h1>
           <p className="text-muted-foreground text-sm">{allSubs.length} total submissions</p>
         </div>
-        <div className="flex gap-2">
-          <Select value={managerFilter} onValueChange={v => { setManagerFilter(v); setTlFilter("all"); }}>
-            <SelectTrigger className="w-36"><SelectValue placeholder="Manager" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Managers</SelectItem>
-              {managers.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={tlFilter} onValueChange={setTlFilter}>
-            <SelectTrigger className="w-36"><SelectValue placeholder="TL" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All TLs</SelectItem>
-              {availableTeams.map(t => <SelectItem key={t.tlId} value={t.tlId}>{t.tlName}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
+        <Select value={managerFilter} onValueChange={setManagerFilter}>
+          <SelectTrigger className="w-36"><SelectValue placeholder="Manager" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Managers</SelectItem>
+            {managers.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -98,8 +78,8 @@ const OrgSTBPage = () => {
               <TableRow>
                 <TableHead>Lead</TableHead>
                 <TableHead>Manager</TableHead>
-                <TableHead>TL</TableHead>
                 <TableHead>Agent</TableHead>
+                <TableHead>Team</TableHead>
                 <TableHead>Product</TableHead>
                 <TableHead>Partner</TableHead>
                 <TableHead>Submitted</TableHead>
@@ -120,8 +100,8 @@ const OrgSTBPage = () => {
                   <TableRow key={s.id} className="cursor-pointer hover:bg-accent/50" onClick={() => navigate(`/leads/${s.leadId}`)}>
                     <TableCell className="font-medium text-sm">{s.leadName}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{getManagerForTeam(s.assignedTeamId)}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{team?.tlName || "—"}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{agent?.name}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{team?.name || "—"}</TableCell>
                     <TableCell><Badge variant="outline" className="text-xs">{getProductLabel(s.product)}</Badge></TableCell>
                     <TableCell className="text-sm">{s.partnerName}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{new Date(s.submittedAt).toLocaleDateString()}</TableCell>

@@ -29,7 +29,6 @@ const OrgLeadsPage = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [managerFilter, setManagerFilter] = useState("all");
-  const [tlFilter, setTlFilter] = useState("all");
   const [agentFilter, setAgentFilter] = useState("all");
   const [stageFilter, setStageFilter] = useState("all");
   const [productFilter, setProductFilter] = useState("all");
@@ -40,43 +39,24 @@ const OrgLeadsPage = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showReassign, setShowReassign] = useState(false);
   const [reassignManager, setReassignManager] = useState("");
-  const [reassignTL, setReassignTL] = useState("");
   const [reassignAgent, setReassignAgent] = useState("");
   const [reassignReason, setReassignReason] = useState("");
 
   const sources = [...new Set(leads.map(l => l.leadSource))];
 
-  // Cascading filters
-  const availableTeams = useMemo(() => {
-    if (managerFilter === "all") return teams;
-    const mgr = managers.find(m => m.id === managerFilter);
-    return mgr ? teams.filter(t => mgr.teams.includes(t.id)) : [];
-  }, [managerFilter]);
-
   const availableAgents = useMemo(() => {
-    if (tlFilter !== "all") {
-      const team = teams.find(t => t.tlId === tlFilter);
-      return team ? agents.filter(a => a.teamId === team.id && a.id !== team.tlId) : [];
-    }
     if (managerFilter !== "all") {
       const mgr = managers.find(m => m.id === managerFilter);
-      return mgr ? agents.filter(a => mgr.teams.includes(a.teamId) && !teams.some(t => t.tlId === a.id)) : [];
+      return mgr ? agents.filter(a => mgr.teams.includes(a.teamId)) : [];
     }
-    return agents.filter(a => a.tlId);
-  }, [managerFilter, tlFilter]);
-
-  // Reassign cascading
-  const reassignTeams = useMemo(() => {
-    if (!reassignManager) return teams;
-    const mgr = managers.find(m => m.id === reassignManager);
-    return mgr ? teams.filter(t => mgr.teams.includes(t.id)) : [];
-  }, [reassignManager]);
+    return agents;
+  }, [managerFilter]);
 
   const reassignAgents = useMemo(() => {
-    if (!reassignTL) return [];
-    const team = teams.find(t => t.tlId === reassignTL);
-    return team ? agents.filter(a => a.teamId === team.id && a.id !== team.tlId) : [];
-  }, [reassignTL]);
+    if (!reassignManager) return agents;
+    const mgr = managers.find(m => m.id === reassignManager);
+    return mgr ? agents.filter(a => mgr.teams.includes(a.teamId)) : [];
+  }, [reassignManager]);
 
   const filtered = useMemo(() => {
     let result = leads.filter(l => {
@@ -84,10 +64,6 @@ const OrgLeadsPage = () => {
       if (managerFilter !== "all") {
         const mgr = managers.find(m => m.id === managerFilter);
         if (!mgr || !mgr.teams.includes(l.assignedTeamId)) return false;
-      }
-      if (tlFilter !== "all") {
-        const team = teams.find(t => t.tlId === tlFilter);
-        if (!team || l.assignedTeamId !== team.id) return false;
       }
       if (agentFilter !== "all" && l.assignedAgentId !== agentFilter) return false;
       if (stageFilter !== "all" && l.stage !== stageFilter) return false;
@@ -105,7 +81,7 @@ const OrgLeadsPage = () => {
       return sortDir === "asc" ? cmp : -cmp;
     });
     return result;
-  }, [leads, search, managerFilter, tlFilter, agentFilter, stageFilter, productFilter, sourceFilter, followUpFilter, sortField, sortDir]);
+  }, [leads, search, managerFilter, agentFilter, stageFilter, productFilter, sourceFilter, followUpFilter, sortField, sortDir]);
 
   const toggleSort = (field: string) => {
     if (sortField === field) setSortDir(d => d === "asc" ? "desc" : "asc");
@@ -132,7 +108,7 @@ const OrgLeadsPage = () => {
     }
     toast.success(`${selectedIds.size} leads reassigned to ${agents.find(a => a.id === reassignAgent)?.name}`);
     setShowReassign(false); setSelectedIds(new Set());
-    setReassignManager(""); setReassignTL(""); setReassignAgent(""); setReassignReason("");
+    setReassignManager(""); setReassignAgent(""); setReassignReason("");
   };
 
   const getManagerForTeam = (teamId: string) => managers.find(m => m.teams.includes(teamId))?.name || "—";
@@ -156,24 +132,16 @@ const OrgLeadsPage = () => {
         </div>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-wrap gap-2">
         <div className="relative flex-1 min-w-[180px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search..." className="pl-9" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <Select value={managerFilter} onValueChange={v => { setManagerFilter(v); setTlFilter("all"); setAgentFilter("all"); }}>
+        <Select value={managerFilter} onValueChange={v => { setManagerFilter(v); setAgentFilter("all"); }}>
           <SelectTrigger className="w-36"><SelectValue placeholder="Manager" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Managers</SelectItem>
             {managers.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={tlFilter} onValueChange={v => { setTlFilter(v); setAgentFilter("all"); }}>
-          <SelectTrigger className="w-36"><SelectValue placeholder="TL" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All TLs</SelectItem>
-            {availableTeams.map(t => <SelectItem key={t.tlId} value={t.tlId}>{t.tlName}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={agentFilter} onValueChange={setAgentFilter}>
@@ -226,8 +194,8 @@ const OrgLeadsPage = () => {
                 <TableHead className="w-10"><Checkbox checked={selectedIds.size === filtered.length && filtered.length > 0} onCheckedChange={toggleAll} /></TableHead>
                 <TableHead className="cursor-pointer" onClick={() => toggleSort("name")}>Name <ArrowUpDown className="inline h-3 w-3" /></TableHead>
                 <TableHead>Manager</TableHead>
-                <TableHead>TL</TableHead>
                 <TableHead>Agent</TableHead>
+                <TableHead>Team</TableHead>
                 <TableHead>Source</TableHead>
                 <TableHead>Product</TableHead>
                 <TableHead className="cursor-pointer" onClick={() => toggleSort("stage")}>Stage <ArrowUpDown className="inline h-3 w-3" /></TableHead>
@@ -253,8 +221,8 @@ const OrgLeadsPage = () => {
                       {lead.dndStatus === "dnd_registered" && <Badge variant="destructive" className="text-[9px] ml-1 px-1">DND</Badge>}
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">{getManagerForTeam(lead.assignedTeamId)}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{team?.tlName || "—"}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{agent?.name || "—"}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{team?.name || "—"}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{lead.leadSource}</TableCell>
                     <TableCell><Badge variant="outline" className="text-xs">{getProductLabel(lead.productType)}</Badge></TableCell>
                     <TableCell onClick={() => navigate(`/leads/${lead.id}`)}><Badge variant={stageBadgeVariant(lead.stage)} className="text-xs">{getStageLabel(lead.stage)}</Badge></TableCell>
@@ -273,27 +241,17 @@ const OrgLeadsPage = () => {
         </CardContent>
       </Card>
 
-      {/* Org-wide Reassign Dialog */}
       <Dialog open={showReassign} onOpenChange={setShowReassign}>
         <DialogContent>
           <DialogHeader><DialogTitle>Reassign {selectedIds.size} Lead(s) — Org Wide</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div>
               <Label>Target Manager (optional)</Label>
-              <Select value={reassignManager} onValueChange={v => { setReassignManager(v); setReassignTL(""); setReassignAgent(""); }}>
+              <Select value={reassignManager} onValueChange={v => { setReassignManager(v); setReassignAgent(""); }}>
                 <SelectTrigger><SelectValue placeholder="Select Manager" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="any">Any</SelectItem>
                   {managers.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Target TL / Team *</Label>
-              <Select value={reassignTL} onValueChange={v => { setReassignTL(v); setReassignAgent(""); }}>
-                <SelectTrigger><SelectValue placeholder="Select TL" /></SelectTrigger>
-                <SelectContent>
-                  {reassignTeams.map(t => <SelectItem key={t.tlId} value={t.tlId}>{t.tlName} ({t.name})</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
