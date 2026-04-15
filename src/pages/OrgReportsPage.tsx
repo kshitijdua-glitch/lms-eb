@@ -1,16 +1,19 @@
 import { useState, useMemo } from "react";
 import { leads, agents, teams, getDispositionLabel, dispositionConfigs } from "@/data/mockData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
+import { ConfigurableTable } from "@/components/ConfigurableTable";
+import type { ColumnDef } from "@/types/table";
 
 const managers = [
   { id: "mgr-1", name: "Vikram Mehta", teams: ["team-1"] },
   { id: "mgr-2", name: "Anjali Kapoor", teams: ["team-2"] },
 ];
+
+type OrgReportRow = { manager: string; agent: string; category: string; disposition: string; count: number };
 
 const OrgReportsPage = () => {
   const [managerFilter, setManagerFilter] = useState("all");
@@ -32,7 +35,7 @@ const OrgReportsPage = () => {
     }
     if (agentFilter !== "all") filtered = filtered.filter(l => l.assignedAgentId === agentFilter);
 
-    const rows: { manager: string; agent: string; category: string; disposition: string; count: number }[] = [];
+    const rows: OrgReportRow[] = [];
     const grouped = new Map<string, number>();
 
     filtered.forEach(l => {
@@ -49,13 +52,19 @@ const OrgReportsPage = () => {
     });
 
     return rows.sort((a, b) => a.manager.localeCompare(b.manager) || a.agent.localeCompare(b.agent));
-  }, [leads, managerFilter, agentFilter]);
+  }, [managerFilter, agentFilter]);
 
   const totalLeads = reportData.reduce((s, r) => s + r.count, 0);
   const mgrSummary = new Map<string, number>();
-  reportData.forEach(r => {
-    mgrSummary.set(r.manager, (mgrSummary.get(r.manager) || 0) + r.count);
-  });
+  reportData.forEach(r => mgrSummary.set(r.manager, (mgrSummary.get(r.manager) || 0) + r.count));
+
+  const columns: ColumnDef<OrgReportRow>[] = [
+    { id: "manager", label: "Manager", render: (r) => <span className="text-xs">{r.manager}</span> },
+    { id: "agent", label: "Agent", render: (r) => <span className="text-xs">{r.agent}</span> },
+    { id: "category", label: "Category", render: (r) => <span className="text-xs font-medium">{r.category}</span> },
+    { id: "disposition", label: "Disposition", render: (r) => <span className="text-xs">{r.disposition}</span> },
+    { id: "count", label: "Count", headerClassName: "text-right", render: (r) => <span className="text-right font-medium block">{r.count}</span> },
+  ];
 
   return (
     <div className="space-y-6">
@@ -95,30 +104,7 @@ const OrgReportsPage = () => {
       <Card>
         <CardHeader><CardTitle className="text-base">Detailed Breakdown</CardTitle></CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Manager</TableHead>
-                  <TableHead>Agent</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Disposition</TableHead>
-                  <TableHead className="text-right">Count</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {reportData.slice(0, 100).map((r, i) => (
-                  <TableRow key={i}>
-                    <TableCell className="text-xs">{r.manager}</TableCell>
-                    <TableCell className="text-xs">{r.agent}</TableCell>
-                    <TableCell className="text-xs font-medium">{r.category}</TableCell>
-                    <TableCell className="text-xs">{r.disposition}</TableCell>
-                    <TableCell className="text-right font-medium">{r.count}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <ConfigurableTable tableId="org-reports" columns={columns} data={reportData.slice(0, 100)} />
         </CardContent>
       </Card>
     </div>

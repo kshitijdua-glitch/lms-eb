@@ -1,13 +1,20 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Search, Database, ArrowLeft } from "lucide-react";
+import { ConfigurableTable } from "@/components/ConfigurableTable";
+import type { ColumnDef } from "@/types/table";
 
-const mockBatches = [
+type BatchRow = {
+  id: string; name: string; source: string; product: string; uploadDate: string;
+  uploadedBy: string; total: number; valid: number; rejected: number;
+  status: string; allocatedTo: string; allocDate: string; bureau?: boolean;
+};
+
+const mockBatches: BatchRow[] = [
   { id: "b1", name: "Google_Ads_Apr10", source: "Google Ads", product: "Personal Loan", uploadDate: "2026-04-10", uploadedBy: "Admin", total: 250, valid: 238, rejected: 12, status: "Allocated", allocatedTo: "Vikram Mehta (Group)", allocDate: "2026-04-11" },
   { id: "b2", name: "Partner_HDFC_Apr08", source: "Partner", product: "Home Loan", uploadDate: "2026-04-08", uploadedBy: "Admin", total: 180, valid: 175, rejected: 5, status: "Partial", allocatedTo: "Priya Sharma (Team)", allocDate: "2026-04-09" },
   { id: "b3", name: "Website_Apr06", source: "Website", product: "Personal Loan", uploadDate: "2026-04-06", uploadedBy: "Admin", total: 320, valid: 305, rejected: 15, status: "Unallocated", allocatedTo: "—", allocDate: "—" },
@@ -32,24 +39,14 @@ const LeadPoolsPage = () => {
   if (pool) {
     return (
       <div className="space-y-6">
-        <Button variant="ghost" size="sm" onClick={() => setSelectedPool(null)}>
-          <ArrowLeft className="h-4 w-4 mr-1" /> Back to Pools
-        </Button>
+        <Button variant="ghost" size="sm" onClick={() => setSelectedPool(null)}><ArrowLeft className="h-4 w-4 mr-1" /> Back to Pools</Button>
         <div>
           <h1 className="text-2xl font-bold">{pool.name}</h1>
           <p className="text-muted-foreground text-sm">Uploaded {pool.uploadDate} by {pool.uploadedBy}</p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { label: "Total Rows", value: pool.total },
-            { label: "Valid", value: pool.valid },
-            { label: "Rejected", value: pool.rejected },
-            { label: "Status", value: pool.status },
-          ].map(k => (
-            <Card key={k.label}><CardContent className="p-4 text-center">
-              <div className="text-xl font-bold">{k.value}</div>
-              <div className="text-xs text-muted-foreground">{k.label}</div>
-            </CardContent></Card>
+          {[{ label: "Total Rows", value: pool.total }, { label: "Valid", value: pool.valid }, { label: "Rejected", value: pool.rejected }, { label: "Status", value: pool.status }].map(k => (
+            <Card key={k.label}><CardContent className="p-4 text-center"><div className="text-xl font-bold">{k.value}</div><div className="text-xs text-muted-foreground">{k.label}</div></CardContent></Card>
           ))}
         </div>
         <Card>
@@ -61,26 +58,15 @@ const LeadPoolsPage = () => {
                 <div><span className="text-muted-foreground">Allocation Date:</span> {pool.allocDate}</div>
                 <div><span className="text-muted-foreground">Mode:</span> {pool.allocatedTo.includes("Auto") ? "Auto Round Robin" : "Manual"}</div>
               </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">Not yet allocated</p>
-            )}
+            ) : <p className="text-sm text-muted-foreground">Not yet allocated</p>}
           </CardContent>
         </Card>
         <Card>
           <CardHeader><CardTitle className="text-base">Pipeline Breakdown</CardTitle></CardHeader>
           <CardContent>
             <div className="grid grid-cols-3 md:grid-cols-5 gap-3 text-center text-sm">
-              {[
-                { stage: "New", count: Math.round(pool.valid * 0.3) },
-                { stage: "Contacted", count: Math.round(pool.valid * 0.25) },
-                { stage: "Interested", count: Math.round(pool.valid * 0.2) },
-                { stage: "STB", count: Math.round(pool.valid * 0.15) },
-                { stage: "Disbursed", count: Math.round(pool.valid * 0.1) },
-              ].map(s => (
-                <div key={s.stage} className="border rounded p-2">
-                  <div className="font-bold">{s.count}</div>
-                  <div className="text-xs text-muted-foreground">{s.stage}</div>
-                </div>
+              {[{ stage: "New", count: Math.round(pool.valid * 0.3) }, { stage: "Contacted", count: Math.round(pool.valid * 0.25) }, { stage: "Interested", count: Math.round(pool.valid * 0.2) }, { stage: "STB", count: Math.round(pool.valid * 0.15) }, { stage: "Disbursed", count: Math.round(pool.valid * 0.1) }].map(s => (
+                <div key={s.stage} className="border rounded p-2"><div className="font-bold">{s.count}</div><div className="text-xs text-muted-foreground">{s.stage}</div></div>
               ))}
             </div>
           </CardContent>
@@ -88,6 +74,20 @@ const LeadPoolsPage = () => {
       </div>
     );
   }
+
+  const columns: ColumnDef<BatchRow>[] = [
+    { id: "name", label: "Batch Name", render: (b) => (
+      <span className="font-medium">{b.name}{b.bureau && <Badge className="ml-1 text-[9px]" variant="secondary">Bureau</Badge>}</span>
+    )},
+    { id: "source", label: "Source", render: (b) => <Badge variant="outline" className="text-[10px]">{b.source}</Badge> },
+    { id: "product", label: "Product", render: (b) => <span className="text-sm">{b.product}</span> },
+    { id: "uploadDate", label: "Upload Date", render: (b) => <span className="text-sm text-muted-foreground">{b.uploadDate}</span> },
+    { id: "total", label: "Total", headerClassName: "text-right", render: (b) => <span className="text-right block">{b.total}</span> },
+    { id: "valid", label: "Valid", headerClassName: "text-right", render: (b) => <span className="text-right text-green-600 block">{b.valid}</span> },
+    { id: "rejected", label: "Rejected", headerClassName: "text-right", render: (b) => <span className="text-right text-red-600 block">{b.rejected}</span> },
+    { id: "status", label: "Status", render: (b) => <Badge variant={b.status === "Allocated" ? "default" : b.status === "Partial" ? "secondary" : "outline"} className="text-[10px]">{b.status}</Badge> },
+    { id: "allocatedTo", label: "Allocated To", render: (b) => <span className="text-sm text-muted-foreground">{b.allocatedTo}</span> },
+  ];
 
   return (
     <div className="space-y-6">
@@ -103,49 +103,13 @@ const LeadPoolsPage = () => {
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {["All", "Unallocated", "Partial", "Allocated"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-          </SelectContent>
+          <SelectContent>{["All", "Unallocated", "Partial", "Allocated"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
         </Select>
       </div>
 
       <Card>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Batch Name</TableHead>
-                <TableHead>Source</TableHead>
-                <TableHead>Product</TableHead>
-                <TableHead>Upload Date</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-                <TableHead className="text-right">Valid</TableHead>
-                <TableHead className="text-right">Rejected</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Allocated To</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map(b => (
-                <TableRow key={b.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedPool(b.id)}>
-                  <TableCell className="font-medium">
-                    {b.name}
-                    {(b as any).bureau && <Badge className="ml-1 text-[9px]" variant="secondary">Bureau</Badge>}
-                  </TableCell>
-                  <TableCell><Badge variant="outline" className="text-[10px]">{b.source}</Badge></TableCell>
-                  <TableCell className="text-sm">{b.product}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{b.uploadDate}</TableCell>
-                  <TableCell className="text-right">{b.total}</TableCell>
-                  <TableCell className="text-right text-green-600">{b.valid}</TableCell>
-                  <TableCell className="text-right text-red-600">{b.rejected}</TableCell>
-                  <TableCell>
-                    <Badge variant={b.status === "Allocated" ? "default" : b.status === "Partial" ? "secondary" : "outline"} className="text-[10px]">{b.status}</Badge>
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{b.allocatedTo}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <ConfigurableTable tableId="lead-pools" columns={columns} data={filtered} onRowClick={(b) => setSelectedPool(b.id)} />
         </CardContent>
       </Card>
     </div>

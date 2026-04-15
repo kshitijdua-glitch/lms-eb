@@ -1,11 +1,14 @@
 import { leads, agents, lendingPartners, getDispositionLabel, getStageLabel } from "@/data/mockData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Download, BarChart3 } from "lucide-react";
+import { Download } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { toast } from "sonner";
+import { ConfigurableTable } from "@/components/ConfigurableTable";
+import type { ColumnDef } from "@/types/table";
+
+type AuditRow = { id: string; timestamp: string; agentName: string; leadName: string; disposition: string };
 
 const ReportsPage = () => {
   const dateWise = Array.from({ length: 14 }, (_, i) => {
@@ -16,6 +19,18 @@ const ReportsPage = () => {
   });
 
   const handleExport = () => toast.success("CSV export started");
+
+  const auditData: AuditRow[] = leads.slice(0, 10).flatMap(l => l.callLogs.slice(0, 1).map(cl => ({
+    id: cl.id, timestamp: cl.timestamp, agentName: cl.agentName, leadName: l.name, disposition: getDispositionLabel(cl.disposition),
+  })));
+
+  const columns: ColumnDef<AuditRow>[] = [
+    { id: "timestamp", label: "Timestamp", render: (r) => <span className="text-sm text-muted-foreground">{new Date(r.timestamp).toLocaleString()}</span> },
+    { id: "agent", label: "Agent", render: (r) => <span className="text-sm">{r.agentName}</span> },
+    { id: "action", label: "Action", render: () => <Badge variant="outline" className="text-xs">Call Logged</Badge> },
+    { id: "lead", label: "Lead", render: (r) => <span className="text-sm font-medium">{r.leadName}</span> },
+    { id: "details", label: "Details", render: (r) => <span className="text-sm text-muted-foreground">{r.disposition}</span> },
+  ];
 
   return (
     <div className="space-y-6">
@@ -44,28 +59,7 @@ const ReportsPage = () => {
       <Card>
         <CardHeader><CardTitle className="text-base">Audit Trail (Recent Actions)</CardTitle></CardHeader>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Timestamp</TableHead>
-                <TableHead>Agent</TableHead>
-                <TableHead>Action</TableHead>
-                <TableHead>Lead</TableHead>
-                <TableHead>Details</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {leads.slice(0, 10).flatMap(l => l.callLogs.slice(0, 1).map(cl => (
-                <TableRow key={cl.id}>
-                  <TableCell className="text-sm text-muted-foreground">{new Date(cl.timestamp).toLocaleString()}</TableCell>
-                  <TableCell className="text-sm">{cl.agentName}</TableCell>
-                  <TableCell><Badge variant="outline" className="text-xs">Call Logged</Badge></TableCell>
-                  <TableCell className="text-sm font-medium">{l.name}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{getDispositionLabel(cl.disposition)}</TableCell>
-                </TableRow>
-              )))}
-            </TableBody>
-          </Table>
+          <ConfigurableTable tableId="reports-audit" columns={columns} data={auditData} />
         </CardContent>
       </Card>
     </div>

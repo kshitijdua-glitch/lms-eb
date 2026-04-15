@@ -1,12 +1,22 @@
-import { leads, getLeadsForAgent, getLeadsForTeam, lendingPartners, getProductLabel } from "@/data/mockData";
+import { leads, getLeadsForAgent, lendingPartners, getProductLabel } from "@/data/mockData";
 import { useRole } from "@/contexts/RoleContext";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Send, CheckCircle, XCircle } from "lucide-react";
 import { toast } from "sonner";
+import { ConfigurableTable } from "@/components/ConfigurableTable";
+import type { ColumnDef } from "@/types/table";
+
+type STBItem = {
+  id: string; partnerId: string; partnerName: string; submittedAt: string;
+  status: "submitted" | "approved" | "declined" | "disbursed";
+  approvedAmount: number | null; sanctionAmount: number | null;
+  disbursedAmount: number | null; disbursementDate: string | null;
+  remarks: string; integrationType: "api" | "portal" | "email";
+  leadName: string; leadId: string; product: string;
+};
 
 const STBPage = () => {
   const { role } = useRole();
@@ -14,7 +24,7 @@ const STBPage = () => {
 
   const allLeads = role === "agent" ? getLeadsForAgent("agent-1") : leads;
   const stbLeads = allLeads.filter(l => l.stbSubmissions.length > 0);
-  const allSubs = stbLeads.flatMap(l => l.stbSubmissions.map(s => ({ ...s, leadName: l.name, leadId: l.id, product: l.productType })));
+  const allSubs: STBItem[] = stbLeads.flatMap(l => l.stbSubmissions.map(s => ({ ...s, leadName: l.name, leadId: l.id, product: l.productType })));
 
   const submitted = allSubs.filter(s => s.status === "submitted").length;
   const approved = allSubs.filter(s => s.status === "approved").length;
@@ -24,6 +34,43 @@ const STBPage = () => {
   const handleStatusUpdate = (subId: string, newStatus: string) => {
     toast.success(`Status updated to ${newStatus}`);
   };
+
+  const columns: ColumnDef<STBItem>[] = [
+    { id: "lead", label: "Lead", render: (s) => <span className="font-medium text-sm">{s.leadName}</span> },
+    { id: "product", label: "Product", render: (s) => <Badge variant="outline" className="text-xs">{getProductLabel(s.product as any)}</Badge> },
+    { id: "partner", label: "Partner", render: (s) => <span className="text-sm">{s.partnerName}</span> },
+    { id: "submitted", label: "Submitted", render: (s) => <span className="text-sm text-muted-foreground">{new Date(s.submittedAt).toLocaleDateString()}</span> },
+    { id: "days", label: "Days", render: (s) => <span className="text-sm">{Math.floor((Date.now() - new Date(s.submittedAt).getTime()) / 86400000)}d</span> },
+    { id: "status", label: "Status", render: (s) => (
+      <Badge variant={s.status === "disbursed" ? "default" : s.status === "approved" ? "default" : s.status === "declined" ? "destructive" : "secondary"} className="text-xs">
+        {s.status}
+      </Badge>
+    )},
+    { id: "sanction", label: "Sanction Amt", render: (s) => <span className="text-sm">{s.sanctionAmount ? `₹${s.sanctionAmount.toLocaleString()}` : "—"}</span> },
+    { id: "disbursedAmt", label: "Disbursed Amt", render: (s) => <span className="text-sm">{s.disbursedAmount ? `₹${s.disbursedAmount.toLocaleString()}` : "—"}</span> },
+    { id: "disbDate", label: "Disb. Date", render: (s) => <span className="text-sm text-muted-foreground">{s.disbursementDate ? new Date(s.disbursementDate).toLocaleDateString() : "—"}</span> },
+    { id: "integration", label: "Integration", defaultVisible: false, render: (s) => <Badge variant="outline" className="text-[10px]">{s.integrationType}</Badge> },
+    ...(role === "agent" ? [{
+      id: "update", label: "Update", locked: "end" as const,
+      render: (s: STBItem) => {
+        const isNonApi = s.integrationType !== "api";
+        return (
+          <div onClick={e => e.stopPropagation()}>
+            {isNonApi && s.status !== "disbursed" ? (
+              <Select onValueChange={(v) => handleStatusUpdate(s.id, v)}>
+                <SelectTrigger className="h-7 w-28 text-xs"><SelectValue placeholder="Update" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="declined">Declined</SelectItem>
+                  <SelectItem value="disbursed">Disbursed</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : <span className="text-xs text-muted-foreground">{s.integrationType === "api" ? "Auto" : "—"}</span>}
+          </div>
+        );
+      }
+    }] : []),
+  ];
 
   return (
     <div className="space-y-6">
@@ -52,64 +99,12 @@ const STBPage = () => {
       <Card>
         <CardHeader><CardTitle className="text-base">STB Submissions</CardTitle></CardHeader>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Lead</TableHead>
-                <TableHead>Product</TableHead>
-                <TableHead>Partner</TableHead>
-                <TableHead>Submitted</TableHead>
-                <TableHead>Days</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Sanction Amt</TableHead>
-                <TableHead>Disbursed Amt</TableHead>
-                <TableHead>Disb. Date</TableHead>
-                {role === "agent" && <TableHead>Update</TableHead>}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {allSubs.map(s => {
-                const daysSince = Math.floor((Date.now() - new Date(s.submittedAt).getTime()) / 86400000);
-                const isNonApi = s.integrationType !== "api";
-                return (
-                  <TableRow key={s.id} className="cursor-pointer hover:bg-accent/50" onClick={() => navigate(`/leads/${s.leadId}`)}>
-                    <TableCell className="font-medium text-sm">{s.leadName}</TableCell>
-                    <TableCell><Badge variant="outline" className="text-xs">{getProductLabel(s.product)}</Badge></TableCell>
-                    <TableCell className="text-sm">{s.partnerName}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{new Date(s.submittedAt).toLocaleDateString()}</TableCell>
-                    <TableCell className="text-sm">{daysSince}d</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={s.status === "disbursed" ? "default" : s.status === "approved" ? "default" : s.status === "declined" ? "destructive" : "secondary"}
-                        className="text-xs"
-                      >
-                        {s.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm">{s.sanctionAmount ? `₹${s.sanctionAmount.toLocaleString()}` : "—"}</TableCell>
-                    <TableCell className="text-sm">{s.disbursedAmount ? `₹${s.disbursedAmount.toLocaleString()}` : "—"}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{s.disbursementDate ? new Date(s.disbursementDate).toLocaleDateString() : "—"}</TableCell>
-                    {role === "agent" && (
-                      <TableCell onClick={e => e.stopPropagation()}>
-                        {isNonApi && s.status !== "disbursed" ? (
-                          <Select onValueChange={(v) => handleStatusUpdate(s.id, v)}>
-                            <SelectTrigger className="h-7 w-28 text-xs"><SelectValue placeholder="Update" /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="approved">Approved</SelectItem>
-                              <SelectItem value="declined">Declined</SelectItem>
-                              <SelectItem value="disbursed">Disbursed</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">{s.integrationType === "api" ? "Auto" : "—"}</span>
-                        )}
-                      </TableCell>
-                    )}
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+          <ConfigurableTable
+            tableId="stb"
+            columns={columns}
+            data={allSubs}
+            onRowClick={(s) => navigate(`/leads/${s.leadId}`)}
+          />
         </CardContent>
       </Card>
     </div>
