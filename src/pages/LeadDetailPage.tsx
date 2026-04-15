@@ -185,7 +185,7 @@ const LeadDetailPage = () => {
             <span className="text-xs text-muted-foreground">Source: {lead.leadSource}</span>
           </div>
         </div>
-        {!isProfileLocked && (
+        {(role === "agent" || role === "manager" || role === "cluster_head") && (
           <Button variant="ghost" size="sm" onClick={() => setIsEditing(!isEditing)}>
             <Edit2 className="h-4 w-4 mr-1" /> {isEditing ? "Done" : "Edit"}
           </Button>
