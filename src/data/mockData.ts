@@ -249,7 +249,7 @@ function generateLeads(): Lead[] {
       loanAmount: randomInt(50000, 5000000),
       stage,
       disposition: disp,
-      priority: randomFrom(priorities),
+      priority: "cold" as Priority, // will be recalculated by engine
       source,
       leadSource: source,
       dndStatus: Math.random() > 0.85 ? "dnd_registered" : "clean",
