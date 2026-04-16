@@ -8,8 +8,128 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Save, Settings } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { Plus, Save, Settings, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { usePriorityConfig } from "@/contexts/PriorityConfigContext";
+import { calculatePriority } from "@/utils/priorityEngine";
+import { leads } from "@/data/mockData";
+
+const PriorityRulesTab = () => {
+  const { config, updateConfig } = usePriorityConfig();
+  const [localFactors, setLocalFactors] = useState(config.factors.map(f => ({ ...f })));
+  const [hotThreshold, setHotThreshold] = useState(config.thresholds.hot);
+  const [warmThreshold, setWarmThreshold] = useState(config.thresholds.warm);
+
+  const handleSave = () => {
+    const newConfig = { factors: localFactors, thresholds: { hot: hotThreshold, warm: warmThreshold } };
+    updateConfig(newConfig);
+    toast.success("Priority rules saved. Change logged.");
+  };
+
+  // Preview distribution
+  const preview = { hot: 0, warm: 0, cold: 0 };
+  const previewConfig = { factors: localFactors, thresholds: { hot: hotThreshold, warm: warmThreshold } };
+  leads.forEach(lead => {
+    const p = calculatePriority(lead, previewConfig);
+    preview[p]++;
+  });
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader><CardTitle className="text-base">Scoring Factors</CardTitle></CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Factor</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead className="w-32">Weight</TableHead>
+                <TableHead className="w-20">Enabled</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {localFactors.map((factor, i) => (
+                <TableRow key={factor.key}>
+                  <TableCell className="font-medium text-sm">{factor.label}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{factor.description}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Slider
+                        value={[factor.weight]}
+                        min={-5}
+                        max={5}
+                        step={1}
+                        onValueChange={([v]) => {
+                          const updated = [...localFactors];
+                          updated[i] = { ...updated[i], weight: v };
+                          setLocalFactors(updated);
+                        }}
+                        className="w-20"
+                      />
+                      <span className="text-xs font-mono w-6 text-right">{factor.weight > 0 ? `+${factor.weight}` : factor.weight}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Switch
+                      checked={factor.enabled}
+                      onCheckedChange={v => {
+                        const updated = [...localFactors];
+                        updated[i] = { ...updated[i], enabled: v };
+                        setLocalFactors(updated);
+                      }}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">Score Thresholds</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Hot Threshold (score ≥)</Label>
+              <Input type="number" value={hotThreshold} onChange={e => setHotThreshold(Number(e.target.value))} />
+            </div>
+            <div>
+              <Label>Warm Threshold (score ≥)</Label>
+              <Input type="number" value={warmThreshold} onChange={e => setWarmThreshold(Number(e.target.value))} />
+            </div>
+          </div>
+          <div className="text-xs text-muted-foreground">Leads scoring below the Warm threshold are marked Cold.</div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base flex items-center gap-2"><RefreshCw className="h-4 w-4" /> Distribution Preview</CardTitle></CardHeader>
+        <CardContent>
+          <div className="flex gap-4">
+            <div className="flex items-center gap-2">
+              <Badge variant="destructive">Hot</Badge>
+              <span className="text-sm font-semibold">{preview.hot}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge>Warm</Badge>
+              <span className="text-sm font-semibold">{preview.warm}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">Cold</Badge>
+              <span className="text-sm font-semibold">{preview.cold}</span>
+            </div>
+            <span className="text-xs text-muted-foreground self-center ml-2">of {leads.length} total leads</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Button onClick={handleSave}><Save className="h-4 w-4 mr-1" /> Save Priority Rules</Button>
+    </div>
+  );
+};
 
 const SystemConfigPage = () => {
   const [leadSources, setLeadSources] = useState([
@@ -50,6 +170,7 @@ const SystemConfigPage = () => {
           <TabsTrigger value="retry">Retry Logic</TabsTrigger>
           <TabsTrigger value="aging">Aging & Expiry</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsTrigger value="priority">Priority Rules</TabsTrigger>
         </TabsList>
 
         <TabsContent value="sources" className="mt-4">
@@ -167,6 +288,10 @@ const SystemConfigPage = () => {
               <Button className="mt-4" onClick={() => toast.success("Notification settings saved. Change logged.")}><Save className="h-4 w-4 mr-1" /> Save</Button>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="priority" className="mt-4">
+          <PriorityRulesTab />
         </TabsContent>
       </Tabs>
     </div>

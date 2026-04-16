@@ -1,4 +1,5 @@
 import { Lead, Agent, Team, LendingPartner, DispositionConfig, Notification, type DispositionType, type LeadStage, type ProductType, type EmploymentType, type Priority } from "@/types/lms";
+import { calculatePriority, defaultPriorityConfig } from "@/utils/priorityEngine";
 
 // Teams
 export const teams: Team[] = [
@@ -249,7 +250,7 @@ function generateLeads(): Lead[] {
       loanAmount: randomInt(50000, 5000000),
       stage,
       disposition: disp,
-      priority: randomFrom(priorities),
+      priority: "cold" as Priority, // will be recalculated by engine
       source,
       leadSource: source,
       dndStatus: Math.random() > 0.85 ? "dnd_registered" : "clean",
@@ -272,7 +273,12 @@ function generateLeads(): Lead[] {
   });
 }
 
-export const leads: Lead[] = generateLeads();
+const rawLeads = generateLeads();
+// Apply priority engine to all leads
+export const leads: Lead[] = rawLeads.map(lead => ({
+  ...lead,
+  priority: calculatePriority(lead, defaultPriorityConfig),
+}));
 
 export const getLeadsForAgent = (agentId: string) => leads.filter(l => l.assignedAgentId === agentId);
 export const getLeadsForTeam = (teamId: string) => leads.filter(l => l.assignedTeamId === teamId);

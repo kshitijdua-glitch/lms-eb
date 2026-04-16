@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { RoleProvider } from "@/contexts/RoleContext";
+import { PriorityConfigProvider } from "@/contexts/PriorityConfigContext";
 import { AppLayout } from "@/components/AppLayout";
 import Index from "./pages/Index";
 import LeadsPage from "./pages/LeadsPage";
@@ -44,6 +45,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <RoleProvider>
+      <PriorityConfigProvider>
         <BrowserRouter>
           <AppLayout>
             <Routes>
@@ -80,6 +82,7 @@ const App = () => (
             </Routes>
           </AppLayout>
         </BrowserRouter>
+      </PriorityConfigProvider>
       </RoleProvider>
     </TooltipProvider>
   </QueryClientProvider>
