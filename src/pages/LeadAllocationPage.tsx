@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
-import { leads, agents, teams } from "@/data/mockData";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { agents, teams } from "@/data/mockData";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -16,19 +16,40 @@ const managers = [
   { id: "mgr-2", name: "Anjali Kapoor", teams: ["team-2"] },
 ];
 
-type PoolRow = { id: string; source: string; date: string; count: number; product: string };
+type BatchRow = {
+  id: string;
+  batchName: string;
+  fileName: string;
+  uploadDate: string;
+  source: string;
+  product: string;
+  count: number;
+  status: "awaiting_allocation" | "partially_allocated" | "allocated";
+};
 
-const unallocatedPools: PoolRow[] = [
-  { id: "pool-1", source: "Website", date: "2026-04-13", count: 15, product: "Personal Loan" },
-  { id: "pool-2", source: "Google Ads", date: "2026-04-13", count: 8, product: "Home Loan" },
-  { id: "pool-3", source: "Partner", date: "2026-04-12", count: 22, product: "Personal Loan" },
-  { id: "pool-4", source: "Facebook", date: "2026-04-12", count: 5, product: "Business Loan" },
-  { id: "pool-5", source: "IVR", date: "2026-04-11", count: 12, product: "Credit Card" },
+const unallocatedBatches: BatchRow[] = [
+  { id: "batch-1", batchName: "Google_Ads_Apr14", fileName: "Google_Ads_Apr14.csv", uploadDate: "2026-04-14", source: "Google Ads", product: "Personal Loan", count: 238, status: "awaiting_allocation" },
+  { id: "batch-2", batchName: "Partner_Leads_Q1", fileName: "Partner_Leads_Q1.xlsx", uploadDate: "2026-04-13", source: "Partner", product: "Home Loan", count: 85, status: "awaiting_allocation" },
+  { id: "batch-3", batchName: "FB_Campaign_Mar", fileName: "FB_Campaign_Mar.csv", uploadDate: "2026-04-12", source: "Facebook", product: "Personal Loan", count: 42, status: "partially_allocated" },
+  { id: "batch-4", batchName: "IVR_Apr_Week2", fileName: "IVR_Apr_Week2.csv", uploadDate: "2026-04-11", source: "IVR", product: "Credit Card", count: 18, status: "awaiting_allocation" },
+  { id: "batch-5", batchName: "Website_Organic_Apr", fileName: "Website_Organic_Apr.xlsx", uploadDate: "2026-04-10", source: "Website", product: "Business Loan", count: 31, status: "awaiting_allocation" },
 ];
+
+const statusLabels: Record<BatchRow["status"], string> = {
+  awaiting_allocation: "Awaiting Allocation",
+  partially_allocated: "Partially Allocated",
+  allocated: "Allocated",
+};
+
+const statusVariant: Record<BatchRow["status"], "default" | "secondary" | "outline"> = {
+  awaiting_allocation: "secondary",
+  partially_allocated: "outline",
+  allocated: "default",
+};
 
 const LeadAllocationPage = () => {
   const [showAllocate, setShowAllocate] = useState(false);
-  const [selectedPool, setSelectedPool] = useState<string | null>(null);
+  const [selectedBatch, setSelectedBatch] = useState<string | null>(null);
   const [allocMode, setAllocMode] = useState("round_robin");
   const [targetManager, setTargetManager] = useState("");
   const [targetTeam, setTargetTeam] = useState("");
@@ -46,26 +67,31 @@ const LeadAllocationPage = () => {
   }, [targetTeam]);
 
   const handleAllocate = () => {
-    const pool = unallocatedPools.find(p => p.id === selectedPool);
-    if (!pool) return;
-    if (allocMode === "round_robin") toast.success(`${pool.count} leads auto-allocated via Round Robin`);
-    else if (allocMode === "to_agent" && targetAgent) toast.success(`${pool.count} leads allocated to ${agents.find(a => a.id === targetAgent)?.name}`);
-    else if (allocMode === "to_team" && targetTeam) toast.success(`${pool.count} leads allocated to team ${teams.find(t => t.id === targetTeam)?.name}`);
-    else if (allocMode === "to_group" && targetManager) toast.success(`${pool.count} leads allocated to ${managers.find(m => m.id === targetManager)?.name}'s group`);
+    const batch = unallocatedBatches.find(b => b.id === selectedBatch);
+    if (!batch) return;
+    if (allocMode === "round_robin") toast.success(`${batch.count} leads from "${batch.batchName}" auto-allocated via Round Robin`);
+    else if (allocMode === "to_agent" && targetAgent) toast.success(`${batch.count} leads from "${batch.batchName}" allocated to ${agents.find(a => a.id === targetAgent)?.name}`);
+    else if (allocMode === "to_team" && targetTeam) toast.success(`${batch.count} leads from "${batch.batchName}" allocated to team ${teams.find(t => t.id === targetTeam)?.name}`);
+    else if (allocMode === "to_group" && targetManager) toast.success(`${batch.count} leads from "${batch.batchName}" allocated to ${managers.find(m => m.id === targetManager)?.name}'s group`);
     else { toast.error("Select a valid allocation target"); return; }
-    setShowAllocate(false); setSelectedPool(null); setAllocMode("round_robin"); setTargetManager(""); setTargetTeam(""); setTargetAgent("");
+    setShowAllocate(false); setSelectedBatch(null); setAllocMode("round_robin"); setTargetManager(""); setTargetTeam(""); setTargetAgent("");
   };
 
-  const totalUnallocated = unallocatedPools.reduce((s, p) => s + p.count, 0);
+  const totalUnallocated = unallocatedBatches.filter(b => b.status !== "allocated").reduce((s, b) => s + b.count, 0);
+  const activeBatches = unallocatedBatches.filter(b => b.status !== "allocated").length;
+  const currentBatch = unallocatedBatches.find(b => b.id === selectedBatch);
 
-  const columns: ColumnDef<PoolRow>[] = [
-    { id: "source", label: "Source", render: (p) => <span className="font-medium">{p.source}</span> },
-    { id: "date", label: "Date", render: (p) => <span className="text-sm text-muted-foreground">{p.date}</span> },
-    { id: "product", label: "Product", render: (p) => <Badge variant="outline" className="text-xs">{p.product}</Badge> },
-    { id: "count", label: "Count", headerClassName: "text-right", render: (p) => <span className="text-right font-medium block">{p.count}</span> },
-    { id: "action", label: "Action", locked: "end", render: (p) => (
+  const columns: ColumnDef<BatchRow>[] = [
+    { id: "batchName", label: "Batch Name", render: (b) => <span className="font-medium">{b.batchName}</span> },
+    { id: "fileName", label: "File", render: (b) => <span className="text-xs text-muted-foreground">{b.fileName}</span> },
+    { id: "uploadDate", label: "Upload Date", render: (b) => <span className="text-sm text-muted-foreground">{b.uploadDate}</span> },
+    { id: "source", label: "Source", render: (b) => <Badge variant="outline" className="text-xs">{b.source}</Badge> },
+    { id: "product", label: "Product", render: (b) => <Badge variant="outline" className="text-xs">{b.product}</Badge> },
+    { id: "count", label: "Leads", headerClassName: "text-right", render: (b) => <span className="text-right font-medium block">{b.count}</span> },
+    { id: "status", label: "Status", render: (b) => <Badge variant={statusVariant[b.status]} className="text-[10px]">{statusLabels[b.status]}</Badge> },
+    { id: "action", label: "Action", locked: "end", render: (b) => (
       <div onClick={e => e.stopPropagation()}>
-        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { setSelectedPool(p.id); setShowAllocate(true); }}>
+        <Button size="sm" variant="outline" className="h-7 text-xs" disabled={b.status === "allocated"} onClick={() => { setSelectedBatch(b.id); setShowAllocate(true); }}>
           <Upload className="h-3 w-3 mr-1" /> Allocate
         </Button>
       </div>
@@ -77,30 +103,29 @@ const LeadAllocationPage = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Lead Allocation</h1>
-          <p className="text-muted-foreground text-sm">{totalUnallocated} unallocated leads across {unallocatedPools.length} pools</p>
+          <p className="text-muted-foreground text-sm">{totalUnallocated} unallocated leads across {activeBatches} batches</p>
         </div>
-        <Button variant="outline" onClick={() => toast.success("Auto Round Robin triggered for all pools")}>
+        <Button variant="outline" onClick={() => toast.success("Auto Round Robin triggered for all batches")}>
           <Shuffle className="h-4 w-4 mr-1" /> Auto Allocate All
         </Button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card><CardContent className="p-4"><div className="text-2xl font-bold">{totalUnallocated}</div><div className="text-xs text-muted-foreground">Total Unallocated</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-2xl font-bold">{unallocatedPools.length}</div><div className="text-xs text-muted-foreground">Active Pools</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-2xl font-bold">{activeBatches}</div><div className="text-xs text-muted-foreground">Active Batches</div></CardContent></Card>
         <Card><CardContent className="p-4"><div className="text-2xl font-bold">{agents.filter(a => a.status === "active").length}</div><div className="text-xs text-muted-foreground">Active Agents</div></CardContent></Card>
         <Card><CardContent className="p-4"><div className="text-2xl font-bold">{teams.length}</div><div className="text-xs text-muted-foreground">Active Teams</div></CardContent></Card>
       </div>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Unallocated Lead Pools</CardTitle></CardHeader>
         <CardContent className="p-0">
-          <ConfigurableTable tableId="lead-allocation" columns={columns} data={unallocatedPools} />
+          <ConfigurableTable tableId="lead-allocation" columns={columns} data={unallocatedBatches} />
         </CardContent>
       </Card>
 
       <Dialog open={showAllocate} onOpenChange={setShowAllocate}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Allocate Leads — {unallocatedPools.find(p => p.id === selectedPool)?.source} ({unallocatedPools.find(p => p.id === selectedPool)?.count} leads)</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Allocate — {currentBatch?.batchName} ({currentBatch?.count} leads)</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div><Label>Allocation Mode</Label><Select value={allocMode} onValueChange={setAllocMode}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="round_robin">Auto Round Robin</SelectItem><SelectItem value="to_group">Assign to Manager Group</SelectItem><SelectItem value="to_team">Assign to Team</SelectItem><SelectItem value="to_agent">Assign to Agent</SelectItem></SelectContent></Select></div>
             {(allocMode === "to_group" || allocMode === "to_team" || allocMode === "to_agent") && (
