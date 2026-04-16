@@ -274,9 +274,45 @@ const LeadDetailPage = () => {
           <div className="flex items-center gap-2 mt-1 flex-wrap">
             <Badge variant="outline" className="text-[10px]">{lead.id}</Badge>
             <Badge>{getStageLabel(lead.stage)}</Badge>
-            <Badge variant={lead.priority === "hot" ? "destructive" : lead.priority === "warm" ? "default" : "secondary"}>
-              {lead.priority.toUpperCase()}
-            </Badge>
+            {(() => {
+              const currentPriority = (priorityOverride || lead.priority) as "hot" | "warm" | "cold";
+              const { reasons } = calculatePriorityScore(lead, config);
+              return (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant={currentPriority === "hot" ? "destructive" : currentPriority === "warm" ? "default" : "secondary"} className="cursor-help">
+                      {currentPriority.toUpperCase()}
+                      {priorityOverride && <span className="ml-1 text-[8px]">(manual)</span>}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-xs">
+                    <p className="font-semibold text-xs mb-1">Priority Scoring Breakdown</p>
+                    {reasons.length > 0 ? reasons.map((r, i) => (
+                      <p key={i} className="text-[11px]">{r}</p>
+                    )) : <p className="text-[11px] text-muted-foreground">No scoring factors matched</p>}
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })()}
+            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => {
+              const newP = calculatePriority(lead, config);
+              setPriorityOverride(null);
+              toast.success(`Priority recalculated: ${newP.toUpperCase()}`);
+            }}>
+              <RefreshCw className="h-3 w-3" />
+            </Button>
+            {(role === "manager" || role === "cluster_head" || role === "data_admin") && (
+              <Select value={priorityOverride || ""} onValueChange={v => { setPriorityOverride(v); toast.success(`Priority overridden to ${v.toUpperCase()}`); }}>
+                <SelectTrigger className="h-6 w-24 text-[10px]">
+                  <SelectValue placeholder="Override" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="hot">Hot</SelectItem>
+                  <SelectItem value="warm">Warm</SelectItem>
+                  <SelectItem value="cold">Cold</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
             <span className="text-xs text-muted-foreground">Source: {lead.leadSource}</span>
           </div>
         </div>
