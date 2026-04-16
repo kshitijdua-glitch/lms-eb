@@ -54,6 +54,7 @@ const SystemConfigPage = () => {
           <TabsTrigger value="retry">Retry Logic</TabsTrigger>
           <TabsTrigger value="aging">Aging & Expiry</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsTrigger value="priority">Priority Rules</TabsTrigger>
         </TabsList>
 
         <TabsContent value="sources" className="mt-4">
@@ -171,6 +172,10 @@ const SystemConfigPage = () => {
               <Button className="mt-4" onClick={() => toast.success("Notification settings saved. Change logged.")}><Save className="h-4 w-4 mr-1" /> Save</Button>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="priority" className="mt-4">
+          <PriorityRulesTab />
         </TabsContent>
       </Tabs>
     </div>
