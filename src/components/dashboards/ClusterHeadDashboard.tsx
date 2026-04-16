@@ -81,7 +81,7 @@ export function ClusterHeadDashboard() {
     { label: "System Config", icon: Settings, path: "/system-config" },
     { label: "Lead Allocation", icon: Upload, path: "/lead-allocation" },
     { label: "Lead Report", icon: FileText, path: "/org-reports" },
-    { label: "Performance", icon: TrendingUp, path: "/performance" },
+    
     { label: "Audit Trail", icon: Shield, path: "/audit-trail" },
   ];
 
