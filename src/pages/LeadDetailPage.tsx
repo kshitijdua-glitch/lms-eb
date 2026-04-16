@@ -12,13 +12,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import {
   ArrowLeft, Phone, Send, Calculator, Clock, AlertTriangle,
-  User, Edit2, Lock, FileText, Shield, CalendarIcon, Shuffle, List
+  User, Edit2, Lock, FileText, Shield, CalendarIcon, Shuffle, Search, ChevronLeft, ChevronRight
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -61,7 +60,7 @@ const LeadDetailPage = () => {
   const [stbSubmitted, setStbSubmitted] = useState(lead?.stbSubmissions?.length ? lead.stbSubmissions.length > 0 : false);
   const [localStbSubmissions, setLocalStbSubmissions] = useState(lead?.stbSubmissions || []);
 
-  const [showLeadList, setShowLeadList] = useState(false);
+  const [leadSidebarOpen, setLeadSidebarOpen] = useState(true);
   const [leadListSearch, setLeadListSearch] = useState("");
 
   if (!lead) return <div className="p-8 text-center text-muted-foreground">Lead not found</div>;
@@ -179,14 +178,69 @@ const LeadDetailPage = () => {
   const groups = dispositionGroups();
 
   return (
-    <div className="space-y-4">
+    <div className="flex gap-0 -m-6">
+      {/* Lead List Sidebar */}
+      <div className={cn(
+        "border-r border-dashed bg-card shrink-0 flex flex-col transition-all duration-200",
+        leadSidebarOpen ? "w-72" : "w-10"
+      )}>
+        <div className="flex items-center justify-between p-2 border-b border-dashed">
+          {leadSidebarOpen && <span className="text-xs font-semibold px-1">Leads</span>}
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setLeadSidebarOpen(!leadSidebarOpen)}>
+            {leadSidebarOpen ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+          </Button>
+        </div>
+        {leadSidebarOpen && (
+          <>
+            <div className="p-2 border-b border-dashed">
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                <Input
+                  placeholder="Search..."
+                  value={leadListSearch}
+                  onChange={e => setLeadListSearch(e.target.value)}
+                  className="h-7 text-xs pl-7"
+                />
+              </div>
+            </div>
+            <ScrollArea className="flex-1">
+              <div className="divide-y divide-dashed">
+                {filteredLeads.map(l => {
+                  const daysSince = Math.floor((Date.now() - new Date(l.lastActivityAt || l.allocatedAt).getTime()) / 86400000);
+                  const isCurrent = l.id === id;
+                  return (
+                    <button
+                      key={l.id}
+                      className={cn(
+                        "w-full text-left px-3 py-2.5 hover:bg-muted/50 transition-colors",
+                        isCurrent && "bg-muted border-l-2 border-primary"
+                      )}
+                      onClick={() => navigate(`/leads/${l.id}`)}
+                    >
+                      <div className="text-xs font-medium truncate">{l.name}</div>
+                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                        <Badge variant="outline" className="text-[10px] px-1 py-0">{getStageLabel(l.stage)}</Badge>
+                        <Badge variant="secondary" className="text-[10px] px-1 py-0">{getProductLabel(l.productType)}</Badge>
+                        <span className="text-[10px] text-muted-foreground ml-auto">{daysSince}d</span>
+                      </div>
+                    </button>
+                  );
+                })}
+                {filteredLeads.length === 0 && (
+                  <div className="p-4 text-xs text-muted-foreground text-center">No leads found</div>
+                )}
+              </div>
+            </ScrollArea>
+          </>
+        )}
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 min-w-0 p-6 overflow-auto space-y-4">
       {/* Action Bar */}
       <div className="flex items-center gap-3 flex-wrap">
         <Button variant="ghost" size="sm" onClick={() => navigate("/leads")}>
           <ArrowLeft className="h-4 w-4 mr-1" /> Back to Leads
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => setShowLeadList(true)}>
-          <List className="h-4 w-4 mr-1" /> Browse Leads
         </Button>
         <div className="flex-1" />
         <Button size="sm" onClick={() => setShowCallLog(true)}><Phone className="h-4 w-4 mr-1" /> Log Call</Button>
@@ -777,52 +831,7 @@ const LeadDetailPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Browse Leads Sheet */}
-      <Sheet open={showLeadList} onOpenChange={setShowLeadList}>
-        <SheetContent side="left" className="w-80 sm:max-w-sm p-0">
-          <SheetHeader className="p-4 pb-2 border-b border-dashed">
-            <SheetTitle className="text-sm">Browse Leads</SheetTitle>
-            <Input
-              placeholder="Search by name..."
-              value={leadListSearch}
-              onChange={e => setLeadListSearch(e.target.value)}
-              className="h-8 text-xs"
-            />
-          </SheetHeader>
-          <ScrollArea className="h-[calc(100vh-120px)]">
-            <div className="divide-y divide-dashed">
-              {filteredLeads.map(l => {
-                const daysSince = Math.floor((Date.now() - new Date(l.lastActivityAt || l.allocatedAt).getTime()) / 86400000);
-                const isCurrent = l.id === id;
-                return (
-                  <button
-                    key={l.id}
-                    className={cn(
-                      "w-full text-left px-4 py-3 hover:bg-muted/50 transition-colors",
-                      isCurrent && "bg-muted border-l-2 border-primary"
-                    )}
-                    onClick={() => {
-                      navigate(`/leads/${l.id}`);
-                      setShowLeadList(false);
-                      setLeadListSearch("");
-                    }}
-                  >
-                    <div className="text-xs font-medium truncate">{l.name}</div>
-                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                      <Badge variant="outline" className="text-[10px] px-1 py-0">{getStageLabel(l.stage)}</Badge>
-                      <Badge variant="secondary" className="text-[10px] px-1 py-0">{getProductLabel(l.productType)}</Badge>
-                      <span className="text-[10px] text-muted-foreground ml-auto">{daysSince}d ago</span>
-                    </div>
-                  </button>
-                );
-              })}
-              {filteredLeads.length === 0 && (
-                <div className="p-4 text-xs text-muted-foreground text-center">No leads found</div>
-              )}
-            </div>
-          </ScrollArea>
-        </SheetContent>
-      </Sheet>
+      </div>
     </div>
   );
 };
