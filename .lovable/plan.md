@@ -1,46 +1,38 @@
 
 
-# Plan: Auto-Priority Scoring Engine with Customizable Rules
+# Plan: File-Based Batch Upload, Naming, and Allocation
 
 ## Summary
-Add a rule-based priority engine that auto-calculates lead priority (hot/warm/cold). Cluster Head and Data Admin roles can customize the scoring weights and thresholds from a settings UI.
+Restructure the upload and allocation flow so batches are file-based, not source-based. Upload flow adds a step where the user names the batch and selects source + default product. Allocation page shows uploaded batches (not source pools). Source list is configurable by Data Admins in System Config.
 
 ## Changes
 
-### 1. New: `src/utils/priorityEngine.ts`
-- `calculatePriority(lead, config)` pure function that scores leads
-- Default scoring config object with factors and weights:
-  - Loan amount, income, credit score, FOIR, disposition type, days since activity, retry count
-- Score thresholds: ≥ 5 = hot, 2–4 = warm, < 2 = cold
+### 1. `src/pages/admin/LeadUploadPage.tsx`
+- Change step flow to: `upload` → `details` → `mapping` → `validation` → `done`
+- New **"details" step** after file upload: user enters batch name (auto-filled from filename), selects source from configurable list, selects default product
+- Product Type column mapping still available (overrides batch default per-lead)
+- Update stepper UI to show 4 steps
+- Remove hardcoded source references; use source list from a shared constant/context
 
-### 2. New: `src/contexts/PriorityConfigContext.tsx`
-- Context holding the scoring config (weights, thresholds) in state
-- Cluster Head and Data Admin can modify; other roles get read-only defaults
-- Persisted in-memory (mock prototype)
+### 2. `src/pages/LeadAllocationPage.tsx`
+- Replace `PoolRow` type: change from `{ source, date, count, product }` to `{ batchName, fileName, uploadDate, source, count, product, status }`
+- Update mock data to show file-based batches (e.g., "Google_Ads_Apr14.csv", "Partner_Leads_Q1.xlsx")
+- Table columns: Batch Name, File Name, Upload Date, Source, Product, Lead Count, Status, Action
+- Allocation dialog title references batch name instead of source
+- Summary cards remain the same (total unallocated, active batches, active agents, active teams)
 
-### 3. `src/data/mockData.ts`
-- Replace `randomFrom(priorities)` with `calculatePriority(lead)` using default config
+### 3. `src/pages/SystemConfigPage.tsx`
+- Add a **"Lead Sources"** tab (visible to Cluster Head / Data Admin)
+- UI: list of source names with Add/Remove buttons
+- Sources stored in component state (mock prototype)
+- These sources are used in the upload page's source dropdown
 
-### 4. `src/pages/LeadDetailPage.tsx`
-- Show priority badge with tooltip explaining scoring factors
-- Add "Recalculate" button to re-run engine
-- Add manual override dropdown (manager+ and cluster head+ only)
-
-### 5. New section in `src/pages/SystemConfigPage.tsx` or `src/pages/ReportsPage.tsx`
-- Add a "Priority Rules" tab accessible to Cluster Head and Data Admin
-- UI to adjust:
-  - Factor weights (sliders or number inputs for each scoring factor)
-  - Score thresholds for hot/warm/cold cutoffs
-  - Toggle individual factors on/off
-- Save button applies changes app-wide via context
-- Shows a preview of how current leads would be re-distributed (e.g., "Hot: 12, Warm: 25, Cold: 8")
-
-### 6. `src/components/AppSidebar.tsx`
-- No changes needed — config is accessed via existing System Config or Reports page
+### 4. `src/data/mockData.ts` (or inline in pages)
+- Add a shared `defaultLeadSources` array: `["Website", "Google Ads", "Facebook", "Partner", "IVR", "Referral", "Walk-in", "Email Campaign"]`
+- Update mock batch data for allocation page
 
 ## Technical Notes
-- Config stored in React context (no backend)
-- Only Cluster Head and Data Admin can edit rules; all roles benefit from calculated priorities
-- Agent and Manager can see priority + override individual leads, but cannot change the rules
-- The engine is a pure function — easy to move server-side later
+- No new context needed for sources — simple shared constant with local state editing in SystemConfig
+- Product override from file column is handled by the existing column mapping step (if "Product Type" column is mapped, per-lead values override batch default)
+- All mock/prototype — no backend
 
