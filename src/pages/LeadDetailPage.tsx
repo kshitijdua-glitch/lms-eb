@@ -178,14 +178,69 @@ const LeadDetailPage = () => {
   const groups = dispositionGroups();
 
   return (
-    <div className="space-y-4">
+    <div className="flex gap-0 -m-6">
+      {/* Lead List Sidebar */}
+      <div className={cn(
+        "border-r border-dashed bg-card shrink-0 flex flex-col transition-all duration-200",
+        leadSidebarOpen ? "w-72" : "w-10"
+      )}>
+        <div className="flex items-center justify-between p-2 border-b border-dashed">
+          {leadSidebarOpen && <span className="text-xs font-semibold px-1">Leads</span>}
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setLeadSidebarOpen(!leadSidebarOpen)}>
+            {leadSidebarOpen ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+          </Button>
+        </div>
+        {leadSidebarOpen && (
+          <>
+            <div className="p-2 border-b border-dashed">
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                <Input
+                  placeholder="Search..."
+                  value={leadListSearch}
+                  onChange={e => setLeadListSearch(e.target.value)}
+                  className="h-7 text-xs pl-7"
+                />
+              </div>
+            </div>
+            <ScrollArea className="flex-1">
+              <div className="divide-y divide-dashed">
+                {filteredLeads.map(l => {
+                  const daysSince = Math.floor((Date.now() - new Date(l.lastActivityAt || l.allocatedAt).getTime()) / 86400000);
+                  const isCurrent = l.id === id;
+                  return (
+                    <button
+                      key={l.id}
+                      className={cn(
+                        "w-full text-left px-3 py-2.5 hover:bg-muted/50 transition-colors",
+                        isCurrent && "bg-muted border-l-2 border-primary"
+                      )}
+                      onClick={() => navigate(`/leads/${l.id}`)}
+                    >
+                      <div className="text-xs font-medium truncate">{l.name}</div>
+                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                        <Badge variant="outline" className="text-[10px] px-1 py-0">{getStageLabel(l.stage)}</Badge>
+                        <Badge variant="secondary" className="text-[10px] px-1 py-0">{getProductLabel(l.productType)}</Badge>
+                        <span className="text-[10px] text-muted-foreground ml-auto">{daysSince}d</span>
+                      </div>
+                    </button>
+                  );
+                })}
+                {filteredLeads.length === 0 && (
+                  <div className="p-4 text-xs text-muted-foreground text-center">No leads found</div>
+                )}
+              </div>
+            </ScrollArea>
+          </>
+        )}
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 min-w-0 p-6 overflow-auto space-y-4">
       {/* Action Bar */}
       <div className="flex items-center gap-3 flex-wrap">
         <Button variant="ghost" size="sm" onClick={() => navigate("/leads")}>
           <ArrowLeft className="h-4 w-4 mr-1" /> Back to Leads
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => setShowLeadList(true)}>
-          <List className="h-4 w-4 mr-1" /> Browse Leads
         </Button>
         <div className="flex-1" />
         <Button size="sm" onClick={() => setShowCallLog(true)}><Phone className="h-4 w-4 mr-1" /> Log Call</Button>
