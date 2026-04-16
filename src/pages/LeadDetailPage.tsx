@@ -1,6 +1,8 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { leads, getLeadsForAgent, getDispositionLabel, getStageLabel, getProductLabel, dispositionGroups, lendingPartners, getAgentsForTeam, agents, teams } from "@/data/mockData";
 import { useRole } from "@/contexts/RoleContext";
+import { usePriorityConfig } from "@/contexts/PriorityConfigContext";
+import { calculatePriorityScore, calculatePriority } from "@/utils/priorityEngine";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,11 +15,12 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import {
   ArrowLeft, Phone, Send, Calculator, Clock, AlertTriangle,
-  User, Edit2, Lock, FileText, Shield, CalendarIcon, Shuffle, Search, ChevronLeft, ChevronRight
+  User, Edit2, Lock, FileText, Shield, CalendarIcon, Shuffle, Search, ChevronLeft, ChevronRight, RefreshCw
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
