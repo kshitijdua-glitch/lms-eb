@@ -13,7 +13,7 @@ import { Plus, Save, Settings, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { usePriorityConfig } from "@/contexts/PriorityConfigContext";
 import { calculatePriority } from "@/utils/priorityEngine";
-import { leads } from "@/data/mockData";
+import { leads, defaultLeadSources } from "@/data/mockData";
 
 const PriorityRulesTab = () => {
   const { config, updateConfig } = usePriorityConfig();
@@ -132,11 +132,9 @@ const PriorityRulesTab = () => {
 };
 
 const SystemConfigPage = () => {
-  const [leadSources, setLeadSources] = useState([
-    { name: "Website", active: true }, { name: "Google Ads", active: true }, { name: "Facebook", active: true },
-    { name: "Referral", active: true }, { name: "Partner", active: true }, { name: "Walk-in", active: true },
-    { name: "IVR", active: true }, { name: "WhatsApp", active: true },
-  ]);
+  const [leadSources, setLeadSources] = useState(
+    defaultLeadSources.map(name => ({ name, active: true }))
+  );
   const [newSource, setNewSource] = useState("");
   const [allocMode, setAllocMode] = useState("round_robin");
   const [leadsPerDay, setLeadsPerDay] = useState("25");

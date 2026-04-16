@@ -117,7 +117,8 @@ const stages: LeadStage[] = ["new","contacted","interested","bank_selected","stb
 const products: ProductType[] = ["personal_loan","home_loan","business_loan","credit_card","loan_against_property"];
 const empTypes: EmploymentType[] = ["salaried","self_employed","business_owner"];
 const priorities: Priority[] = ["hot","warm","cold"];
-const leadSources = ["Website","Google Ads","Facebook","Referral","Partner","Walk-in","IVR","WhatsApp"];
+export const defaultLeadSources = ["Website","Google Ads","Facebook","Referral","Partner","Walk-in","IVR","WhatsApp","Email Campaign"];
+const leadSources = defaultLeadSources;
 const cities = ["Mumbai","Delhi","Bangalore","Hyderabad","Chennai","Pune","Kolkata","Ahmedabad","Jaipur","Lucknow"];
 const pinCodes: Record<string, string[]> = {
   "Mumbai": ["400001","400050","400070"],
