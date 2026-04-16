@@ -131,6 +131,7 @@ const PriorityRulesTab = () => {
   );
 };
 
+const SystemConfigPage = () => {
   const [leadSources, setLeadSources] = useState([
     { name: "Website", active: true }, { name: "Google Ads", active: true }, { name: "Facebook", active: true },
     { name: "Referral", active: true }, { name: "Partner", active: true }, { name: "Walk-in", active: true },
