@@ -8,8 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Save, Settings } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { Plus, Save, Settings, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { usePriorityConfig } from "@/contexts/PriorityConfigContext";
+import { calculatePriority } from "@/utils/priorityEngine";
+import { leads } from "@/data/mockData";
 
 const SystemConfigPage = () => {
   const [leadSources, setLeadSources] = useState([
