@@ -42,7 +42,6 @@ const clusterHeadNav = [
   { title: "System Config", url: "/system-config", icon: Settings },
   { title: "Lead Allocation", url: "/lead-allocation", icon: Upload },
   { title: "Lead Report", url: "/org-reports", icon: FileText },
-  { title: "Performance", url: "/performance", icon: TrendingUp },
   { title: "Audit Trail", url: "/audit-trail", icon: BarChart3 },
   { title: "MIS & Reports", url: "/reports", icon: BarChart3 },
 ];
@@ -56,7 +55,6 @@ const adminNav = [
   { title: "System Config", url: "/system-config", icon: Settings },
   { title: "Staff Mgmt", url: "/admin/staff", icon: UserCog },
   { title: "Audit Trail", url: "/audit-trail", icon: Shield },
-  { title: "Performance", url: "/performance", icon: TrendingUp },
 ];
 
 function getNav(role: UserRole) {
