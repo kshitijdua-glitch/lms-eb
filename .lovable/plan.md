@@ -1,32 +1,26 @@
 
 
-# Plan: Add Lead List Shortcut Panel on Lead Detail Page
+# Plan: Move Performance into MIS & Reports for Cluster Head and Data Admin
 
 ## Summary
-Add a collapsible/popover lead list panel on the lead detail page that lets users quickly browse and switch between leads without going back to the leads list page. Shows basic info (name, stage, product, days since activity) for each lead.
+Remove the "Performance" sidebar link for Cluster Head and Data Admin roles. Instead, add a "Team Performance" tab/section inside the MIS & Reports page so these roles can view performance data there.
 
-## What Changes
+## Changes
 
-### `src/pages/LeadDetailPage.tsx`
+### 1. `src/components/AppSidebar.tsx`
+- Remove `{ title: "Performance", url: "/performance", icon: TrendingUp }` from `clusterHeadNav` array
+- Remove `{ title: "Performance", url: "/performance", icon: TrendingUp }` from `adminNav` array
 
-1. **Add a "Browse Leads" button** in the header area (next to the Back button) that opens a Sheet (slide-out panel) from the left side.
+### 2. `src/pages/ReportsPage.tsx`
+- Add a Tabs layout wrapping the existing content under a "MIS Reports" tab
+- Add a new "Team Performance" tab that embeds the same performance content (KPI cards + trend chart) from `PerformancePage.tsx`
+- Import `performanceData` from mockData, plus chart and icon components
+- The performance tab will show the same KPI summary cards and metric trend line chart currently on the Performance page
 
-2. **Sheet content**: 
-   - Search input at top to filter leads by name
-   - Scrollable list of leads (same dataset as LeadsPage — role-filtered)
-   - Each list item shows: Name, Stage badge, Product badge, Days since last activity
-   - Current lead is highlighted
-   - Clicking a lead navigates to `/leads/{id}` (closing the sheet)
-
-3. **Imports**: Add `Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger` from UI, `List` icon from lucide, and `getLeadsForAgent` from mockData.
-
-4. **State**: Add `leadListSearch` state for filtering the lead list, and `showLeadList` for sheet open state.
-
-### No other files change.
+### 3. `src/components/dashboards/ClusterHeadDashboard.tsx`
+- Remove the `{ label: "Performance", icon: TrendingUp, path: "/performance" }` entry from the Quick Navigation grid
 
 ## Technical Notes
-- Uses the existing `Sheet` component for the slide-out panel
-- Filters leads by role (agent sees only their leads, others see all)
-- List is capped at ~50 items for performance
-- Current lead gets a distinct background highlight
+- Agent and Manager roles keep their standalone Performance sidebar link unchanged
+- The Reports page will use shadcn Tabs to separate MIS Reports from Team Performance
 
