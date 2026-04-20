@@ -40,7 +40,7 @@ const clusterHeadNav = [
   { title: "Org STB", url: "/org-stb", icon: Send },
   { title: "Staff Mgmt", url: "/staff-management", icon: UserCog },
   { title: "System Config", url: "/system-config", icon: Settings },
-  { title: "Lead Allocation", url: "/lead-allocation", icon: Upload },
+  { title: "Lead Allocation", url: "/admin/allocation", icon: Upload },
   { title: "Lead Report", url: "/org-reports", icon: FileText },
   { title: "Audit Trail", url: "/audit-trail", icon: BarChart3 },
   { title: "MIS & Reports", url: "/reports", icon: BarChart3 },
