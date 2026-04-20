@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +25,7 @@ const stepLabels: Record<Exclude<Step, "done">, string> = {
 };
 
 const LeadUploadPage = () => {
+  const navigate = useNavigate();
   const [step, setStep] = useState<Step>("upload");
   const [dragOver, setDragOver] = useState(false);
   const [fileName, setFileName] = useState("");
@@ -100,7 +102,7 @@ const LeadUploadPage = () => {
             <p className="text-sm text-muted-foreground">Source: <Badge variant="outline">{batchSource}</Badge> · Product: <Badge variant="outline">{batchProduct}</Badge> · Status: <Badge>Awaiting Allocation</Badge></p>
             <div className="flex gap-2 justify-center">
               <Button onClick={resetAll}>Upload Another File</Button>
-              <Button variant="outline" onClick={() => window.location.href = "/admin/allocation"}>Go to Allocation</Button>
+              <Button variant="outline" onClick={() => navigate("/admin/allocation")}>Go to Allocation</Button>
             </div>
           </CardContent>
         </Card>

@@ -16,7 +16,6 @@ import LeadUploadPage from "./pages/admin/LeadUploadPage";
 import AgentManagementPage from "./pages/admin/AgentManagementPage";
 import ConfigPage from "./pages/admin/ConfigPage";
 import PartnersPage from "./pages/admin/PartnersPage";
-import AdminAllocationPage from "./pages/admin/AdminAllocationPage";
 import LeadPoolsPage from "./pages/admin/LeadPoolsPage";
 import MISExportPage from "./pages/admin/MISExportPage";
 
@@ -60,7 +59,7 @@ const App = () => (
               <Route path="/admin/agents" element={<AgentManagementPage />} />
               <Route path="/admin/config" element={<ConfigPage />} />
               <Route path="/admin/partners" element={<PartnersPage />} />
-              <Route path="/admin/allocation" element={<AdminAllocationPage />} />
+              <Route path="/admin/allocation" element={<LeadAllocationPage />} />
               <Route path="/admin/pools" element={<LeadPoolsPage />} />
               <Route path="/admin/mis" element={<MISExportPage />} />
               
