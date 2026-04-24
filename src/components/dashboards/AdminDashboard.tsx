@@ -75,7 +75,10 @@ export function AdminDashboard() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-muted-foreground">{b.valid}/{b.rows} valid</span>
-                  <Badge variant={b.status === "Allocated" ? "default" : b.status === "Partial" ? "secondary" : "outline"} className="text-[10px]">
+                  <Badge
+                    variant={b.status === "Allocated" ? "success" : b.status === "Partial" ? "warning" : "outline"}
+                    className="text-[10px]"
+                  >
                     {b.status}
                   </Badge>
                 </div>
