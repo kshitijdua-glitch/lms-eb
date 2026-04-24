@@ -3,6 +3,7 @@ import { leads, agents, teams, lendingPartners } from "@/data/mockData";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { StatTile } from "@/components/StatTile";
 import { useNavigate } from "react-router-dom";
 import {
   Users, Clock, Send, CheckCircle, AlertTriangle, BarChart3, UserCog,
