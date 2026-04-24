@@ -3,6 +3,7 @@ import { leads, agents, teams } from "@/data/mockData";
 import { Upload, Users, Settings, FileText, Database, AlertTriangle, UserCog, BarChart3, Building2, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { StatTile } from "@/components/StatTile";
 import { useNavigate } from "react-router-dom";
 
 export function AdminDashboard() {
@@ -28,26 +29,20 @@ export function AdminDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Data Admin Dashboard</h1>
-        <p className="text-muted-foreground">Data operations & system health overview</p>
+        <h1>Data Admin Dashboard</h1>
+        <p className="text-sm text-muted-foreground mt-1">Data operations & system health overview</p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {[
-          { label: "Unallocated Pools", value: unallocated, color: "text-orange-600", icon: Database },
-          { label: "Pending Validation", value: pendingValidation, color: "text-yellow-600", icon: AlertTriangle },
-          { label: "Stale Lead Pools", value: staleLeads, color: "text-red-600", icon: AlertTriangle },
-          { label: "Active Agents", value: activeAgents, color: "text-green-600", icon: Users },
-          { label: "Active TLs", value: activeTLs, color: "text-blue-600", icon: UserCog },
-          { label: "Flagged Profiles", value: flaggedProfiles, color: "text-red-500", icon: Shield },
-        ].map(k => (
-          <Card key={k.label}>
-            <CardContent className="p-4">
-              <k.icon className={`h-5 w-5 mb-1 ${k.color}`} />
-              <div className="text-2xl font-bold">{k.value}</div>
-              <div className="text-xs text-muted-foreground">{k.label}</div>
-            </CardContent>
-          </Card>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        {([
+          { label: "Unallocated Pools", value: unallocated, tone: "primary", icon: Database, variant: "gradient" },
+          { label: "Pending Validation", value: pendingValidation, tone: "warning", icon: AlertTriangle, variant: "gradient" },
+          { label: "Stale Lead Pools", value: staleLeads, tone: "destructive", icon: AlertTriangle, variant: "gradient" },
+          { label: "Active Agents", value: activeAgents, tone: "success", icon: Users, variant: "soft" },
+          { label: "Active TLs", value: activeTLs, tone: "info", icon: UserCog, variant: "soft" },
+          { label: "Flagged Profiles", value: flaggedProfiles, tone: "destructive", icon: Shield, variant: "soft" },
+        ] as const).map(k => (
+          <StatTile key={k.label} label={k.label} value={k.value} icon={k.icon} tone={k.tone} variant={k.variant} />
         ))}
       </div>
 
