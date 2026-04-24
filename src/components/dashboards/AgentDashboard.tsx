@@ -45,8 +45,8 @@ export function AgentDashboard() {
     { label: "Missed Follow-Ups", value: missedFollowUps.length, icon: AlertTriangle, tone: "destructive", variant: "gradient" },
     { label: "Today's Follow-Ups", value: todayFollowUps.length, icon: Calendar, tone: "warning", variant: "gradient" },
     { label: "Leads Worked Today", value: workedToday.length, icon: Phone, tone: "info", variant: "gradient" },
-    { label: "STB Count (Month)", value: stbCount.length, icon: Send, tone: "primary", variant: "soft" },
-    { label: "Approved (Month)", value: approved.length, icon: CheckCircle, tone: "success", variant: "soft" },
+    { label: "STB Count (This Month)", value: stbCount.length, icon: Send, tone: "primary", variant: "soft" },
+    { label: "Approved (This Month)", value: approved.length, icon: CheckCircle, tone: "success", variant: "soft" },
     { label: "Disbursed Amount", value: `₹${(totalDisbursed / 100000).toFixed(1)}L`, icon: TrendingUp, tone: "success", variant: "soft" },
   ];
 
