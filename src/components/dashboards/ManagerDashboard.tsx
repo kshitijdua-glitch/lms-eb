@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { StatTile } from "@/components/StatTile";
 import { leads, teams, agents, getStageLabel, getLeadsForTeam, getLeadsForAgent, getAgentsForTeam, lendingPartners } from "@/data/mockData";
 import { useRole } from "@/contexts/RoleContext";
 import { useNavigate } from "react-router-dom";
@@ -70,51 +71,45 @@ export function ManagerDashboard() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold flex items-center gap-2"><LayoutDashboard className="h-6 w-6" /> Manager Dashboard</h2>
+      <h1 className="flex items-center gap-2"><LayoutDashboard className="h-6 w-6" /> Manager Dashboard</h1>
 
       {/* My Production */}
       <div>
-        <h3 className="text-sm font-medium text-muted-foreground mb-2">My Production</h3>
+        <h3 className="text-eyebrow mb-2">My Production</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-          {[
-            { label: "My Leads", value: myLeads.length, icon: FileText },
-            { label: "Worked Today", value: myWorkedToday, icon: CheckCircle },
-            { label: "Pending F/U", value: myPendingFU, icon: Clock },
-            { label: "Missed F/U", value: myMissedFU, icon: AlertTriangle, alert: myMissedFU > 0 },
-            { label: "STB", value: mySTB, icon: Send },
-            { label: "Disbursed", value: myDisbursed, icon: TrendingUp },
-          ].map(k => (
-            <Card key={k.label}>
-              <CardContent className="p-3">
-                <k.icon className={`h-4 w-4 mb-1 ${k.alert ? "text-destructive" : "text-muted-foreground"}`} />
-                <div className="text-xl font-bold">{k.value}</div>
-                <div className="text-[10px] text-muted-foreground">{k.label}</div>
-              </CardContent>
-            </Card>
+          {([
+            { label: "My Leads", value: myLeads.length, icon: FileText, tone: "primary", variant: "gradient" },
+            { label: "Worked Today", value: myWorkedToday, icon: CheckCircle, tone: "success", variant: "gradient" },
+            { label: "Pending F/U", value: myPendingFU, icon: Clock, tone: "warning", variant: "gradient" },
+            { label: "Missed F/U", value: myMissedFU, icon: AlertTriangle, tone: "destructive", variant: "gradient" },
+            { label: "STB", value: mySTB, icon: Send, tone: "info", variant: "soft" },
+            { label: "Disbursed", value: myDisbursed, icon: TrendingUp, tone: "success", variant: "soft" },
+          ] as const).map(k => (
+            <StatTile key={k.label} label={k.label} value={k.value} icon={k.icon} tone={k.tone} variant={k.variant} />
           ))}
         </div>
         <Card className="mt-3">
-          <CardContent className="p-3 flex items-center gap-4">
+          <CardContent className="p-4 flex items-center gap-4">
             <Target className="h-4 w-4 text-primary" />
             <div className="flex-1">
               <div className="text-xs text-muted-foreground">Daily Target: {myCallsToday}/{myDailyTarget} calls</div>
               <Progress value={myTargetPct} className="h-2 mt-1" />
             </div>
-            <span className="text-sm font-bold">{myTargetPct}%</span>
+            <span className="text-sm font-semibold">{myTargetPct}%</span>
           </CardContent>
         </Card>
       </div>
 
       {/* Business Funnel */}
       <div>
-        <h3 className="text-sm font-medium text-muted-foreground mb-2">Business Performance Funnel</h3>
+        <h3 className="text-eyebrow mb-2">Business Performance Funnel</h3>
         <div className="grid grid-cols-5 gap-2">
-          {funnelSteps.map((step, i) => (
+          {funnelSteps.map((step) => (
             <Card key={step.label}>
-              <CardContent className="p-3 text-center">
-                <div className="text-xl font-bold">{step.value}</div>
-                <div className="text-[10px] text-muted-foreground">{step.label}</div>
-                <div className="text-[10px] font-medium text-primary">{step.pct}%</div>
+              <CardContent className="p-4 text-center">
+                <div className="text-stat text-foreground">{step.value}</div>
+                <div className="mt-1 text-[11px] font-medium text-muted-foreground">{step.label}</div>
+                <div className="mt-0.5 text-[11px] font-semibold text-primary">{step.pct}%</div>
               </CardContent>
             </Card>
           ))}
