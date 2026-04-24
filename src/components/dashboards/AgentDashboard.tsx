@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { StatTile } from "@/components/StatTile";
 import { leads, getLeadsForAgent, getDispositionLabel, getStageLabel } from "@/data/mockData";
 import { useNavigate } from "react-router-dom";
 import { AlertTriangle, Calendar, CheckCircle, Clock, Phone, Plus, Send, Target, TrendingUp, Users } from "lucide-react";
