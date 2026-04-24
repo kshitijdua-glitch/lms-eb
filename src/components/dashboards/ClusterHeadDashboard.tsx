@@ -3,6 +3,7 @@ import { leads, agents, teams, lendingPartners } from "@/data/mockData";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { StatTile } from "@/components/StatTile";
 import { useNavigate } from "react-router-dom";
 import {
   Users, Clock, Send, CheckCircle, AlertTriangle, BarChart3, UserCog,
@@ -85,40 +86,45 @@ export function ClusterHeadDashboard() {
     { label: "Audit Trail", icon: Shield, path: "/audit-trail" },
   ];
 
+  const funnelTones = ["primary", "info", "warning", "success", "primary"] as const;
+  const alertTones: Record<string, "destructive" | "warning" | "muted"> = {
+    error: "destructive",
+    warning: "warning",
+    ok: "muted",
+  };
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Cluster Head Dashboard</h1>
-        <p className="text-muted-foreground">Organisation-wide overview & control</p>
+        <h1>Cluster Head Dashboard</h1>
+        <p className="text-sm text-muted-foreground mt-1">Organisation-wide overview & control</p>
       </div>
 
-      {/* Pipeline Health Strip */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Organisation Pipeline Health</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between gap-2">
-            {funnelSteps.map((step, idx) => (
-              <div key={step.label} className="flex items-center gap-2 flex-1">
-                <div className="text-center flex-1">
-                  <div className="text-2xl font-bold">{step.value}</div>
-                  <div className="text-xs text-muted-foreground">{step.label}</div>
-                  <div className="text-[10px] text-muted-foreground">{step.rate}%</div>
-                </div>
-                {idx < funnelSteps.length - 1 && <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />}
-              </div>
-            ))}
-          </div>
-          <div className="text-right mt-2 text-sm text-muted-foreground">
+      {/* Pipeline Health Strip — gradient stat tiles */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-eyebrow">Organisation Pipeline Health</h3>
+          <span className="text-xs text-muted-foreground">
             Total Disbursed: <strong className="text-foreground">₹{(totalDisbursedAmt / 100000).toFixed(1)}L</strong>
-          </div>
-        </CardContent>
-      </Card>
+          </span>
+        </div>
+        <div className="grid grid-cols-5 gap-3">
+          {funnelSteps.map((step, idx) => (
+            <StatTile
+              key={step.label}
+              label={step.label}
+              value={step.value}
+              tone={funnelTones[idx]}
+              variant="gradient"
+              hint={`${step.rate}% conversion`}
+            />
+          ))}
+        </div>
+      </div>
 
       {/* Manager Group Comparison */}
       <Card>
-        <CardHeader className="pb-2"><CardTitle className="text-base">Manager Group Comparison</CardTitle></CardHeader>
+        <CardHeader className="pb-3"><CardTitle>Manager Group Comparison</CardTitle></CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
@@ -138,7 +144,7 @@ export function ClusterHeadDashboard() {
                   <TableCell className="text-right">{m.groupSize}</TableCell>
                   <TableCell className="text-right">{m.leads}</TableCell>
                   <TableCell className="text-right">
-                    <Badge variant={m.contactRate > 70 ? "default" : "secondary"}>{m.contactRate}%</Badge>
+                    <Badge variant={m.contactRate > 70 ? "success" : "warning"}>{m.contactRate}%</Badge>
                   </TableCell>
                   <TableCell className="text-right">{m.stb}</TableCell>
                   <TableCell className="text-right">{m.disbursed}</TableCell>
@@ -149,28 +155,21 @@ export function ClusterHeadDashboard() {
         </CardContent>
       </Card>
 
-      {/* System Alerts */}
-      <Card>
-        <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="h-4 w-4" /> System Alerts</CardTitle></CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            {alerts.map(a => (
-              <div key={a.label} className={`p-3 rounded-lg border text-center ${
-                a.severity === "error" ? "border-destructive/40 bg-destructive/5" :
-                a.severity === "warning" ? "border-warning/40 bg-warning/5" :
-                "border-border bg-muted/30"
-              }`}>
-                <div className={`text-xl font-bold ${
-                  a.severity === "error" ? "text-destructive" :
-                  a.severity === "warning" ? "text-warning" :
-                  "text-muted-foreground"
-                }`}>{a.value}</div>
-                <div className="text-[10px] text-muted-foreground">{a.label}</div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      {/* System Alerts — soft StatTiles */}
+      <div>
+        <h3 className="text-eyebrow mb-2 flex items-center gap-2"><AlertTriangle className="h-3.5 w-3.5" /> System Alerts</h3>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          {alerts.map(a => (
+            <StatTile
+              key={a.label}
+              label={a.label}
+              value={a.value}
+              tone={alertTones[a.severity]}
+              variant="soft"
+            />
+          ))}
+        </div>
+      </div>
 
       {/* Quick Navigation */}
       <Card>

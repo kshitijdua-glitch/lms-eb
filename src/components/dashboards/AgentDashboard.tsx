@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { StatTile } from "@/components/StatTile";
 import { leads, getLeadsForAgent, getDispositionLabel, getStageLabel } from "@/data/mockData";
 import { useNavigate } from "react-router-dom";
 import { AlertTriangle, Calendar, CheckCircle, Clock, Phone, Plus, Send, Target, TrendingUp, Users } from "lucide-react";
@@ -33,60 +34,46 @@ export function AgentDashboard() {
   const callsToday = myLeads.reduce((sum, l) => sum + l.callLogs.filter(c => c.timestamp.split("T")[0] === today).length, 0);
   const targetPct = Math.min(100, Math.round((callsToday / dailyTarget) * 100));
 
-  const kpis = [
-    { label: "Total Assigned", value: totalAssigned, icon: Users, color: "text-primary" },
-    { label: "Missed Follow-Ups", value: missedFollowUps.length, icon: AlertTriangle, color: "text-destructive" },
-    { label: "Today's Follow-Ups", value: todayFollowUps.length, icon: Calendar, color: "text-warning" },
-    { label: "Leads Worked Today", value: workedToday.length, icon: Phone, color: "text-info" },
-    { label: "STB Count (Month)", value: stbCount.length, icon: Send, color: "text-primary" },
-    { label: "Approved (Month)", value: approved.length, icon: CheckCircle, color: "text-success" },
-    { label: "Disbursed Amount", value: `₹${(totalDisbursed / 100000).toFixed(1)}L`, icon: TrendingUp, color: "text-success" },
+  const kpis: Array<{
+    label: string;
+    value: React.ReactNode;
+    icon: typeof Users;
+    tone: "primary" | "destructive" | "warning" | "info" | "success" | "muted";
+    variant: "gradient" | "soft";
+  }> = [
+    { label: "Total Assigned", value: totalAssigned, icon: Users, tone: "primary", variant: "gradient" },
+    { label: "Missed Follow-Ups", value: missedFollowUps.length, icon: AlertTriangle, tone: "destructive", variant: "gradient" },
+    { label: "Today's Follow-Ups", value: todayFollowUps.length, icon: Calendar, tone: "warning", variant: "gradient" },
+    { label: "Leads Worked Today", value: workedToday.length, icon: Phone, tone: "info", variant: "gradient" },
+    { label: "STB Count (Month)", value: stbCount.length, icon: Send, tone: "primary", variant: "soft" },
+    { label: "Approved (Month)", value: approved.length, icon: CheckCircle, tone: "success", variant: "soft" },
+    { label: "Disbursed Amount", value: `₹${(totalDisbursed / 100000).toFixed(1)}L`, icon: TrendingUp, tone: "success", variant: "soft" },
   ];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Welcome back, Amit!</h1>
-          <p className="text-muted-foreground">Here's your daily overview</p>
+          <h1>Welcome back, Amit!</h1>
+          <p className="text-sm text-muted-foreground mt-1">Here's your daily overview</p>
         </div>
         <div className="text-sm text-muted-foreground">
-          Never Contacted: <span className="font-bold text-warning">{neverContacted.length}</span>
+          Never Contacted: <span className="font-semibold text-[hsl(var(--warning))]">{neverContacted.length}</span>
         </div>
       </div>
 
       {/* KPI Cards — first 4 are highlighted gradient tiles */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-        {kpis.map((kpi, i) => {
-          const isHighlight = i < 4;
-          if (isHighlight) {
-            return (
-              <Card
-                key={kpi.label}
-                className="border-0 text-white shadow-md bg-gradient-to-br from-primary to-[hsl(265_84%_62%)]"
-              >
-                <CardContent className="p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <kpi.icon className="h-4 w-4 text-white/90" />
-                  </div>
-                  <div className="text-xl font-bold">{kpi.value}</div>
-                  <div className="text-[10px] text-white/80 leading-tight">{kpi.label}</div>
-                </CardContent>
-              </Card>
-            );
-          }
-          return (
-            <Card key={kpi.label}>
-              <CardContent className="p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
-                </div>
-                <div className="text-xl font-bold">{kpi.value}</div>
-                <div className="text-[10px] text-muted-foreground leading-tight">{kpi.label}</div>
-              </CardContent>
-            </Card>
-          );
-        })}
+        {kpis.map((kpi) => (
+          <StatTile
+            key={kpi.label}
+            label={kpi.label}
+            value={kpi.value}
+            icon={kpi.icon}
+            tone={kpi.tone}
+            variant={kpi.variant}
+          />
+        ))}
       </div>
 
       {/* Daily Target Tracker */}
