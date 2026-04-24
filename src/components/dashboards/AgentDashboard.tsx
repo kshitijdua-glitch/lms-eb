@@ -55,19 +55,38 @@ export function AgentDashboard() {
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards — first 4 are highlighted gradient tiles */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-        {kpis.map((kpi) => (
-          <Card key={kpi.label}>
-            <CardContent className="p-3">
-              <div className="flex items-center gap-2 mb-1">
-                <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
-              </div>
-              <div className="text-xl font-bold">{kpi.value}</div>
-              <div className="text-[10px] text-muted-foreground leading-tight">{kpi.label}</div>
-            </CardContent>
-          </Card>
-        ))}
+        {kpis.map((kpi, i) => {
+          const isHighlight = i < 4;
+          if (isHighlight) {
+            return (
+              <Card
+                key={kpi.label}
+                className="border-0 text-white shadow-md bg-gradient-to-br from-primary to-[hsl(265_84%_62%)]"
+              >
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <kpi.icon className="h-4 w-4 text-white/90" />
+                  </div>
+                  <div className="text-xl font-bold">{kpi.value}</div>
+                  <div className="text-[10px] text-white/80 leading-tight">{kpi.label}</div>
+                </CardContent>
+              </Card>
+            );
+          }
+          return (
+            <Card key={kpi.label}>
+              <CardContent className="p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
+                </div>
+                <div className="text-xl font-bold">{kpi.value}</div>
+                <div className="text-[10px] text-muted-foreground leading-tight">{kpi.label}</div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Daily Target Tracker */}
