@@ -11,8 +11,10 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, Shuffle, Download } from "lucide-react";
+import { Search, Shuffle, Download, AlertTriangle, Flame, MessageSquarePlus } from "lucide-react";
 import { toast } from "sonner";
+import { useAudit } from "@/contexts/AuditContext";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ConfigurableTable } from "@/components/ConfigurableTable";
 import type { ColumnDef } from "@/types/table";
 import type { Lead } from "@/types/lms";
@@ -25,6 +27,21 @@ function stageBadgeVariant(stage: string) {
 
 const GroupLeadsPage = () => {
   const navigate = useNavigate();
+  const { logAudit } = useAudit();
+  const logBulk = (leadId: string, action: string, notes: string, reason?: string) => {
+    const lead = leads.find(l => l.id === leadId);
+    logAudit({
+      actorId: "mgr-1",
+      actorName: "Vikram Mehta",
+      actorRole: "manager",
+      action: action as any,
+      entityType: "lead",
+      entityId: leadId,
+      entityLabel: lead?.name,
+      notes,
+      reason,
+    });
+  };
   const allLeads = leads;
 
   const [search, setSearch] = useState("");
@@ -37,6 +54,8 @@ const GroupLeadsPage = () => {
   const [showReassign, setShowReassign] = useState(false);
   const [reassignAgent, setReassignAgent] = useState("");
   const [reassignReason, setReassignReason] = useState("");
+  const [showNote, setShowNote] = useState(false);
+  const [bulkNote, setBulkNote] = useState("");
 
   const sources = [...new Set(allLeads.map(l => l.leadSource))];
 
@@ -72,8 +91,29 @@ const GroupLeadsPage = () => {
       toast.error(`${stbLocked.length} leads have active STB and cannot be reassigned`);
       return;
     }
-    toast.success(`${selectedIds.size} leads reassigned to ${agents.find(a => a.id === reassignAgent)?.name}`);
+    const target = agents.find(a => a.id === reassignAgent)?.name;
+    selectedIds.forEach(id => logBulk(id, "bulk_reassign", `Reassigned to ${target}`, reassignReason));
+    toast.success(`${selectedIds.size} leads reassigned to ${target}`);
     setShowReassign(false); setSelectedIds(new Set()); setReassignAgent(""); setReassignReason("");
+  };
+
+  const handleBulkEscalate = () => {
+    selectedIds.forEach(id => logBulk(id, "bulk_escalate", "Escalated to senior management"));
+    toast.success(`${selectedIds.size} lead(s) escalated`);
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkPriority = () => {
+    selectedIds.forEach(id => logBulk(id, "bulk_priority", "Marked as Hot priority"));
+    toast.success(`${selectedIds.size} lead(s) marked Hot`);
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkNote = () => {
+    if (!bulkNote.trim()) { toast.error("Enter a note"); return; }
+    selectedIds.forEach(id => logBulk(id, "bulk_note", bulkNote));
+    toast.success(`Note added to ${selectedIds.size} lead(s)`);
+    setShowNote(false); setBulkNote(""); setSelectedIds(new Set());
   };
 
   const today = new Date().toISOString().split("T")[0];
@@ -117,13 +157,39 @@ const GroupLeadsPage = () => {
           <h1 className="text-2xl font-bold">Group Leads</h1>
           <p className="text-muted-foreground text-sm">{filtered.length} of {allLeads.length} leads</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {selectedIds.size > 0 && (
-            <Button size="sm" onClick={() => setShowReassign(true)}>
-              <Shuffle className="h-4 w-4 mr-1" /> Reassign ({selectedIds.size})
-            </Button>
+            <>
+              <Button size="sm" onClick={() => setShowReassign(true)}>
+                <Shuffle className="h-4 w-4 mr-1" /> Reassign ({selectedIds.size})
+              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button size="sm" variant="outline" onClick={handleBulkEscalate} aria-label="Escalate selected leads">
+                    <AlertTriangle className="h-4 w-4 mr-1" /> Escalate
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Escalate to senior management</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button size="sm" variant="outline" onClick={handleBulkPriority} aria-label="Mark as hot priority">
+                    <Flame className="h-4 w-4 mr-1" /> Mark Hot
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Set priority to Hot</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button size="sm" variant="outline" onClick={() => setShowNote(true)} aria-label="Add note to selected leads">
+                    <MessageSquarePlus className="h-4 w-4 mr-1" /> Add Note
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Add a manager note to all selected</TooltipContent>
+              </Tooltip>
+            </>
           )}
-          <Button variant="outline" size="sm" onClick={() => toast.success("CSV exported")}>
+          <Button variant="outline" size="sm" onClick={() => toast.success("CSV exported (non-PII)")}>
             <Download className="h-4 w-4 mr-1" /> Export
           </Button>
         </div>
@@ -217,6 +283,20 @@ const GroupLeadsPage = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowReassign(false)}>Cancel</Button>
             <Button onClick={handleBulkReassign}>Reassign</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showNote} onOpenChange={setShowNote}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Add Note to {selectedIds.size} Lead(s)</DialogTitle></DialogHeader>
+          <div className="space-y-2">
+            <Label>Note *</Label>
+            <Textarea placeholder="Manager note visible to assigned agents..." value={bulkNote} onChange={e => setBulkNote(e.target.value)} rows={4} />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNote(false)}>Cancel</Button>
+            <Button onClick={handleBulkNote}>Add Note</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
