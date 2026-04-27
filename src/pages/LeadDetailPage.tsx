@@ -21,10 +21,12 @@ import { format } from "date-fns";
 import {
   ArrowLeft, Phone, Send, Calculator, Clock, AlertTriangle,
   User, Edit2, Lock, FileText, Shield, CalendarIcon, Shuffle, Search, ChevronLeft, ChevronRight, RefreshCw,
-  Building2, StickyNote, Plus, X
+  Building2, StickyNote, Plus, X, IndianRupee, Percent, CalendarDays, TrendingDown
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Slider } from "@/components/ui/slider";
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis } from "recharts";
 
 // Soft pill color map — clean tinted backgrounds for status chips
 const SOFT_PILL: Record<string, string> = {
