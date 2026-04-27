@@ -68,6 +68,7 @@ const LeadDetailPage = () => {
   const { role } = useRole();
   const { config } = usePriorityConfig();
   const { logAudit, forLead } = useAudit();
+  const { partners } = usePartners();
   const lead = leads.find(l => l.id === id);
   const [showCallLog, setShowCallLog] = useState(false);
   const [showEMI, setShowEMI] = useState(false);
@@ -412,6 +413,21 @@ const LeadDetailPage = () => {
           </Button>
         )}
       </div>
+
+      {/* Compliance Banner */}
+      {lead.consentStatus !== "received" && lead.callLogs.length > 0 && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3 flex items-start gap-3">
+          <div className="h-8 w-8 rounded-md bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+            <ShieldAlert className="h-4 w-4" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-semibold text-amber-900">Consent required</div>
+            <p className="text-xs text-amber-900/80 mt-0.5">
+              Customer consent is <strong>{lead.consentStatus.replace(/_/g, " ")}</strong>. Capture consent before sharing data with partner banks.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* STB Lock Banner */}
       {isProfileLocked && lockState.submission && (
