@@ -296,26 +296,32 @@ const LeadDetailPage = () => {
       </div>
 
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold">{lead.name}</h1>
+      <div className="flex items-start gap-4">
+        <div className="flex-1 space-y-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-2xl font-semibold tracking-tight">{lead.name}</h1>
             {isProfileLocked && <Lock className="h-4 w-4 text-muted-foreground" />}
-            {lead.dndStatus === "dnd_registered" && <Badge variant="destructive" className="text-[10px]">DND</Badge>}
+            {lead.dndStatus === "dnd_registered" && <SoftPill tone="missed">DND</SoftPill>}
+            {role !== "agent" && (
+              <span className="text-xs text-muted-foreground">
+                <span className="opacity-60">·</span> Source: <span className="font-medium text-foreground">{lead.leadSource}</span>
+              </span>
+            )}
           </div>
-          <div className="flex items-center gap-2 mt-1 flex-wrap">
-            <Badge variant="outline" className="text-[10px]">{lead.id}</Badge>
-            <Badge>{getStageLabel(lead.stage)}</Badge>
+          <div className="flex items-center gap-2 flex-wrap">
+            <SoftPill tone={lead.stage}>{getStageLabel(lead.stage)}</SoftPill>
             {(() => {
               const currentPriority = (priorityOverride || lead.priority) as "hot" | "warm" | "cold";
               const { reasons } = calculatePriorityScore(lead, config);
               return (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Badge variant={currentPriority === "hot" ? "destructive" : currentPriority === "warm" ? "default" : "secondary"} className="cursor-help">
-                      {currentPriority.toUpperCase()}
-                      {priorityOverride && <span className="ml-1 text-[8px]">(manual)</span>}
-                    </Badge>
+                    <button className="cursor-help">
+                      <SoftPill tone={currentPriority}>
+                        {currentPriority.charAt(0).toUpperCase() + currentPriority.slice(1)}
+                        {priorityOverride && <span className="ml-1 text-[9px] opacity-70">(manual)</span>}
+                      </SoftPill>
+                    </button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="max-w-xs">
                     <p className="font-semibold text-xs mb-1">Priority Scoring Breakdown</p>
@@ -326,7 +332,7 @@ const LeadDetailPage = () => {
                 </Tooltip>
               );
             })()}
-            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => {
+            <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground" onClick={() => {
               const newP = calculatePriority(lead, config);
               setPriorityOverride(null);
               toast.success(`Priority recalculated: ${newP.toUpperCase()}`);
@@ -335,7 +341,7 @@ const LeadDetailPage = () => {
             </Button>
             {(role === "manager" || role === "cluster_head" || role === "data_admin") && (
               <Select value={priorityOverride || ""} onValueChange={v => { setPriorityOverride(v); toast.success(`Priority overridden to ${v.toUpperCase()}`); }}>
-                <SelectTrigger className="h-6 w-24 text-[10px]">
+                <SelectTrigger className="h-7 w-24 text-[11px]">
                   <SelectValue placeholder="Override" />
                 </SelectTrigger>
                 <SelectContent>
@@ -345,17 +351,17 @@ const LeadDetailPage = () => {
                 </SelectContent>
               </Select>
             )}
-            {role !== "agent" && <span className="text-xs text-muted-foreground">Source: {lead.leadSource}</span>}
+            <span className="text-xs text-muted-foreground ml-1">Lead ID: <span className="font-mono">{lead.id}</span></span>
           </div>
         </div>
         {(role === "agent" || role === "manager" || role === "cluster_head") && (
-          <Button variant="ghost" size="sm" onClick={() => setIsEditing(!isEditing)}>
-            <Edit2 className="h-4 w-4 mr-1" /> {isEditing ? "Done" : "Edit"}
+          <Button variant="outline" size="sm" onClick={() => setIsEditing(!isEditing)} className="h-9">
+            <Edit2 className="h-4 w-4 mr-1.5" /> {isEditing ? "Done" : "Edit"}
           </Button>
         )}
       </div>
 
-      <div className="grid md:grid-cols-3 gap-4">
+      <div className="grid md:grid-cols-3 gap-6">
         {/* Customer Profile */}
         <Card className="shadow-none">
           <CardHeader className="pb-3 border-b">
