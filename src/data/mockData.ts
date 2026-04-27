@@ -296,34 +296,48 @@ export const getProductLabel = (p: ProductType) => ({
 
 // Mock Notifications (includes manager-specific team events)
 export const mockNotifications: Notification[] = [
-  { id: "n-1", type: "follow_up_due", title: "Follow-Up Due", message: "Follow-up with Rajesh Khanna is due in 30 minutes", timestamp: daysAgo(0), read: false, leadId: "lead-1" },
-  { id: "n-2", type: "follow_up_missed", title: "Missed Follow-Up", message: "You missed a follow-up with Sunita Devi", timestamp: daysAgo(0), read: false, leadId: "lead-2" },
-  { id: "n-3", type: "lead_expiry", title: "Lead Expiring Soon", message: "Lead Mohd Irfan expires in 2 days", timestamp: daysAgo(0), read: false, leadId: "lead-3" },
-  { id: "n-4", type: "consent_received", title: "Consent Received", message: "Consent SMS confirmed for Lakshmi Narayan", timestamp: daysAgo(0), read: true, leadId: "lead-4" },
-  { id: "n-5", type: "new_allocation", title: "New Lead Allocated", message: "3 new leads have been assigned to you", timestamp: daysAgo(0), read: true },
-  { id: "n-6", type: "stb_status_update", title: "STB Update", message: "HDFC Bank approved loan for Vikram Chauhan", timestamp: daysAgo(1), read: true, leadId: "lead-5" },
-  { id: "n-7", type: "lead_reassigned", title: "Lead Reassigned", message: "Lead Nisha Agarwal reassigned to you from Sneha Gupta", timestamp: daysAgo(1), read: true, leadId: "lead-6" },
-  { id: "n-8", type: "follow_up_due", title: "Follow-Up Due", message: "Document collection follow-up with Arjun Rao", timestamp: daysAgo(0), read: false, leadId: "lead-9" },
-  // Manager-specific notifications
-  { id: "n-9", type: "agent_missed_fu", title: "Agent Missed Follow-Up", message: "Amit Verma missed a follow-up with Rekha Pandey", timestamp: daysAgo(0), read: false, leadId: "lead-12" },
-  { id: "n-10", type: "nc_escalation", title: "5+ NC Escalation", message: "Suresh Babu has 5+ not contactable attempts — requires manager review", timestamp: daysAgo(0), read: false, leadId: "lead-7" },
-  { id: "n-11", type: "agent_not_logged_in", title: "Agent Not Logged In", message: "Karan Singh has not logged in today", timestamp: daysAgo(0), read: false },
-  { id: "n-12", type: "stb_initiated_by_agent", title: "STB Initiated", message: "Sneha Gupta initiated STB for Vikram Chauhan to HDFC Bank", timestamp: daysAgo(0), read: false, leadId: "lead-5" },
-  { id: "n-13", type: "lead_expiry", title: "Team Lead Expiring", message: "3 team leads expiring within 48 hours", timestamp: daysAgo(0), read: false },
-  { id: "n-14", type: "stb_status_update", title: "STB Approved", message: "ICICI Bank approved loan for Fatima Begum — agent: Rahul Jain", timestamp: daysAgo(0), read: true, leadId: "lead-8" },
-  // Group-level notifications
-  { id: "n-15", type: "agent_not_logged_in", title: "Agent Not Logged In", message: "Agent Ravi Kumar (Beta Force) has not logged in today", timestamp: daysAgo(0), read: false },
-  { id: "n-16", type: "nc_escalation", title: "Team Missed F/U Threshold", message: "Alpha Squad has exceeded 10 missed follow-ups this week", timestamp: daysAgo(0), read: false },
-  { id: "n-17", type: "stb_status_update", title: "Group STB Update", message: "Bajaj Finserv declined loan for Manoj Tiwari — Manager: Vikram Mehta, Agent: Meera Patel", timestamp: daysAgo(0), read: false, leadId: "lead-15" },
-  { id: "n-18", type: "lead_reassigned", title: "Override Confirmation", message: "You overrode a Closed/Lost disposition on lead Arjun Rao — lead moved to Contacted", timestamp: daysAgo(1), read: true, leadId: "lead-9" },
-  // Cluster Head notifications
-  { id: "n-19", type: "agent_not_logged_in", title: "Manager Not Logged In", message: "Manager Anjali Kapoor has not logged in today", timestamp: daysAgo(0), read: false },
-  { id: "n-20", type: "nc_escalation", title: "DND Risk Alert", message: "3 DND-registered leads contacted without consent in South Zone", timestamp: daysAgo(0), read: false },
-  { id: "n-21", type: "new_allocation", title: "Unallocated Pool Alert", message: "22 leads from Partner source remain unallocated for 48 hours", timestamp: daysAgo(0), read: false },
-  { id: "n-22", type: "stb_status_update", title: "Stale STB Pool", message: "5 STB submissions pending >7 days across organisation", timestamp: daysAgo(0), read: false },
-  { id: "n-23", type: "lead_reassigned", title: "Config Change Logged", message: "Allocation mode changed from Manual to Round Robin by CH Admin", timestamp: daysAgo(0), read: true },
-  { id: "n-24", type: "lead_reassigned", title: "Staff Deactivated", message: "Agent Karan Singh deactivated. 12 leads need reassignment.", timestamp: daysAgo(1), read: true },
+  // Agent-scoped (own leads)
+  { id: "n-1", type: "follow_up_due", title: "Follow-Up Due", message: "Follow-up with Rajesh Khanna is due in 30 minutes", timestamp: daysAgo(0), read: false, leadId: "lead-1", scope: "agent", agentId: "agent-1" },
+  { id: "n-2", type: "follow_up_missed", title: "Missed Follow-Up", message: "You missed a follow-up with Sunita Devi", timestamp: daysAgo(0), read: false, leadId: "lead-2", scope: "agent", agentId: "agent-1" },
+  { id: "n-3", type: "lead_expiry", title: "Lead Expiring Soon", message: "Lead Mohd Irfan expires in 2 days", timestamp: daysAgo(0), read: false, leadId: "lead-3", scope: "agent", agentId: "agent-1" },
+  { id: "n-4", type: "consent_received", title: "Consent Received", message: "Consent SMS confirmed for Lakshmi Narayan", timestamp: daysAgo(0), read: true, leadId: "lead-4", scope: "agent", agentId: "agent-1" },
+  { id: "n-5", type: "new_allocation", title: "New Lead Allocated", message: "3 new leads have been assigned to you", timestamp: daysAgo(0), read: true, scope: "agent", agentId: "agent-1", clickTarget: "/leads" },
+  { id: "n-6", type: "stb_status_update", title: "STB Update", message: "HDFC Bank approved loan for Vikram Chauhan", timestamp: daysAgo(1), read: true, leadId: "lead-5", scope: "agent", agentId: "agent-1" },
+  { id: "n-7", type: "lead_reassigned", title: "Lead Reassigned", message: "Lead Nisha Agarwal reassigned to you from Sneha Gupta", timestamp: daysAgo(1), read: true, leadId: "lead-6", scope: "agent", agentId: "agent-1" },
+  { id: "n-8", type: "follow_up_due", title: "Follow-Up Due", message: "Document collection follow-up with Arjun Rao", timestamp: daysAgo(0), read: false, leadId: "lead-9", scope: "agent", agentId: "agent-1" },
+  // Manager / team-scoped
+  { id: "n-9", type: "agent_missed_fu", title: "Agent Missed Follow-Up", message: "Amit Verma missed a follow-up with Rekha Pandey", timestamp: daysAgo(0), read: false, leadId: "lead-12", scope: "team", teamId: "team-1" },
+  { id: "n-10", type: "nc_escalation", title: "5+ NC Escalation", message: "Suresh Babu has 5+ not contactable attempts — requires manager review", timestamp: daysAgo(0), read: false, leadId: "lead-7", scope: "team", teamId: "team-1" },
+  { id: "n-11", type: "agent_not_logged_in", title: "Agent Not Logged In", message: "Karan Singh has not logged in today", timestamp: daysAgo(0), read: false, scope: "team", teamId: "team-1", clickTarget: "/group-management" },
+  { id: "n-12", type: "stb_initiated_by_agent", title: "STB Initiated", message: "Sneha Gupta initiated STB for Vikram Chauhan to HDFC Bank", timestamp: daysAgo(0), read: false, leadId: "lead-5", scope: "team", teamId: "team-1" },
+  { id: "n-13", type: "lead_expiry", title: "Team Leads Expiring", message: "3 team leads expiring within 48 hours", timestamp: daysAgo(0), read: false, scope: "team", teamId: "team-1", clickTarget: "/group-leads" },
+  { id: "n-14", type: "stb_status_update", title: "STB Approved", message: "ICICI Bank approved loan for Fatima Begum — agent: Rahul Jain", timestamp: daysAgo(0), read: true, leadId: "lead-8", scope: "team", teamId: "team-1" },
+  // Org / cluster-head-scoped
+  { id: "n-15", type: "agent_not_logged_in", title: "Agent Not Logged In", message: "Agent Ravi Kumar (Beta Force) has not logged in today", timestamp: daysAgo(0), read: false, scope: "org", clickTarget: "/staff-management" },
+  { id: "n-16", type: "nc_escalation", title: "Team Missed F/U Threshold", message: "Alpha Squad has exceeded 10 missed follow-ups this week", timestamp: daysAgo(0), read: false, scope: "org", clickTarget: "/org-follow-ups" },
+  { id: "n-17", type: "stb_status_update", title: "Group STB Update", message: "Bajaj Finserv declined loan for Manoj Tiwari — Manager: Vikram Mehta, Agent: Meera Patel", timestamp: daysAgo(0), read: false, leadId: "lead-15", scope: "org" },
+  { id: "n-18", type: "lead_reassigned", title: "Override Confirmation", message: "You overrode a Closed/Lost disposition on lead Arjun Rao — lead moved to Contacted", timestamp: daysAgo(1), read: true, leadId: "lead-9", scope: "org" },
+  { id: "n-19", type: "agent_not_logged_in", title: "Manager Not Logged In", message: "Manager Anjali Kapoor has not logged in today", timestamp: daysAgo(0), read: false, scope: "org", clickTarget: "/staff-management" },
+  { id: "n-20", type: "nc_escalation", title: "DND Risk Alert", message: "3 DND-registered leads contacted without consent in South Zone", timestamp: daysAgo(0), read: false, scope: "org", clickTarget: "/audit-trail" },
+  // Admin / data-admin-scoped
+  { id: "n-21", type: "new_allocation", title: "Unallocated Pool Alert", message: "22 leads from Partner source remain unallocated for 48 hours", timestamp: daysAgo(0), read: false, scope: "admin", clickTarget: "/admin/allocation" },
+  { id: "n-22", type: "stb_status_update", title: "Stale STB Pool", message: "5 STB submissions pending >7 days across organisation", timestamp: daysAgo(0), read: false, scope: "admin", clickTarget: "/admin/pools" },
+  { id: "n-23", type: "config_changed", title: "Config Change Logged", message: "Allocation mode changed from Manual to Round Robin by CH Admin", timestamp: daysAgo(0), read: true, scope: "admin", clickTarget: "/audit-trail" },
+  { id: "n-24", type: "lead_reassigned", title: "Staff Deactivated", message: "Agent Karan Singh deactivated. 12 leads need reassignment.", timestamp: daysAgo(1), read: true, scope: "admin", clickTarget: "/admin/staff" },
+  { id: "n-25", type: "batch_uploaded", title: "Batch Uploaded", message: "Google_Ads_Apr14.csv uploaded — 238 valid rows awaiting allocation", timestamp: daysAgo(0), read: false, scope: "admin", clickTarget: "/admin/upload" },
 ];
+
+import type { UserRole } from "@/types/lms";
+export function getNotificationsForRole(role: UserRole, agentId: string, teamId: string): Notification[] {
+  return mockNotifications.filter(n => {
+    if (role === "agent") return n.scope === "agent" && (!n.agentId || n.agentId === agentId);
+    if (role === "manager") return n.scope === "agent" && (!n.agentId || n.agentId === agentId)
+      || n.scope === "team" && (!n.teamId || n.teamId === teamId);
+    if (role === "cluster_head") return n.scope === "team" || n.scope === "org";
+    if (role === "data_admin") return n.scope === "admin" || n.scope === "org";
+    return false;
+  });
+}
 
 // Performance mock data
 export const performanceData = [
