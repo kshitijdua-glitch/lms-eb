@@ -1,8 +1,8 @@
-import { useState, useRef } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Settings2, GripVertical } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Settings2, ChevronUp, ChevronDown } from "lucide-react";
 
 interface ConfigItem {
   id: string;
@@ -18,34 +18,56 @@ interface Props {
 }
 
 export const ColumnConfigurator = ({ items, onToggle, onMove, onReset }: Props) => {
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="h-8 text-xs gap-1">
+        <Button variant="outline" size="sm" className="h-8 text-xs gap-1" aria-label="Configure columns">
           <Settings2 className="h-3.5 w-3.5" /> Columns
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-56 p-2" align="end">
+      <PopoverContent className="w-64 p-2" align="end">
         <div className="text-xs font-medium text-muted-foreground mb-2 px-1">Show / reorder columns</div>
-        <div className="space-y-0.5 max-h-[300px] overflow-y-auto">
+        <div className="space-y-0.5 max-h-[320px] overflow-y-auto">
           {items.map((item, i) => (
             <div
               key={item.id}
-              draggable
-              onDragStart={() => setDragIndex(i)}
-              onDragOver={e => { e.preventDefault(); setDragOverIndex(i); }}
-              onDrop={() => { if (dragIndex !== null && dragIndex !== i) onMove(dragIndex, i); setDragIndex(null); setDragOverIndex(null); }}
-              onDragEnd={() => { setDragIndex(null); setDragOverIndex(null); }}
-              className={`flex items-center gap-2 px-1 py-1 rounded text-xs cursor-grab hover:bg-accent/50 ${dragOverIndex === i ? "border-t-2 border-primary" : ""}`}
+              className="flex items-center gap-1.5 px-1 py-1 rounded text-xs hover:bg-accent/50"
             >
-              <GripVertical className="h-3 w-3 text-muted-foreground shrink-0" />
+              <div className="flex flex-col -space-y-1">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Move up"
+                      disabled={i === 0}
+                      onClick={() => onMove(i, i - 1)}
+                      className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <ChevronUp className="h-3 w-3" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">Move up</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Move down"
+                      disabled={i === items.length - 1}
+                      onClick={() => onMove(i, i + 1)}
+                      className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <ChevronDown className="h-3 w-3" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">Move down</TooltipContent>
+                </Tooltip>
+              </div>
               <Checkbox
                 checked={item.visible}
                 onCheckedChange={() => onToggle(item.id)}
                 className="h-3.5 w-3.5"
+                aria-label={`Toggle ${item.label}`}
               />
               <span className="truncate">{item.label}</span>
             </div>
