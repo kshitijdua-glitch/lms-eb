@@ -151,32 +151,71 @@ const LeadDetailPage = () => {
       toast.error("Outcome and Disposition are required");
       return;
     }
-    // Validate backdating
+    // Validate backdating per role
     if (callDate) {
       const diff = Date.now() - callDate.getTime();
-      if (diff > 24 * 3600000) {
+      if (diff > 24 * 3600000 && !can.backdateBeyond24h(role)) {
         toast.error("Cannot backdate call more than 24 hours");
         return;
       }
     }
+    if (callNextAction === "follow_up" && !followUpDate) {
+      toast.error("Follow-up date is required");
+      return;
+    }
+    logAudit({
+      ...actor,
+      action: "log_call",
+      entityType: "lead",
+      entityId: lead.id,
+      entityLabel: lead.name,
+      after: {
+        outcome: callOutcome,
+        disposition: callDisposition,
+        duration: callDuration,
+        nextAction: callNextAction,
+        followUpAt: followUpDate ? followUpDate.toISOString() : null,
+      },
+      notes: callNotes || undefined,
+    });
     setShowCallLog(false);
     toast.success("Call logged successfully");
-    // Reset
     setCallOutcome(""); setCallDisposition(""); setCallNotes(""); setCallNextAction(""); setCallDuration("120"); setFollowUpDate(undefined); setFollowUpTime("");
   };
 
   const handleAddNote = () => {
     if (!newNote.trim()) return;
+    logAudit({
+      ...actor,
+      action: "add_note",
+      entityType: "lead",
+      entityId: lead.id,
+      entityLabel: lead.name,
+      notes: newNote.trim(),
+    });
     toast.success("Note added");
     setNewNote("");
   };
 
   const handleSaveCreditScore = () => {
+    logAudit({
+      ...actor,
+      action: "update_credit_score",
+      entityType: "lead",
+      entityId: lead.id,
+      entityLabel: lead.name,
+      before: { creditScore: lead.creditScore },
+      after: { creditScore: Number(editCreditScore) || null },
+    });
     toast.success("Credit score updated");
   };
 
 
   const handleAddPair = () => {
+    if (isProfileLocked) {
+      toast.error("STB locked — cannot modify bank selection");
+      return;
+    }
     if (!selectedProduct || !selectedBank) {
       toast.error("Select both product and bank");
       return;
@@ -191,16 +230,43 @@ const LeadDetailPage = () => {
     setSelectedPairs([...selectedPairs, { partnerId: partner.id, partnerName: partner.name, productType: selectedProduct }]);
     setSelectedProduct("");
     setSelectedBank("");
+    logAudit({
+      ...actor,
+      action: "select_bank",
+      entityType: "lead",
+      entityId: lead.id,
+      entityLabel: lead.name,
+      after: { partner: partner.name, product: selectedProduct },
+    });
     toast.success("Bank added");
   };
 
   const handleRemovePair = (index: number) => {
+    if (isProfileLocked) {
+      toast.error("STB locked — cannot remove bank");
+      return;
+    }
+    const removed = selectedPairs[index];
     setSelectedPairs(selectedPairs.filter((_, i) => i !== index));
+    logAudit({
+      ...actor,
+      action: "remove_bank",
+      entityType: "lead",
+      entityId: lead.id,
+      entityLabel: lead.name,
+      before: { partner: removed?.partnerName, product: removed?.productType },
+    });
     toast.success("Bank removed");
   };
 
 
   const handleSendToBank = () => {
+    if (isProfileLocked) {
+      toast.error("STB already submitted — cannot resubmit", {
+        description: lockState.reason,
+      });
+      return;
+    }
     // Pre-STB checklist
     const checks = [];
     if (selectedPairs.length === 0) checks.push("No banks selected");
@@ -227,6 +293,16 @@ const LeadDetailPage = () => {
 
     setLocalStbSubmissions([...localStbSubmissions, ...newSubmissions]);
     setStbSubmitted(true);
+    newSubmissions.forEach(s => {
+      logAudit({
+        ...actor,
+        action: "send_to_bank",
+        entityType: "stb",
+        entityId: s.id,
+        entityLabel: `${lead.name} → ${s.partnerName}`,
+        after: { partner: s.partnerName, status: s.status },
+      });
+    });
     toast.success(`STB initiated for ${selectedPairs.length} bank(s)`, {
       description: selectedPairs.map(p => `${p.partnerName} (${getProductLabel(p.productType as any)})`).join(", "),
     });
