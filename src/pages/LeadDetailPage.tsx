@@ -617,7 +617,7 @@ const LeadDetailPage = () => {
                   <p className="text-xs text-muted-foreground">No existing loans recorded</p>
                 )}
               </div>
-              <Button variant="outline" className="w-full h-10 border-dashed" onClick={() => setShowAddLoan(true)}>
+              <Button variant="outline" className="w-full h-10 border-dashed" disabled={isProfileLocked} onClick={() => setShowAddLoan(true)}>
                 <Plus className="h-4 w-4 mr-1.5" /> Add Existing Loan
               </Button>
             </CardContent>
