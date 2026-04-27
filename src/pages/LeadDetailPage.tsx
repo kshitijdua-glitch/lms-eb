@@ -1328,7 +1328,18 @@ const LeadDetailPage = () => {
             <Button
               disabled={!reassignAgent || lead.stbSubmissions.length > 0}
               onClick={() => {
-                toast.success(`Lead reassigned to ${agents.find(a => a.id === reassignAgent)?.name}`);
+                const newAgent = agents.find(a => a.id === reassignAgent);
+                logAudit({
+                  ...actor,
+                  action: "reassign_lead",
+                  entityType: "lead",
+                  entityId: lead.id,
+                  entityLabel: lead.name,
+                  before: { agentId: lead.assignedAgentId, agentName: agents.find(a => a.id === lead.assignedAgentId)?.name },
+                  after: { agentId: reassignAgent, agentName: newAgent?.name, teamId: reassignTL || lead.assignedTeamId },
+                  reason: reassignReason || undefined,
+                });
+                toast.success(`Lead reassigned to ${newAgent?.name}`);
                 setShowReassign(false);
                 setReassignAgent(""); setReassignTL(""); setReassignReason("");
               }}
