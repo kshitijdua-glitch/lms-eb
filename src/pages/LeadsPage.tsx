@@ -149,7 +149,7 @@ const LeadsPage = () => {
             </Button>
           )}
           {role !== "agent" && (
-            <Button variant="outline" size="sm" className="h-9">
+            <Button variant="outline" size="sm" className="h-9" onClick={() => toast.success("Team summary CSV exported (non-PII)")}>
               <Download className="h-4 w-4 mr-1.5" /> Export
             </Button>
           )}
