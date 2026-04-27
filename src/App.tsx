@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { RoleProvider } from "@/contexts/RoleContext";
 import { PriorityConfigProvider } from "@/contexts/PriorityConfigContext";
 import { AuditProvider } from "@/contexts/AuditContext";
+import { PartnersProvider } from "@/contexts/PartnersContext";
 import { AppLayout } from "@/components/AppLayout";
 import { RouteGuard } from "@/components/RouteGuard";
 import Index from "./pages/Index";
@@ -50,6 +51,7 @@ const App = () => (
       <Sonner />
       <RoleProvider>
         <AuditProvider>
+          <PartnersProvider>
           <PriorityConfigProvider>
             <BrowserRouter>
               <AppLayout>
@@ -87,6 +89,7 @@ const App = () => (
               </AppLayout>
             </BrowserRouter>
           </PriorityConfigProvider>
+          </PartnersProvider>
         </AuditProvider>
       </RoleProvider>
     </TooltipProvider>

@@ -219,6 +219,13 @@ export interface LendingPartner {
   status: "active" | "inactive";
 }
 
+export interface ProductDefinition {
+  id: string; // ProductType slug or custom slug
+  label: string;
+  status: "active" | "inactive";
+  isCustom?: boolean;
+}
+
 export interface DispositionConfig {
   type: DispositionType;
   label: string;
