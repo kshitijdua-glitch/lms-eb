@@ -1108,6 +1108,7 @@ const LeadDetailPage = () => {
                   <SelectContent>
                     <SelectItem value="connected">Connected</SelectItem>
                     <SelectItem value="not_connected">Not Connected</SelectItem>
+                    <SelectItem value="invalid">Invalid / Compliance</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
