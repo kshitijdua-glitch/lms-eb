@@ -286,6 +286,20 @@ const GroupLeadsPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={showNote} onOpenChange={setShowNote}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Add Note to {selectedIds.size} Lead(s)</DialogTitle></DialogHeader>
+          <div className="space-y-2">
+            <Label>Note *</Label>
+            <Textarea placeholder="Manager note visible to assigned agents..." value={bulkNote} onChange={e => setBulkNote(e.target.value)} rows={4} />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNote(false)}>Cancel</Button>
+            <Button onClick={handleBulkNote}>Add Note</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
