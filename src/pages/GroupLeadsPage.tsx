@@ -11,8 +11,10 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, Shuffle, Download } from "lucide-react";
+import { Search, Shuffle, Download, AlertTriangle, Flame, MessageSquarePlus } from "lucide-react";
 import { toast } from "sonner";
+import { useAudit } from "@/contexts/AuditContext";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ConfigurableTable } from "@/components/ConfigurableTable";
 import type { ColumnDef } from "@/types/table";
 import type { Lead } from "@/types/lms";
@@ -25,6 +27,7 @@ function stageBadgeVariant(stage: string) {
 
 const GroupLeadsPage = () => {
   const navigate = useNavigate();
+  const { logEvent } = useAudit();
   const allLeads = leads;
 
   const [search, setSearch] = useState("");
@@ -37,6 +40,8 @@ const GroupLeadsPage = () => {
   const [showReassign, setShowReassign] = useState(false);
   const [reassignAgent, setReassignAgent] = useState("");
   const [reassignReason, setReassignReason] = useState("");
+  const [showNote, setShowNote] = useState(false);
+  const [bulkNote, setBulkNote] = useState("");
 
   const sources = [...new Set(allLeads.map(l => l.leadSource))];
 
@@ -72,8 +77,29 @@ const GroupLeadsPage = () => {
       toast.error(`${stbLocked.length} leads have active STB and cannot be reassigned`);
       return;
     }
-    toast.success(`${selectedIds.size} leads reassigned to ${agents.find(a => a.id === reassignAgent)?.name}`);
+    const target = agents.find(a => a.id === reassignAgent)?.name;
+    selectedIds.forEach(id => logEvent({ leadId: id, action: "bulk_reassign", actor: "Manager", details: `Reassigned to ${target}. ${reassignReason}` }));
+    toast.success(`${selectedIds.size} leads reassigned to ${target}`);
     setShowReassign(false); setSelectedIds(new Set()); setReassignAgent(""); setReassignReason("");
+  };
+
+  const handleBulkEscalate = () => {
+    selectedIds.forEach(id => logEvent({ leadId: id, action: "bulk_escalate", actor: "Manager", details: "Escalated to senior management" }));
+    toast.success(`${selectedIds.size} lead(s) escalated`);
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkPriority = () => {
+    selectedIds.forEach(id => logEvent({ leadId: id, action: "bulk_priority", actor: "Manager", details: "Marked as Hot priority" }));
+    toast.success(`${selectedIds.size} lead(s) marked Hot`);
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkNote = () => {
+    if (!bulkNote.trim()) { toast.error("Enter a note"); return; }
+    selectedIds.forEach(id => logEvent({ leadId: id, action: "bulk_note", actor: "Manager", details: bulkNote }));
+    toast.success(`Note added to ${selectedIds.size} lead(s)`);
+    setShowNote(false); setBulkNote(""); setSelectedIds(new Set());
   };
 
   const today = new Date().toISOString().split("T")[0];
