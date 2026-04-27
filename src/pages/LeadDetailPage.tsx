@@ -821,6 +821,93 @@ const LeadDetailPage = () => {
         </CardContent>
       </Card>
 
+      {/* Add Existing Loan Dialog */}
+      <Dialog open={showAddLoan} onOpenChange={setShowAddLoan}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle className="text-base">Add Existing Loan</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Bank / NBFC</Label>
+                <Input
+                  placeholder="e.g. HDFC Bank"
+                  value={newLoan.bankName}
+                  onChange={e => setNewLoan({ ...newLoan, bankName: e.target.value })}
+                  className="h-9"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Loan Type</Label>
+                <Select value={newLoan.loanType} onValueChange={v => setNewLoan({ ...newLoan, loanType: v })}>
+                  <SelectTrigger className="h-9"><SelectValue placeholder="Select…" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Personal Loan">Personal Loan</SelectItem>
+                    <SelectItem value="Home Loan">Home Loan</SelectItem>
+                    <SelectItem value="Auto Loan">Auto Loan</SelectItem>
+                    <SelectItem value="Business Loan">Business Loan</SelectItem>
+                    <SelectItem value="Credit Card">Credit Card</SelectItem>
+                    <SelectItem value="Education Loan">Education Loan</SelectItem>
+                    <SelectItem value="Gold Loan">Gold Loan</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Outstanding (₹)</Label>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  value={newLoan.outstandingAmount}
+                  onChange={e => setNewLoan({ ...newLoan, outstandingAmount: e.target.value })}
+                  className="h-9"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">EMI (₹)</Label>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  value={newLoan.emi}
+                  onChange={e => setNewLoan({ ...newLoan, emi: e.target.value })}
+                  className="h-9"
+                />
+              </div>
+              <div className="space-y-1.5 col-span-2">
+                <Label className="text-xs">Tenure Remaining (months)</Label>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  value={newLoan.tenure}
+                  onChange={e => setNewLoan({ ...newLoan, tenure: e.target.value })}
+                  className="h-9"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddLoan(false)}>Cancel</Button>
+            <Button onClick={() => {
+              if (!newLoan.bankName.trim() || !newLoan.loanType) {
+                toast.error("Bank name and loan type are required");
+                return;
+              }
+              const loan = {
+                id: `loan-${Date.now()}`,
+                bankName: newLoan.bankName.trim(),
+                loanType: newLoan.loanType,
+                outstandingAmount: Number(newLoan.outstandingAmount) || 0,
+                emi: Number(newLoan.emi) || 0,
+                tenure: Number(newLoan.tenure) || 0,
+              };
+              setLocalLoans([...localLoans, loan]);
+              setNewLoan({ bankName: "", loanType: "", outstandingAmount: "", emi: "", tenure: "" });
+              setShowAddLoan(false);
+              toast.success("Loan added");
+            }}>Add Loan</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Revamped Call Log Dialog */}
       <Dialog open={showCallLog} onOpenChange={setShowCallLog}>
         <DialogContent className="max-w-md">
