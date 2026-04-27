@@ -447,7 +447,7 @@ const LeadDetailPage = () => {
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl font-semibold tracking-tight">{lead.name}</h1>
             {isProfileLocked && <Lock className="h-4 w-4 text-muted-foreground" />}
-            {lead.dndStatus === "dnd_registered" && <SoftPill tone="missed">DND</SoftPill>}
+            
             {role !== "agent" && (
               <span className="text-xs text-muted-foreground">
                 <span className="opacity-60">·</span> Source: <span className="font-medium text-foreground">{lead.leadSource}</span>
