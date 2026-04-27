@@ -274,7 +274,7 @@ const SystemConfigPage = () => {
                   <TableRow><TableHead>Notification Type</TableHead><TableHead>Real-time</TableHead><TableHead>Summary</TableHead></TableRow>
                 </TableHeader>
                 <TableBody>
-                  {["Follow-Up Due", "Follow-Up Missed", "Lead Expiry", "NC Escalation", "STB Status Update", "New Allocation", "Agent Not Logged In", "DND Violation"].map(n => (
+                  {["Follow-Up Due", "Follow-Up Missed", "Lead Expiry", "NC Escalation", "STB Status Update", "New Allocation", "Agent Not Logged In", "Consent Required"].map(n => (
                     <TableRow key={n}>
                       <TableCell className="font-medium text-sm">{n}</TableCell>
                       <TableCell><Switch defaultChecked /></TableCell>
