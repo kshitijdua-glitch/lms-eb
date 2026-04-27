@@ -313,7 +313,7 @@ const LeadDetailPage = () => {
                 </SelectContent>
               </Select>
             )}
-            <span className="text-xs text-muted-foreground">Source: {lead.leadSource}</span>
+            {role !== "agent" && <span className="text-xs text-muted-foreground">Source: {lead.leadSource}</span>}
           </div>
         </div>
         {(role === "agent" || role === "manager" || role === "cluster_head") && (
