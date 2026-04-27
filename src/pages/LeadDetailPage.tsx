@@ -448,14 +448,28 @@ const LeadDetailPage = () => {
               </div>
               <div>
                 <div className="text-sm font-medium mb-2">Existing Loans</div>
-                {lead.existingLoans.length > 0 ? (
+                {localLoans.length > 0 ? (
                   <div className="space-y-2">
-                    {lead.existingLoans.map(loan => (
-                      <div key={loan.id} className="p-3 rounded-lg border border-border bg-muted/30">
-                        <div className="text-sm font-medium text-foreground">{loan.bankName} — {loan.loanType}</div>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          Outstanding: ₹{loan.outstandingAmount.toLocaleString()} · EMI: ₹{loan.emi.toLocaleString()} · {loan.tenure}mo
+                    {localLoans.map(loan => (
+                      <div key={loan.id} className="p-3 rounded-lg border border-border bg-muted/30 flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-foreground">{loan.bankName} — {loan.loanType}</div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Outstanding: ₹{loan.outstandingAmount.toLocaleString()} · EMI: ₹{loan.emi.toLocaleString()} · {loan.tenure}mo
+                          </div>
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
+                          onClick={() => {
+                            setLocalLoans(localLoans.filter(l => l.id !== loan.id));
+                            toast.success("Loan removed");
+                          }}
+                          aria-label="Remove loan"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
                       </div>
                     ))}
                   </div>
@@ -463,7 +477,7 @@ const LeadDetailPage = () => {
                   <p className="text-xs text-muted-foreground">No existing loans recorded</p>
                 )}
               </div>
-              <Button variant="outline" className="w-full h-10 border-dashed" onClick={() => toast.info("Add loan form — coming soon")}>
+              <Button variant="outline" className="w-full h-10 border-dashed" onClick={() => setShowAddLoan(true)}>
                 <Plus className="h-4 w-4 mr-1.5" /> Add Existing Loan
               </Button>
             </CardContent>
