@@ -93,6 +93,9 @@ const LeadDetailPage = () => {
   const [followUpTime, setFollowUpTime] = useState("");
   const [stbSubmitted, setStbSubmitted] = useState(lead?.stbSubmissions?.length ? lead.stbSubmissions.length > 0 : false);
   const [localStbSubmissions, setLocalStbSubmissions] = useState(lead?.stbSubmissions || []);
+  const [localLoans, setLocalLoans] = useState(lead?.existingLoans || []);
+  const [showAddLoan, setShowAddLoan] = useState(false);
+  const [newLoan, setNewLoan] = useState({ bankName: "", loanType: "", outstandingAmount: "", emi: "", tenure: "" });
 
   const [leadSidebarOpen, setLeadSidebarOpen] = useState(true);
   const [leadListSearch, setLeadListSearch] = useState("");
@@ -445,14 +448,28 @@ const LeadDetailPage = () => {
               </div>
               <div>
                 <div className="text-sm font-medium mb-2">Existing Loans</div>
-                {lead.existingLoans.length > 0 ? (
+                {localLoans.length > 0 ? (
                   <div className="space-y-2">
-                    {lead.existingLoans.map(loan => (
-                      <div key={loan.id} className="p-3 rounded-lg border border-border bg-muted/30">
-                        <div className="text-sm font-medium text-foreground">{loan.bankName} — {loan.loanType}</div>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          Outstanding: ₹{loan.outstandingAmount.toLocaleString()} · EMI: ₹{loan.emi.toLocaleString()} · {loan.tenure}mo
+                    {localLoans.map(loan => (
+                      <div key={loan.id} className="p-3 rounded-lg border border-border bg-muted/30 flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-foreground">{loan.bankName} — {loan.loanType}</div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Outstanding: ₹{loan.outstandingAmount.toLocaleString()} · EMI: ₹{loan.emi.toLocaleString()} · {loan.tenure}mo
+                          </div>
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
+                          onClick={() => {
+                            setLocalLoans(localLoans.filter(l => l.id !== loan.id));
+                            toast.success("Loan removed");
+                          }}
+                          aria-label="Remove loan"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
                       </div>
                     ))}
                   </div>
@@ -460,7 +477,7 @@ const LeadDetailPage = () => {
                   <p className="text-xs text-muted-foreground">No existing loans recorded</p>
                 )}
               </div>
-              <Button variant="outline" className="w-full h-10 border-dashed" onClick={() => toast.info("Add loan form — coming soon")}>
+              <Button variant="outline" className="w-full h-10 border-dashed" onClick={() => setShowAddLoan(true)}>
                 <Plus className="h-4 w-4 mr-1.5" /> Add Existing Loan
               </Button>
             </CardContent>
@@ -803,6 +820,93 @@ const LeadDetailPage = () => {
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Add Existing Loan Dialog */}
+      <Dialog open={showAddLoan} onOpenChange={setShowAddLoan}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle className="text-base">Add Existing Loan</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Bank / NBFC</Label>
+                <Input
+                  placeholder="e.g. HDFC Bank"
+                  value={newLoan.bankName}
+                  onChange={e => setNewLoan({ ...newLoan, bankName: e.target.value })}
+                  className="h-9"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Loan Type</Label>
+                <Select value={newLoan.loanType} onValueChange={v => setNewLoan({ ...newLoan, loanType: v })}>
+                  <SelectTrigger className="h-9"><SelectValue placeholder="Select…" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Personal Loan">Personal Loan</SelectItem>
+                    <SelectItem value="Home Loan">Home Loan</SelectItem>
+                    <SelectItem value="Auto Loan">Auto Loan</SelectItem>
+                    <SelectItem value="Business Loan">Business Loan</SelectItem>
+                    <SelectItem value="Credit Card">Credit Card</SelectItem>
+                    <SelectItem value="Education Loan">Education Loan</SelectItem>
+                    <SelectItem value="Gold Loan">Gold Loan</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Outstanding (₹)</Label>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  value={newLoan.outstandingAmount}
+                  onChange={e => setNewLoan({ ...newLoan, outstandingAmount: e.target.value })}
+                  className="h-9"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">EMI (₹)</Label>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  value={newLoan.emi}
+                  onChange={e => setNewLoan({ ...newLoan, emi: e.target.value })}
+                  className="h-9"
+                />
+              </div>
+              <div className="space-y-1.5 col-span-2">
+                <Label className="text-xs">Tenure Remaining (months)</Label>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  value={newLoan.tenure}
+                  onChange={e => setNewLoan({ ...newLoan, tenure: e.target.value })}
+                  className="h-9"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddLoan(false)}>Cancel</Button>
+            <Button onClick={() => {
+              if (!newLoan.bankName.trim() || !newLoan.loanType) {
+                toast.error("Bank name and loan type are required");
+                return;
+              }
+              const loan = {
+                id: `loan-${Date.now()}`,
+                bankName: newLoan.bankName.trim(),
+                loanType: newLoan.loanType,
+                outstandingAmount: Number(newLoan.outstandingAmount) || 0,
+                emi: Number(newLoan.emi) || 0,
+                tenure: Number(newLoan.tenure) || 0,
+              };
+              setLocalLoans([...localLoans, loan]);
+              setNewLoan({ bankName: "", loanType: "", outstandingAmount: "", emi: "", tenure: "" });
+              setShowAddLoan(false);
+              toast.success("Loan added");
+            }}>Add Loan</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Revamped Call Log Dialog */}
       <Dialog open={showCallLog} onOpenChange={setShowCallLog}>
