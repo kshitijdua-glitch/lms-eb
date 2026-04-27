@@ -214,6 +214,24 @@ const LeadDetailPage = () => {
   ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
   const groups = dispositionGroups();
+  // Filter + sort dispositions based on selected call outcome.
+  // Connected → outcome-driven groups (Follow-Up first, then progression/closure).
+  // Not Connected → contactability groups only.
+  const CONNECTED_ORDER = ["Follow-Up", "Documents Pending", "Outcome", "Not Interested", "Negative", "Compliance", "Closed"];
+  const NOT_CONNECTED_ORDER = ["Not Contactable", "Compliance"];
+  const filteredGroups = (() => {
+    if (callOutcome === "connected") {
+      return CONNECTED_ORDER
+        .map(name => groups.find(g => g.group === name))
+        .filter((g): g is { group: string; items: typeof groups[0]["items"] } => !!g);
+    }
+    if (callOutcome === "not_connected") {
+      return NOT_CONNECTED_ORDER
+        .map(name => groups.find(g => g.group === name))
+        .filter((g): g is { group: string; items: typeof groups[0]["items"] } => !!g);
+    }
+    return groups;
+  })();
 
   return (
     <div className="flex gap-0 -m-6 min-h-screen">
