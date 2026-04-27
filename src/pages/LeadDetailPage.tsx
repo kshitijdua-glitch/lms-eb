@@ -428,116 +428,143 @@ const LeadDetailPage = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 pt-5">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Credit Score</span>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    className="w-20 h-7 text-xs"
-                    value={editCreditScore}
-                    onChange={e => setEditCreditScore(e.target.value)}
-                    placeholder="—"
-                  />
-                  <Button size="sm" variant="outline" className="h-7 text-[10px] px-2" onClick={handleSaveCreditScore}>Save</Button>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-foreground">Credit Score</span>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      className="w-24 h-9 text-sm"
+                      value={editCreditScore}
+                      onChange={e => setEditCreditScore(e.target.value)}
+                      placeholder="—"
+                    />
+                    <Button size="sm" className="h-9" onClick={handleSaveCreditScore}>Save</Button>
+                  </div>
                 </div>
               </div>
-              <div className="text-xs font-medium mt-2">Existing Loans</div>
-              {lead.existingLoans.length > 0 ? (
-                <div className="space-y-1">
-                  {lead.existingLoans.map(loan => (
-                    <div key={loan.id} className="p-2 rounded border text-xs flex justify-between">
-                      <div>
-                        <div className="font-medium">{loan.bankName} — {loan.loanType}</div>
-                        <div className="text-muted-foreground">Outstanding: ₹{loan.outstandingAmount.toLocaleString()} · EMI: ₹{loan.emi.toLocaleString()} · {loan.tenure}mo</div>
+              <div>
+                <div className="text-sm font-medium mb-2">Existing Loans</div>
+                {lead.existingLoans.length > 0 ? (
+                  <div className="space-y-2">
+                    {lead.existingLoans.map(loan => (
+                      <div key={loan.id} className="p-3 rounded-lg border border-border bg-muted/30">
+                        <div className="text-sm font-medium text-foreground">{loan.bankName} — {loan.loanType}</div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Outstanding: ₹{loan.outstandingAmount.toLocaleString()} · EMI: ₹{loan.emi.toLocaleString()} · {loan.tenure}mo
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground">No existing loans recorded</p>
-              )}
-              <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => toast.info("Add loan form — coming soon")}>
-                + Add Existing Loan
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">No existing loans recorded</p>
+                )}
+              </div>
+              <Button variant="outline" className="w-full h-10 border-dashed" onClick={() => toast.info("Add loan form — coming soon")}>
+                <Plus className="h-4 w-4 mr-1.5" /> Add Existing Loan
               </Button>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm">Bank / NBFC Selection</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex gap-2 items-end">
-                <div className="flex-1 space-y-1">
-                  <Label className="text-[10px]">Product Type</Label>
+          <Card className="shadow-none">
+            <CardHeader className="pb-3 border-b">
+              <CardTitle className="text-sm flex items-center gap-2.5">
+                <span className="h-7 w-7 rounded-md bg-primary/10 text-primary flex items-center justify-center">
+                  <Building2 className="h-4 w-4" />
+                </span>
+                Bank / NBFC Selection
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 pt-5">
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Product Type</Label>
                   <Select value={selectedProduct} onValueChange={(v) => { setSelectedProduct(v); setSelectedBank(""); }}>
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue placeholder="Select product" />
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="Select…" />
                     </SelectTrigger>
                     <SelectContent>
                       {[...new Set(lendingPartners.filter(lp => lp.status === "active").flatMap(lp => lp.products))].map(p => (
-                        <SelectItem key={p} value={p} className="text-xs">{getProductLabel(p)}</SelectItem>
+                        <SelectItem key={p} value={p}>{getProductLabel(p)}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex-1 space-y-1">
-                  <Label className="text-[10px]">Bank / NBFC</Label>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Bank / NBFC</Label>
                   <Select value={selectedBank} onValueChange={setSelectedBank} disabled={!selectedProduct}>
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue placeholder={selectedProduct ? "Select bank" : "Pick product first"} />
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder={selectedProduct ? "Pick bank…" : "Pick product first"} />
                     </SelectTrigger>
                     <SelectContent>
                       {lendingPartners
                         .filter(lp => lp.status === "active" && lp.products.includes(selectedProduct as any))
                         .map(lp => (
-                          <SelectItem key={lp.id} value={lp.id} className="text-xs">{lp.name}</SelectItem>
+                          <SelectItem key={lp.id} value={lp.id}>{lp.name}</SelectItem>
                         ))}
                     </SelectContent>
                   </Select>
                 </div>
-                <Button size="sm" className="h-8 text-xs px-3" onClick={handleAddPair}>+ Add</Button>
+                <Button variant="outline" className="w-full h-10" onClick={handleAddPair}>
+                  <Plus className="h-4 w-4 mr-1.5" /> Add
+                </Button>
               </div>
               {selectedPairs.length > 0 ? (
-                <div className="space-y-1">
+                <div className="flex flex-wrap gap-2 pt-1">
                   {selectedPairs.map((pair, i) => (
-                    <div key={`${pair.partnerId}-${pair.productType}`} className="flex items-center justify-between p-2 rounded border text-xs">
-                      <span>
-                        <span className="font-medium">{getProductLabel(pair.productType as any)}</span>
-                        <span className="text-muted-foreground"> → </span>
-                        <span>{pair.partnerName}</span>
-                      </span>
-                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive" onClick={() => handleRemovePair(i)}>×</Button>
-                    </div>
+                    <span
+                      key={`${pair.partnerId}-${pair.productType}`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium"
+                    >
+                      {getProductLabel(pair.productType as any)} → {pair.partnerName}
+                      <button
+                        onClick={() => handleRemovePair(i)}
+                        className="ml-0.5 rounded-full hover:bg-primary/20 p-0.5"
+                        aria-label="Remove"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
                   ))}
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground">No banks selected yet</p>
               )}
-
             </CardContent>
           </Card>
         </div>
 
         {/* STB + Notes + Retry */}
-        <div className="space-y-4">
-          <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm">STB Status</CardTitle></CardHeader>
-            <CardContent className="space-y-2">
+        <div className="space-y-6">
+          <Card className="shadow-none">
+            <CardHeader className="pb-3 border-b">
+              <CardTitle className="text-sm flex items-center gap-2.5">
+                <span className="h-7 w-7 rounded-md bg-primary/10 text-primary flex items-center justify-center">
+                  <Send className="h-4 w-4" />
+                </span>
+                STB Status
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-5">
               {localStbSubmissions.length > 0 ? (
-                localStbSubmissions.map(s => (
-                  <div key={s.id} className="p-2 rounded border space-y-1">
-                    <div className="flex justify-between">
-                      <span className="font-medium text-xs">{s.partnerName}</span>
-                      <Badge variant={s.status === "disbursed" ? "default" : s.status === "approved" ? "default" : s.status === "declined" ? "destructive" : "secondary"} className="text-[10px]">
-                        {s.status}
-                      </Badge>
+                <div className="divide-y divide-border/60 -my-1">
+                  {localStbSubmissions.map(s => (
+                    <div key={s.id} className="py-3 first:pt-0 last:pb-0 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold text-foreground">{s.partnerName}</span>
+                        <SoftPill tone={s.status === "disbursed" || s.status === "approved" ? "completed" : s.status === "declined" ? "missed" : "submitted"}>
+                          {s.status.charAt(0).toUpperCase() + s.status.slice(1)}
+                        </SoftPill>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>{s.remarks || "—"}</span>
+                        <span>{new Date(s.submittedAt).toLocaleDateString()}</span>
+                      </div>
+                      {s.sanctionAmount && <div className="text-xs">Sanction: ₹{s.sanctionAmount.toLocaleString()}</div>}
+                      {s.disbursedAmount && <div className="text-xs text-success">Disbursed: ₹{s.disbursedAmount.toLocaleString()}</div>}
                     </div>
-                    <div className="text-[10px] text-muted-foreground">Submitted: {new Date(s.submittedAt).toLocaleDateString()}</div>
-                    {s.remarks && <div className="text-[10px] text-muted-foreground">{s.remarks}</div>}
-                    {s.sanctionAmount && <div className="text-[10px]">Sanction: ₹{s.sanctionAmount.toLocaleString()}</div>}
-                    {s.disbursedAmount && <div className="text-[10px] text-success">Disbursed: ₹{s.disbursedAmount.toLocaleString()}</div>}
-                    {s.disbursementDate && <div className="text-[10px] text-muted-foreground">Disbursed on: {new Date(s.disbursementDate).toLocaleDateString()}</div>}
-                  </div>
-                ))
+                  ))}
+                </div>
               ) : (
                 <p className="text-xs text-muted-foreground">No STB submissions yet</p>
               )}
@@ -545,15 +572,35 @@ const LeadDetailPage = () => {
           </Card>
 
           {/* Notes (immutable timestamped) */}
-          <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><FileText className="h-4 w-4" /> Notes</CardTitle></CardHeader>
-            <CardContent>
-              <div className="flex gap-2 mb-3">
-                <Input placeholder="Add a note..." value={newNote} onChange={e => setNewNote(e.target.value)} className="text-xs h-8" />
-                <Button size="sm" className="h-8 text-xs" onClick={handleAddNote}>Add</Button>
-              </div>
-              <div className="space-y-2 max-h-40 overflow-y-auto">
+          <Card className="shadow-none">
+            <CardHeader className="pb-3 border-b">
+              <CardTitle className="text-sm flex items-center gap-2.5">
+                <span className="h-7 w-7 rounded-md bg-primary/10 text-primary flex items-center justify-center">
+                  <StickyNote className="h-4 w-4" />
+                </span>
+                Notes
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 pt-5">
+              <Textarea
+                placeholder="Add a note…"
+                value={newNote}
+                onChange={e => setNewNote(e.target.value)}
+                className="text-sm min-h-[80px] resize-none"
+              />
+              <Button className="w-full h-10" onClick={handleAddNote}>
+                <Plus className="h-4 w-4 mr-1.5" /> Add
+              </Button>
+              <div className="space-y-3 max-h-64 overflow-y-auto pt-1">
                 {(lead.notes || []).map(n => (
+                  <div key={n.id} className="space-y-1">
+                    <p className="text-sm font-medium text-foreground">{n.text}</p>
+                    <p className="text-xs text-muted-foreground">{n.agentName} · {new Date(n.createdAt).toLocaleString()}</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
                   <div key={n.id} className="p-2 rounded border text-xs">
                     <p>{n.text}</p>
                     <div className="flex justify-between mt-1 text-[10px] text-muted-foreground">
