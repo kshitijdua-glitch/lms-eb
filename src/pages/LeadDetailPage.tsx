@@ -551,7 +551,11 @@ const LeadDetailPage = () => {
             })()}
             {isEditing && (
               <div className="p-4 border-t">
-                <Button className="w-full h-10" onClick={() => { setIsEditing(false); toast.success("Profile saved"); }}>
+                <Button className="w-full h-10" onClick={() => {
+                  setIsEditing(false);
+                  logAudit({ ...actor, action: "edit_profile", entityType: "lead", entityId: lead.id, entityLabel: lead.name, notes: "Profile fields edited" });
+                  toast.success("Profile saved");
+                }}>
                   Save
                 </Button>
               </div>
