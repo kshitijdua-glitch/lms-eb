@@ -107,7 +107,6 @@ export const dispositionGroups = (): { group: string; items: DispositionConfig[]
 
 const names = ["Rajesh Khanna","Sunita Devi","Mohd Irfan","Lakshmi Narayan","Vikram Chauhan","Nisha Agarwal","Suresh Babu","Fatima Begum","Arjun Rao","Kavita Mishra","Dinesh Thakur","Rekha Pandey","Sanjay Dubey","Asha Kumari","Manoj Tiwari","Geeta Sinha","Ramprasad Yadav","Zainab Khan","Harish Chandra","Padma Lakshmi","Gopal Krishna","Savitri Devi","Naresh Agarwal","Mumtaz Patel","Vijay Shankar","Usha Rani","Prakash Joshi","Salma Sheikh","Ashok Mehta","Kamla Devi","Bharat Bhushan","Parveen Akhtar","Sunil Sharma","Annapurna Iyer","Ramesh Chand","Indira Soni","Arun Kapoor","Sarita Gupta","Mukesh Ambani","Lata Deshmukh","Raghav Mehra","Shobha Rajan","Nilesh Puri","Rina Chakraborty","Satish Kale","Uma Mahesh","Jagdish Prasad","Rubina Sayyed","Kishore Bhat","Malti Sharma"];
 
-function maskMobile(m: string) { return "XXXXXX" + m.slice(-4); }
 function maskPan(p: string) { return p.slice(0, 4) + "XXXX" + p.slice(-2); }
 
 function randomFrom<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
