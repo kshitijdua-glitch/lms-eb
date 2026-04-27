@@ -83,7 +83,7 @@ export function NotificationsDrawer() {
           )}
           {notifications.map(n => {
             const Icon = iconMap[n.type] || Bell;
-            const tone = n.type.includes("missed") || n.type.includes("expiry") || n.type.includes("nc_") || n.type.includes("dnd")
+            const tone = n.type.includes("missed") || n.type.includes("expiry") || n.type.includes("nc_")
               ? "bg-destructive/10 text-destructive"
               : n.type.includes("consent") || n.type.includes("approved") || n.type.includes("export_completed")
                 ? "bg-success/10 text-success"

@@ -103,10 +103,7 @@ const OrgLeadsPage = () => {
       </div>
     )},
     { id: "name", label: "Name", render: (lead) => (
-      <span className="font-medium">
-        {lead.name}
-        {lead.dndStatus === "dnd_registered" && <Badge variant="destructive" className="text-[9px] ml-1 px-1">DND</Badge>}
-      </span>
+      <span className="font-medium">{lead.name}</span>
     )},
     { id: "manager", label: "Manager", render: (lead) => <span className="text-xs text-muted-foreground">{getManagerForTeam(lead.assignedTeamId)}</span> },
     { id: "agent", label: "Agent", render: (lead) => <span className="text-xs text-muted-foreground">{agents.find(a => a.id === lead.assignedAgentId)?.name || "—"}</span> },
