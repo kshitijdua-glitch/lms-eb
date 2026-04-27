@@ -93,6 +93,9 @@ const LeadDetailPage = () => {
   const [followUpTime, setFollowUpTime] = useState("");
   const [stbSubmitted, setStbSubmitted] = useState(lead?.stbSubmissions?.length ? lead.stbSubmissions.length > 0 : false);
   const [localStbSubmissions, setLocalStbSubmissions] = useState(lead?.stbSubmissions || []);
+  const [localLoans, setLocalLoans] = useState(lead?.existingLoans || []);
+  const [showAddLoan, setShowAddLoan] = useState(false);
+  const [newLoan, setNewLoan] = useState({ bankName: "", loanType: "", outstandingAmount: "", emi: "", tenure: "" });
 
   const [leadSidebarOpen, setLeadSidebarOpen] = useState(true);
   const [leadListSearch, setLeadListSearch] = useState("");
