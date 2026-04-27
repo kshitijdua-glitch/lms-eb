@@ -157,13 +157,39 @@ const GroupLeadsPage = () => {
           <h1 className="text-2xl font-bold">Group Leads</h1>
           <p className="text-muted-foreground text-sm">{filtered.length} of {allLeads.length} leads</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {selectedIds.size > 0 && (
-            <Button size="sm" onClick={() => setShowReassign(true)}>
-              <Shuffle className="h-4 w-4 mr-1" /> Reassign ({selectedIds.size})
-            </Button>
+            <>
+              <Button size="sm" onClick={() => setShowReassign(true)}>
+                <Shuffle className="h-4 w-4 mr-1" /> Reassign ({selectedIds.size})
+              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button size="sm" variant="outline" onClick={handleBulkEscalate} aria-label="Escalate selected leads">
+                    <AlertTriangle className="h-4 w-4 mr-1" /> Escalate
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Escalate to senior management</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button size="sm" variant="outline" onClick={handleBulkPriority} aria-label="Mark as hot priority">
+                    <Flame className="h-4 w-4 mr-1" /> Mark Hot
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Set priority to Hot</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button size="sm" variant="outline" onClick={() => setShowNote(true)} aria-label="Add note to selected leads">
+                    <MessageSquarePlus className="h-4 w-4 mr-1" /> Add Note
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Add a manager note to all selected</TooltipContent>
+              </Tooltip>
+            </>
           )}
-          <Button variant="outline" size="sm" onClick={() => toast.success("CSV exported")}>
+          <Button variant="outline" size="sm" onClick={() => toast.success("CSV exported (non-PII)")}>
             <Download className="h-4 w-4 mr-1" /> Export
           </Button>
         </div>
