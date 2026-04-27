@@ -20,10 +20,40 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import {
   ArrowLeft, Phone, Send, Calculator, Clock, AlertTriangle,
-  User, Edit2, Lock, FileText, Shield, CalendarIcon, Shuffle, Search, ChevronLeft, ChevronRight, RefreshCw
+  User, Edit2, Lock, FileText, Shield, CalendarIcon, Shuffle, Search, ChevronLeft, ChevronRight, RefreshCw,
+  Building2, StickyNote, Plus, X
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+
+// Soft pill color map — clean tinted backgrounds for status chips
+const SOFT_PILL: Record<string, string> = {
+  new: "bg-blue-50 text-blue-700 border border-blue-100",
+  contacted: "bg-amber-50 text-amber-700 border border-amber-100",
+  interested: "bg-emerald-50 text-emerald-700 border border-emerald-100",
+  bank_selected: "bg-violet-50 text-violet-700 border border-violet-100",
+  stb_submitted: "bg-indigo-50 text-indigo-700 border border-indigo-100",
+  approved: "bg-emerald-50 text-emerald-700 border border-emerald-100",
+  declined: "bg-rose-50 text-rose-700 border border-rose-100",
+  disbursed: "bg-emerald-50 text-emerald-700 border border-emerald-100",
+  closed_lost: "bg-slate-100 text-slate-600 border border-slate-200",
+  hot: "bg-rose-50 text-rose-700 border border-rose-100",
+  warm: "bg-amber-50 text-amber-700 border border-amber-100",
+  cold: "bg-cyan-50 text-cyan-700 border border-cyan-100",
+  submitted: "bg-indigo-50 text-indigo-700 border border-indigo-100",
+  pending: "bg-amber-50 text-amber-700 border border-amber-100",
+  completed: "bg-emerald-50 text-emerald-700 border border-emerald-100",
+  missed: "bg-rose-50 text-rose-700 border border-rose-100",
+};
+const SoftPill = ({ tone, children, className }: { tone: string; children: React.ReactNode; className?: string }) => (
+  <span className={cn(
+    "inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium",
+    SOFT_PILL[tone] || "bg-slate-100 text-slate-700 border border-slate-200",
+    className,
+  )}>
+    {children}
+  </span>
+);
 
 const LeadDetailPage = () => {
   const { id } = useParams();
@@ -183,33 +213,33 @@ const LeadDetailPage = () => {
   const groups = dispositionGroups();
 
   return (
-    <div className="flex gap-0 -m-6">
+    <div className="flex gap-0 -m-6 min-h-screen">
       {/* Lead List Sidebar */}
       <div className={cn(
-        "border-r border-dashed bg-card shrink-0 flex flex-col transition-all duration-200",
-        leadSidebarOpen ? "w-72" : "w-10"
+        "border-r border-border bg-card shrink-0 flex flex-col transition-all duration-200",
+        leadSidebarOpen ? "w-80" : "w-12"
       )}>
-        <div className="flex items-center justify-between p-2 border-b border-dashed">
-          {leadSidebarOpen && <span className="text-xs font-semibold px-1">Leads</span>}
-          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setLeadSidebarOpen(!leadSidebarOpen)}>
-            {leadSidebarOpen ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+          {leadSidebarOpen && <span className="text-sm font-semibold">Leads</span>}
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setLeadSidebarOpen(!leadSidebarOpen)}>
+            {leadSidebarOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           </Button>
         </div>
         {leadSidebarOpen && (
           <>
-            <div className="p-2 border-b border-dashed">
+            <div className="p-3 border-b border-border">
               <div className="relative">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input
-                  placeholder="Search..."
+                  placeholder="Search"
                   value={leadListSearch}
                   onChange={e => setLeadListSearch(e.target.value)}
-                  className="h-7 text-xs pl-7"
+                  className="h-9 text-xs pl-8 bg-background"
                 />
               </div>
             </div>
             <ScrollArea className="flex-1">
-              <div className="divide-y divide-dashed">
+              <div className="divide-y divide-border">
                 {filteredLeads.map(l => {
                   const daysSince = Math.floor((Date.now() - new Date(l.lastActivityAt || l.allocatedAt).getTime()) / 86400000);
                   const isCurrent = l.id === id;
@@ -217,22 +247,25 @@ const LeadDetailPage = () => {
                     <button
                       key={l.id}
                       className={cn(
-                        "w-full text-left px-3 py-2.5 hover:bg-muted/50 transition-colors",
-                        isCurrent && "bg-muted border-l-2 border-primary"
+                        "w-full text-left px-4 py-3.5 hover:bg-muted/40 transition-colors relative",
+                        isCurrent && "bg-primary/5"
                       )}
                       onClick={() => navigate(`/leads/${l.id}`)}
                     >
-                      <div className="text-xs font-medium truncate">{l.name}</div>
-                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                        <Badge variant="outline" className="text-[10px] px-1 py-0">{getStageLabel(l.stage)}</Badge>
-                        <Badge variant="secondary" className="text-[10px] px-1 py-0">{getProductLabel(l.productType)}</Badge>
-                        <span className="text-[10px] text-muted-foreground ml-auto">{daysSince}d</span>
+                      {isCurrent && <span className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary" />}
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <span className="text-sm font-semibold text-foreground truncate">{l.name}</span>
+                        <SoftPill tone={l.stage}>{getStageLabel(l.stage)}</SoftPill>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>{getProductLabel(l.productType)}</span>
+                        <span>{daysSince}d</span>
                       </div>
                     </button>
                   );
                 })}
                 {filteredLeads.length === 0 && (
-                  <div className="p-4 text-xs text-muted-foreground text-center">No leads found</div>
+                  <div className="p-6 text-xs text-muted-foreground text-center">No leads found</div>
                 )}
               </div>
             </ScrollArea>
@@ -241,49 +274,55 @@ const LeadDetailPage = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 min-w-0 p-6 overflow-auto space-y-4">
+      <div className="flex-1 min-w-0 p-8 overflow-auto space-y-6">
       {/* Action Bar */}
       <div className="flex items-center gap-3 flex-wrap">
-        <Button variant="ghost" size="sm" onClick={() => navigate("/leads")}>
-          <ArrowLeft className="h-4 w-4 mr-1" /> Back to Leads
+        <Button variant="ghost" size="sm" onClick={() => navigate("/leads")} className="text-muted-foreground hover:text-foreground -ml-2">
+          <ArrowLeft className="h-4 w-4 mr-1.5" /> Back to Leads
         </Button>
         <div className="flex-1" />
-        <Button size="sm" onClick={() => setShowCallLog(true)}><Phone className="h-4 w-4 mr-1" /> Log Call</Button>
-        <Button size="sm" variant="outline" onClick={handleSendToBank}><Send className="h-4 w-4 mr-1" /> Send to Bank</Button>
-        <Button size="sm" variant="outline" onClick={() => setShowEMI(true)}><Calculator className="h-4 w-4 mr-1" /> EMI Calc</Button>
+        <Button size="sm" onClick={() => setShowCallLog(true)} className="h-9"><Phone className="h-4 w-4 mr-1.5" /> Log Call</Button>
+        <Button size="sm" variant="outline" onClick={handleSendToBank} className="h-9"><Send className="h-4 w-4 mr-1.5" /> Send to Bank</Button>
+        <Button size="sm" variant="outline" onClick={() => setShowEMI(true)} className="h-9"><Calculator className="h-4 w-4 mr-1.5" /> EMI Calculator</Button>
         {(role === "manager" || role === "cluster_head") && (
-          <Button size="sm" variant="outline" onClick={() => setShowReassign(true)}>
-            <Shuffle className="h-4 w-4 mr-1" /> Reassign
+          <Button size="sm" variant="outline" onClick={() => setShowReassign(true)} className="h-9">
+            <Shuffle className="h-4 w-4 mr-1.5" /> Reassign
           </Button>
         )}
         {(role === "manager" || role === "cluster_head") && (lead.stage === "closed_lost" || lead.stage === "declined") && (
-          <Button size="sm" variant="secondary" onClick={() => setShowOverride(true)}>
+          <Button size="sm" variant="secondary" onClick={() => setShowOverride(true)} className="h-9">
             Override
           </Button>
         )}
       </div>
 
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold">{lead.name}</h1>
+      <div className="flex items-start gap-4">
+        <div className="flex-1 space-y-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-2xl font-semibold tracking-tight">{lead.name}</h1>
             {isProfileLocked && <Lock className="h-4 w-4 text-muted-foreground" />}
-            {lead.dndStatus === "dnd_registered" && <Badge variant="destructive" className="text-[10px]">DND</Badge>}
+            {lead.dndStatus === "dnd_registered" && <SoftPill tone="missed">DND</SoftPill>}
+            {role !== "agent" && (
+              <span className="text-xs text-muted-foreground">
+                <span className="opacity-60">·</span> Source: <span className="font-medium text-foreground">{lead.leadSource}</span>
+              </span>
+            )}
           </div>
-          <div className="flex items-center gap-2 mt-1 flex-wrap">
-            <Badge variant="outline" className="text-[10px]">{lead.id}</Badge>
-            <Badge>{getStageLabel(lead.stage)}</Badge>
+          <div className="flex items-center gap-2 flex-wrap">
+            <SoftPill tone={lead.stage}>{getStageLabel(lead.stage)}</SoftPill>
             {(() => {
               const currentPriority = (priorityOverride || lead.priority) as "hot" | "warm" | "cold";
               const { reasons } = calculatePriorityScore(lead, config);
               return (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Badge variant={currentPriority === "hot" ? "destructive" : currentPriority === "warm" ? "default" : "secondary"} className="cursor-help">
-                      {currentPriority.toUpperCase()}
-                      {priorityOverride && <span className="ml-1 text-[8px]">(manual)</span>}
-                    </Badge>
+                    <button className="cursor-help">
+                      <SoftPill tone={currentPriority}>
+                        {currentPriority.charAt(0).toUpperCase() + currentPriority.slice(1)}
+                        {priorityOverride && <span className="ml-1 text-[9px] opacity-70">(manual)</span>}
+                      </SoftPill>
+                    </button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="max-w-xs">
                     <p className="font-semibold text-xs mb-1">Priority Scoring Breakdown</p>
@@ -294,7 +333,7 @@ const LeadDetailPage = () => {
                 </Tooltip>
               );
             })()}
-            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => {
+            <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground" onClick={() => {
               const newP = calculatePriority(lead, config);
               setPriorityOverride(null);
               toast.success(`Priority recalculated: ${newP.toUpperCase()}`);
@@ -303,7 +342,7 @@ const LeadDetailPage = () => {
             </Button>
             {(role === "manager" || role === "cluster_head" || role === "data_admin") && (
               <Select value={priorityOverride || ""} onValueChange={v => { setPriorityOverride(v); toast.success(`Priority overridden to ${v.toUpperCase()}`); }}>
-                <SelectTrigger className="h-6 w-24 text-[10px]">
+                <SelectTrigger className="h-7 w-24 text-[11px]">
                   <SelectValue placeholder="Override" />
                 </SelectTrigger>
                 <SelectContent>
@@ -313,88 +352,64 @@ const LeadDetailPage = () => {
                 </SelectContent>
               </Select>
             )}
-            {role !== "agent" && <span className="text-xs text-muted-foreground">Source: {lead.leadSource}</span>}
+            <span className="text-xs text-muted-foreground ml-1">Lead ID: <span className="font-mono">{lead.id}</span></span>
           </div>
         </div>
         {(role === "agent" || role === "manager" || role === "cluster_head") && (
-          <Button variant="ghost" size="sm" onClick={() => setIsEditing(!isEditing)}>
-            <Edit2 className="h-4 w-4 mr-1" /> {isEditing ? "Done" : "Edit"}
+          <Button variant="outline" size="sm" onClick={() => setIsEditing(!isEditing)} className="h-9">
+            <Edit2 className="h-4 w-4 mr-1.5" /> {isEditing ? "Done" : "Edit"}
           </Button>
         )}
       </div>
 
-      <div className="grid md:grid-cols-3 gap-4">
+      <div className="grid md:grid-cols-3 gap-6">
         {/* Customer Profile */}
         <Card className="shadow-none">
           <CardHeader className="pb-3 border-b">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <User className="h-4 w-4 text-primary" /> Customer Profile
+            <CardTitle className="text-sm flex items-center gap-2.5">
+              <span className="h-7 w-7 rounded-md bg-primary/10 text-primary flex items-center justify-center">
+                <User className="h-4 w-4" />
+              </span>
+              Customer Profile
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0 text-sm">
             {(() => {
-              const sections: { title: string; fields: [string, string, boolean][] }[] = [
-                {
-                  title: "Contact",
-                  fields: [
-                    ["Mobile", lead.mobile, true],
-                    ["PAN", lead.pan, false],
-                    ["DOB", new Date(lead.dob).toLocaleDateString(), true],
-                  ],
-                },
-                {
-                  title: "Address",
-                  fields: [
-                    ["City", lead.city, true],
-                    ["State", lead.state, true],
-                    ["PIN Code", lead.pinCode, true],
-                  ],
-                },
-                {
-                  title: "Employment",
-                  fields: [
-                    ["Company", lead.companyName, true],
-                    ["Employment Type", lead.employmentType.replace(/_/g, " "), true],
-                    ["Monthly Income", `₹${lead.monthlyIncome.toLocaleString()}`, true],
-                    ["Obligations", `₹${lead.existingObligations.toLocaleString()}`, true],
-                    ["FOIR", `${lead.foir}%`, true],
-                  ],
-                },
-                {
-                  title: "Loan Requirement",
-                  fields: [
-                    ["Product", getProductLabel(lead.productType), true],
-                    ["Loan Amount", `₹${lead.loanAmount.toLocaleString()}`, true],
-                    ["Days Since Alloc", `${daysSinceAlloc} days`, false],
-                  ],
-                },
+              const fields: [string, string, boolean][] = [
+                ["Mobile", lead.mobile, true],
+                ["PAN", lead.pan, false],
+                ["DOB", new Date(lead.dob).toLocaleDateString(), true],
+                ["City", lead.city, true],
+                ["State", lead.state, true],
+                ["PIN Code", lead.pinCode, true],
+                ["Company", lead.companyName, true],
+                ["Employment", lead.employmentType.replace(/_/g, " "), true],
+                ["Monthly Income", `₹${lead.monthlyIncome.toLocaleString()}`, true],
+                ["Obligation", `₹${lead.existingObligations.toLocaleString()}`, true],
+                ["FOIR", `${lead.foir}%`, true],
+                ["Product", getProductLabel(lead.productType), true],
+                ["Loan Amount", `₹${lead.loanAmount.toLocaleString()}`, true],
+                ["Days Since Alloc", `${daysSinceAlloc} days`, false],
               ];
-              return sections.map((section, sIdx) => (
-                <div key={section.title} className={cn(sIdx > 0 && "border-t")}>
-                  <div className="px-4 pt-3 pb-1.5">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      {section.title}
-                    </span>
-                  </div>
-                  <div className="divide-y">
-                    {section.fields.map(([label, value, editable]) => (
-                      <div key={label} className="flex justify-between items-center px-4 py-2.5">
-                        <span className="text-muted-foreground text-xs">{label}</span>
-                        {isEditing && editable ? (
-                          <Input className="w-32 h-7 text-xs" defaultValue={value} />
-                        ) : (
-                          <span className="font-medium text-xs text-foreground">{value}</span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+              return (
+                <div className="divide-y divide-border/60">
+                  {fields.map(([label, value, editable]) => (
+                    <div key={label} className="flex justify-between items-center px-5 py-3">
+                      <span className="text-muted-foreground text-sm">{label}</span>
+                      {isEditing && editable ? (
+                        <Input className="w-36 h-8 text-sm" defaultValue={value} />
+                      ) : (
+                        <span className="font-medium text-sm text-foreground capitalize">{value}</span>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              ));
+              );
             })()}
             {isEditing && (
-              <div className="p-3 border-t">
-                <Button size="sm" className="w-full" onClick={() => { setIsEditing(false); toast.success("Profile saved"); }}>
-                  Save Changes
+              <div className="p-4 border-t">
+                <Button className="w-full h-10" onClick={() => { setIsEditing(false); toast.success("Profile saved"); }}>
+                  Save
                 </Button>
               </div>
             )}
@@ -402,120 +417,154 @@ const LeadDetailPage = () => {
         </Card>
 
         {/* Credit & Obligations + Bank Selection */}
-        <div className="space-y-4">
-          <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><Shield className="h-4 w-4" /> Credit & Obligations</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Credit Score</span>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    className="w-20 h-7 text-xs"
-                    value={editCreditScore}
-                    onChange={e => setEditCreditScore(e.target.value)}
-                    placeholder="—"
-                  />
-                  <Button size="sm" variant="outline" className="h-7 text-[10px] px-2" onClick={handleSaveCreditScore}>Save</Button>
+        <div className="space-y-6">
+          <Card className="shadow-none">
+            <CardHeader className="pb-3 border-b">
+              <CardTitle className="text-sm flex items-center gap-2.5">
+                <span className="h-7 w-7 rounded-md bg-primary/10 text-primary flex items-center justify-center">
+                  <Shield className="h-4 w-4" />
+                </span>
+                Credit &amp; Obligations
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 pt-5">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-foreground">Credit Score</span>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      className="w-24 h-9 text-sm"
+                      value={editCreditScore}
+                      onChange={e => setEditCreditScore(e.target.value)}
+                      placeholder="—"
+                    />
+                    <Button size="sm" className="h-9" onClick={handleSaveCreditScore}>Save</Button>
+                  </div>
                 </div>
               </div>
-              <div className="text-xs font-medium mt-2">Existing Loans</div>
-              {lead.existingLoans.length > 0 ? (
-                <div className="space-y-1">
-                  {lead.existingLoans.map(loan => (
-                    <div key={loan.id} className="p-2 rounded border text-xs flex justify-between">
-                      <div>
-                        <div className="font-medium">{loan.bankName} — {loan.loanType}</div>
-                        <div className="text-muted-foreground">Outstanding: ₹{loan.outstandingAmount.toLocaleString()} · EMI: ₹{loan.emi.toLocaleString()} · {loan.tenure}mo</div>
+              <div>
+                <div className="text-sm font-medium mb-2">Existing Loans</div>
+                {lead.existingLoans.length > 0 ? (
+                  <div className="space-y-2">
+                    {lead.existingLoans.map(loan => (
+                      <div key={loan.id} className="p-3 rounded-lg border border-border bg-muted/30">
+                        <div className="text-sm font-medium text-foreground">{loan.bankName} — {loan.loanType}</div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Outstanding: ₹{loan.outstandingAmount.toLocaleString()} · EMI: ₹{loan.emi.toLocaleString()} · {loan.tenure}mo
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground">No existing loans recorded</p>
-              )}
-              <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => toast.info("Add loan form — coming soon")}>
-                + Add Existing Loan
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">No existing loans recorded</p>
+                )}
+              </div>
+              <Button variant="outline" className="w-full h-10 border-dashed" onClick={() => toast.info("Add loan form — coming soon")}>
+                <Plus className="h-4 w-4 mr-1.5" /> Add Existing Loan
               </Button>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm">Bank / NBFC Selection</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex gap-2 items-end">
-                <div className="flex-1 space-y-1">
-                  <Label className="text-[10px]">Product Type</Label>
+          <Card className="shadow-none">
+            <CardHeader className="pb-3 border-b">
+              <CardTitle className="text-sm flex items-center gap-2.5">
+                <span className="h-7 w-7 rounded-md bg-primary/10 text-primary flex items-center justify-center">
+                  <Building2 className="h-4 w-4" />
+                </span>
+                Bank / NBFC Selection
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 pt-5">
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Product Type</Label>
                   <Select value={selectedProduct} onValueChange={(v) => { setSelectedProduct(v); setSelectedBank(""); }}>
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue placeholder="Select product" />
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="Select…" />
                     </SelectTrigger>
                     <SelectContent>
                       {[...new Set(lendingPartners.filter(lp => lp.status === "active").flatMap(lp => lp.products))].map(p => (
-                        <SelectItem key={p} value={p} className="text-xs">{getProductLabel(p)}</SelectItem>
+                        <SelectItem key={p} value={p}>{getProductLabel(p)}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex-1 space-y-1">
-                  <Label className="text-[10px]">Bank / NBFC</Label>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Bank / NBFC</Label>
                   <Select value={selectedBank} onValueChange={setSelectedBank} disabled={!selectedProduct}>
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue placeholder={selectedProduct ? "Select bank" : "Pick product first"} />
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder={selectedProduct ? "Pick bank…" : "Pick product first"} />
                     </SelectTrigger>
                     <SelectContent>
                       {lendingPartners
                         .filter(lp => lp.status === "active" && lp.products.includes(selectedProduct as any))
                         .map(lp => (
-                          <SelectItem key={lp.id} value={lp.id} className="text-xs">{lp.name}</SelectItem>
+                          <SelectItem key={lp.id} value={lp.id}>{lp.name}</SelectItem>
                         ))}
                     </SelectContent>
                   </Select>
                 </div>
-                <Button size="sm" className="h-8 text-xs px-3" onClick={handleAddPair}>+ Add</Button>
+                <Button variant="outline" className="w-full h-10" onClick={handleAddPair}>
+                  <Plus className="h-4 w-4 mr-1.5" /> Add
+                </Button>
               </div>
               {selectedPairs.length > 0 ? (
-                <div className="space-y-1">
+                <div className="flex flex-wrap gap-2 pt-1">
                   {selectedPairs.map((pair, i) => (
-                    <div key={`${pair.partnerId}-${pair.productType}`} className="flex items-center justify-between p-2 rounded border text-xs">
-                      <span>
-                        <span className="font-medium">{getProductLabel(pair.productType as any)}</span>
-                        <span className="text-muted-foreground"> → </span>
-                        <span>{pair.partnerName}</span>
-                      </span>
-                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive" onClick={() => handleRemovePair(i)}>×</Button>
-                    </div>
+                    <span
+                      key={`${pair.partnerId}-${pair.productType}`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium"
+                    >
+                      {getProductLabel(pair.productType as any)} → {pair.partnerName}
+                      <button
+                        onClick={() => handleRemovePair(i)}
+                        className="ml-0.5 rounded-full hover:bg-primary/20 p-0.5"
+                        aria-label="Remove"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
                   ))}
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground">No banks selected yet</p>
               )}
-
             </CardContent>
           </Card>
         </div>
 
         {/* STB + Notes + Retry */}
-        <div className="space-y-4">
-          <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm">STB Status</CardTitle></CardHeader>
-            <CardContent className="space-y-2">
+        <div className="space-y-6">
+          <Card className="shadow-none">
+            <CardHeader className="pb-3 border-b">
+              <CardTitle className="text-sm flex items-center gap-2.5">
+                <span className="h-7 w-7 rounded-md bg-primary/10 text-primary flex items-center justify-center">
+                  <Send className="h-4 w-4" />
+                </span>
+                STB Status
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-5">
               {localStbSubmissions.length > 0 ? (
-                localStbSubmissions.map(s => (
-                  <div key={s.id} className="p-2 rounded border space-y-1">
-                    <div className="flex justify-between">
-                      <span className="font-medium text-xs">{s.partnerName}</span>
-                      <Badge variant={s.status === "disbursed" ? "default" : s.status === "approved" ? "default" : s.status === "declined" ? "destructive" : "secondary"} className="text-[10px]">
-                        {s.status}
-                      </Badge>
+                <div className="divide-y divide-border/60 -my-1">
+                  {localStbSubmissions.map(s => (
+                    <div key={s.id} className="py-3 first:pt-0 last:pb-0 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold text-foreground">{s.partnerName}</span>
+                        <SoftPill tone={s.status === "disbursed" || s.status === "approved" ? "completed" : s.status === "declined" ? "missed" : "submitted"}>
+                          {s.status.charAt(0).toUpperCase() + s.status.slice(1)}
+                        </SoftPill>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>{s.remarks || "—"}</span>
+                        <span>{new Date(s.submittedAt).toLocaleDateString()}</span>
+                      </div>
+                      {s.sanctionAmount && <div className="text-xs">Sanction: ₹{s.sanctionAmount.toLocaleString()}</div>}
+                      {s.disbursedAmount && <div className="text-xs text-success">Disbursed: ₹{s.disbursedAmount.toLocaleString()}</div>}
                     </div>
-                    <div className="text-[10px] text-muted-foreground">Submitted: {new Date(s.submittedAt).toLocaleDateString()}</div>
-                    {s.remarks && <div className="text-[10px] text-muted-foreground">{s.remarks}</div>}
-                    {s.sanctionAmount && <div className="text-[10px]">Sanction: ₹{s.sanctionAmount.toLocaleString()}</div>}
-                    {s.disbursedAmount && <div className="text-[10px] text-success">Disbursed: ₹{s.disbursedAmount.toLocaleString()}</div>}
-                    {s.disbursementDate && <div className="text-[10px] text-muted-foreground">Disbursed on: {new Date(s.disbursementDate).toLocaleDateString()}</div>}
-                  </div>
-                ))
+                  ))}
+                </div>
               ) : (
                 <p className="text-xs text-muted-foreground">No STB submissions yet</p>
               )}
@@ -523,21 +572,30 @@ const LeadDetailPage = () => {
           </Card>
 
           {/* Notes (immutable timestamped) */}
-          <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><FileText className="h-4 w-4" /> Notes</CardTitle></CardHeader>
-            <CardContent>
-              <div className="flex gap-2 mb-3">
-                <Input placeholder="Add a note..." value={newNote} onChange={e => setNewNote(e.target.value)} className="text-xs h-8" />
-                <Button size="sm" className="h-8 text-xs" onClick={handleAddNote}>Add</Button>
-              </div>
-              <div className="space-y-2 max-h-40 overflow-y-auto">
+          <Card className="shadow-none">
+            <CardHeader className="pb-3 border-b">
+              <CardTitle className="text-sm flex items-center gap-2.5">
+                <span className="h-7 w-7 rounded-md bg-primary/10 text-primary flex items-center justify-center">
+                  <StickyNote className="h-4 w-4" />
+                </span>
+                Notes
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 pt-5">
+              <Textarea
+                placeholder="Add a note…"
+                value={newNote}
+                onChange={e => setNewNote(e.target.value)}
+                className="text-sm min-h-[80px] resize-none"
+              />
+              <Button className="w-full h-10" onClick={handleAddNote}>
+                <Plus className="h-4 w-4 mr-1.5" /> Add
+              </Button>
+              <div className="space-y-3 max-h-64 overflow-y-auto pt-1">
                 {(lead.notes || []).map(n => (
-                  <div key={n.id} className="p-2 rounded border text-xs">
-                    <p>{n.text}</p>
-                    <div className="flex justify-between mt-1 text-[10px] text-muted-foreground">
-                      <span>{n.agentName}</span>
-                      <span>{new Date(n.createdAt).toLocaleString()}</span>
-                    </div>
+                  <div key={n.id} className="space-y-1">
+                    <p className="text-sm font-medium text-foreground">{n.text}</p>
+                    <p className="text-xs text-muted-foreground">{n.agentName} · {new Date(n.createdAt).toLocaleString()}</p>
                   </div>
                 ))}
               </div>
@@ -557,133 +615,189 @@ const LeadDetailPage = () => {
       </div>
 
       {/* Unified History Timeline */}
-      <Card>
-        <CardHeader className="pb-2"><CardTitle className="text-sm">Activity History</CardTitle></CardHeader>
-        <CardContent>
+      <Card className="shadow-none">
+        <CardHeader className="pb-3 border-b">
+          <CardTitle className="text-sm flex items-center gap-2.5">
+            <span className="h-7 w-7 rounded-md bg-primary/10 text-primary flex items-center justify-center">
+              <Clock className="h-4 w-4" />
+            </span>
+            Activity History
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
           <Tabs defaultValue="all">
-            <TabsList>
-              <TabsTrigger value="all" className="text-xs">All ({timelineEvents.length})</TabsTrigger>
-              <TabsTrigger value="calls" className="text-xs">Calls ({lead.callLogs.length})</TabsTrigger>
-              <TabsTrigger value="followups" className="text-xs">Follow-Ups ({lead.followUps.length})</TabsTrigger>
-              <TabsTrigger value="stb" className="text-xs">STB ({lead.stbSubmissions.length})</TabsTrigger>
-            </TabsList>
-            <TabsContent value="all" className="mt-3">
-              <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                {timelineEvents.map((ev, idx) => (
-                  <div key={idx} className="flex gap-3 p-2 rounded border text-xs">
-                    <div className={`h-6 w-6 rounded-full flex items-center justify-center shrink-0 ${
-                      ev.type === "call" ? ((ev.data as any).outcome === "connected" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive")
-                      : ev.type === "stb" ? "bg-primary/10 text-primary"
-                      : ev.type === "note" ? "bg-muted text-muted-foreground"
-                      : "bg-warning/10 text-warning"
-                    }`}>
-                      {ev.type === "call" ? <Phone className="h-3 w-3" /> : ev.type === "stb" ? <Send className="h-3 w-3" /> : ev.type === "note" ? <FileText className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+            <div className="px-5 pt-4">
+              <TabsList className="bg-transparent p-0 h-auto gap-6 border-b border-border w-full justify-start rounded-none">
+                {[
+                  { v: "all", label: "All", count: timelineEvents.length },
+                  { v: "calls", label: "Call", count: lead.callLogs.length },
+                  { v: "followups", label: "Follow-up", count: lead.followUps.length },
+                  { v: "stb", label: "STB", count: lead.stbSubmissions.length },
+                ].map(t => (
+                  <TabsTrigger
+                    key={t.v}
+                    value={t.v}
+                    className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 pb-3 -mb-px text-sm font-medium text-muted-foreground"
+                  >
+                    {t.label}
+                    <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground tabular-nums">
+                      {String(t.count).padStart(2, "0")}
+                    </span>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
+            <TabsContent value="all" className="mt-0">
+              <div className="divide-y divide-border/60">
+                {timelineEvents.map((ev, idx) => {
+                  const iconBg = ev.type === "call" ? "bg-blue-50 text-blue-600"
+                    : ev.type === "stb" ? "bg-indigo-50 text-indigo-600"
+                    : ev.type === "note" ? "bg-slate-100 text-slate-600"
+                    : "bg-amber-50 text-amber-600";
+                  const Icon = ev.type === "call" ? Phone : ev.type === "stb" ? Send : ev.type === "note" ? StickyNote : Clock;
+                  const typeLabel = ev.type === "call" ? "Call" : ev.type === "stb" ? "STB" : ev.type === "note" ? "Note" : "Follow-up";
+                  const typeTone = ev.type === "call" ? "tone=\"new\"" : ev.type === "stb" ? "tone=\"submitted\"" : ev.type === "note" ? "tone=\"closed_lost\"" : "tone=\"pending\"";
+                  return (
+                    <div key={idx} className="flex items-start gap-4 px-5 py-4">
+                      <div className={cn("h-9 w-9 rounded-full flex items-center justify-center shrink-0", iconBg)}>
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        {ev.type === "call" && (() => {
+                          const cl = ev.data as typeof lead.callLogs[0];
+                          return <>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <SoftPill tone="new">Call</SoftPill>
+                              <span className="text-sm font-semibold text-foreground">{cl.outcome === "connected" ? "Connected" : "Not Connected"}</span>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">{cl.notes || getDispositionLabel(cl.disposition)}</p>
+                          </>;
+                        })()}
+                        {ev.type === "followup" && (() => {
+                          const fu = ev.data as typeof lead.followUps[0];
+                          return <>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <SoftPill tone="pending">Follow-up</SoftPill>
+                              <span className="text-sm font-semibold text-foreground capitalize">{fu.type.replace(/_/g, " ")}</span>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">Scheduled for {new Date(fu.scheduledAt).toLocaleString()}</p>
+                          </>;
+                        })()}
+                        {ev.type === "stb" && (() => {
+                          const s = ev.data as typeof lead.stbSubmissions[0];
+                          return <>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <SoftPill tone="submitted">STB</SoftPill>
+                              <span className="text-sm font-semibold text-foreground">{s.partnerName}</span>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">{s.remarks || "Submission update"}</p>
+                          </>;
+                        })()}
+                        {ev.type === "note" && (() => {
+                          const n = ev.data as typeof lead.notes[0];
+                          return <>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <SoftPill tone="closed_lost">Note</SoftPill>
+                              <span className="text-sm font-semibold text-foreground">{n.text}</span>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">{n.agentName}</p>
+                          </>;
+                        })()}
+                      </div>
+                      <div className="text-right shrink-0 space-y-1">
+                        {ev.type === "followup" && (() => {
+                          const fu = ev.data as typeof lead.followUps[0];
+                          return <SoftPill tone={fu.status === "completed" ? "completed" : fu.status === "missed" ? "missed" : "pending"}>
+                            {fu.status.charAt(0).toUpperCase() + fu.status.slice(1)}
+                          </SoftPill>;
+                        })()}
+                        {ev.type === "stb" && (() => {
+                          const s = ev.data as typeof lead.stbSubmissions[0];
+                          return <SoftPill tone={s.status === "approved" || s.status === "disbursed" ? "completed" : s.status === "declined" ? "missed" : "submitted"}>
+                            {s.status.charAt(0).toUpperCase() + s.status.slice(1)}
+                          </SoftPill>;
+                        })()}
+                        {ev.type === "note" && <SoftPill tone="completed">Completed</SoftPill>}
+                        <div className="text-xs text-muted-foreground tabular-nums">
+                          {new Date(ev.timestamp).toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                {timelineEvents.length === 0 && (
+                  <div className="px-5 py-12 text-center text-sm text-muted-foreground">No activity yet</div>
+                )}
+              </div>
+            </TabsContent>
+            <TabsContent value="calls" className="mt-0">
+              <div className="divide-y divide-border/60">
+                {lead.callLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).map(cl => (
+                  <div key={cl.id} className="flex items-start gap-4 px-5 py-4">
+                    <div className="h-9 w-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                      <Phone className="h-4 w-4" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      {ev.type === "call" && (() => {
-                        const cl = ev.data as typeof lead.callLogs[0];
-                        return <>
-                          <div className="flex items-center gap-1 flex-wrap">
-                            <Badge variant="outline" className="text-[9px]">Call</Badge>
-                            {cl.agentId === "agent-9" && <Badge className="text-[9px] bg-primary/20 text-primary">Manager</Badge>}
-                            {role === "cluster_head" && <Badge className="text-[9px] bg-warning/20 text-warning">Cluster Head</Badge>}
-                            <span className="font-medium">{cl.outcome === "connected" ? "Connected" : "Not Connected"}</span>
-                            <Badge variant="outline" className="text-[9px]">{getDispositionLabel(cl.disposition)}</Badge>
-                            <span className="text-muted-foreground">{Math.floor(cl.duration / 60)}m {cl.duration % 60}s</span>
-                          </div>
-                          <p className="text-muted-foreground mt-0.5">{cl.notes}</p>
-                          <div className="text-[10px] text-muted-foreground mt-0.5">{new Date(cl.timestamp).toLocaleString()} · {cl.agentName}</div>
-                        </>;
-                      })()}
-                      {ev.type === "followup" && (() => {
-                        const fu = ev.data as typeof lead.followUps[0];
-                        return <>
-                          <div className="flex items-center gap-1">
-                            <Badge variant="outline" className="text-[9px]">Follow-Up</Badge>
-                            <span className="font-medium capitalize">{fu.type.replace(/_/g, " ")}</span>
-                            <Badge variant={fu.status === "completed" ? "default" : fu.status === "missed" ? "destructive" : "secondary"} className="text-[9px]">{fu.status}</Badge>
-                          </div>
-                          <div className="text-[10px] text-muted-foreground mt-0.5">{new Date(fu.scheduledAt).toLocaleString()}</div>
-                        </>;
-                      })()}
-                      {ev.type === "stb" && (() => {
-                        const s = ev.data as typeof lead.stbSubmissions[0];
-                        return <>
-                          <div className="flex items-center gap-1">
-                            <Badge variant="outline" className="text-[9px]">STB</Badge>
-                            <span className="font-medium">{s.partnerName}</span>
-                            <Badge variant={s.status === "approved" ? "default" : s.status === "declined" ? "destructive" : "secondary"} className="text-[9px]">{s.status}</Badge>
-                          </div>
-                          <div className="text-[10px] text-muted-foreground mt-0.5">{new Date(s.submittedAt).toLocaleString()}</div>
-                        </>;
-                      })()}
-                      {ev.type === "note" && (() => {
-                        const n = ev.data as typeof lead.notes[0];
-                        return <>
-                          <div className="flex items-center gap-1">
-                            <Badge variant="outline" className="text-[9px]">Note</Badge>
-                            <span>{n.text}</span>
-                          </div>
-                          <div className="text-[10px] text-muted-foreground mt-0.5">{new Date(n.createdAt).toLocaleString()} · {n.agentName}</div>
-                        </>;
-                      })()}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </TabsContent>
-            <TabsContent value="calls" className="mt-3">
-              <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                {lead.callLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).map(cl => (
-                  <div key={cl.id} className="flex gap-3 p-2 rounded border text-xs">
-                    <div className={`h-6 w-6 rounded-full flex items-center justify-center shrink-0 ${cl.outcome === "connected" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}`}>
-                      <Phone className="h-3 w-3" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-1 flex-wrap">
-                        <span className="font-medium">{cl.outcome === "connected" ? "Connected" : "Not Connected"}</span>
-                        <Badge variant="outline" className="text-[9px]">{getDispositionLabel(cl.disposition)}</Badge>
-                        <span className="text-muted-foreground">{Math.floor(cl.duration / 60)}m {cl.duration % 60}s</span>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <SoftPill tone="new">Call</SoftPill>
+                        <span className="text-sm font-semibold">{cl.outcome === "connected" ? "Connected" : "Not Connected"}</span>
                       </div>
-                      <p className="text-muted-foreground mt-0.5">{cl.notes}</p>
-                      <div className="text-[10px] text-muted-foreground mt-0.5">{new Date(cl.timestamp).toLocaleString()} · {cl.agentName}</div>
+                      <p className="text-sm text-muted-foreground mt-1">{cl.notes || getDispositionLabel(cl.disposition)}</p>
                     </div>
+                    <div className="text-xs text-muted-foreground tabular-nums shrink-0">{new Date(cl.timestamp).toLocaleString()}</div>
                   </div>
                 ))}
+                {lead.callLogs.length === 0 && (
+                  <div className="px-5 py-12 text-center text-sm text-muted-foreground">No calls logged</div>
+                )}
               </div>
             </TabsContent>
-            <TabsContent value="followups" className="mt-3">
-              <div className="space-y-2">
+            <TabsContent value="followups" className="mt-0">
+              <div className="divide-y divide-border/60">
                 {lead.followUps.map(fu => (
-                  <div key={fu.id} className="flex gap-3 p-2 rounded border text-xs">
-                    <div className={`h-6 w-6 rounded-full flex items-center justify-center shrink-0 ${fu.status === "completed" ? "bg-success/10 text-success" : fu.status === "missed" ? "bg-destructive/10 text-destructive" : "bg-warning/10 text-warning"}`}>
-                      <Clock className="h-3 w-3" />
+                  <div key={fu.id} className="flex items-start gap-4 px-5 py-4">
+                    <div className="h-9 w-9 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                      <Clock className="h-4 w-4" />
                     </div>
-                    <div>
-                      <div className="flex items-center gap-1">
-                        <span className="font-medium capitalize">{fu.type.replace(/_/g, " ")}</span>
-                        <Badge variant={fu.status === "completed" ? "default" : fu.status === "missed" ? "destructive" : "secondary"} className="text-[9px]">{fu.status}</Badge>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <SoftPill tone="pending">Follow-up</SoftPill>
+                        <span className="text-sm font-semibold capitalize">{fu.type.replace(/_/g, " ")}</span>
                       </div>
-                      <div className="text-[10px] text-muted-foreground mt-0.5">{new Date(fu.scheduledAt).toLocaleString()}</div>
+                      <p className="text-sm text-muted-foreground mt-1">{new Date(fu.scheduledAt).toLocaleString()}</p>
                     </div>
+                    <SoftPill tone={fu.status === "completed" ? "completed" : fu.status === "missed" ? "missed" : "pending"}>
+                      {fu.status.charAt(0).toUpperCase() + fu.status.slice(1)}
+                    </SoftPill>
                   </div>
                 ))}
+                {lead.followUps.length === 0 && (
+                  <div className="px-5 py-12 text-center text-sm text-muted-foreground">No follow-ups</div>
+                )}
               </div>
             </TabsContent>
-            <TabsContent value="stb" className="mt-3">
-              <div className="space-y-2">
+            <TabsContent value="stb" className="mt-0">
+              <div className="divide-y divide-border/60">
                 {lead.stbSubmissions.map(s => (
-                  <div key={s.id} className="p-2 rounded border text-xs space-y-1">
-                    <div className="flex justify-between">
-                      <span className="font-medium">{s.partnerName}</span>
-                      <Badge variant={s.status === "disbursed" ? "default" : s.status === "approved" ? "default" : s.status === "declined" ? "destructive" : "secondary"} className="text-[9px]">{s.status}</Badge>
+                  <div key={s.id} className="flex items-start gap-4 px-5 py-4">
+                    <div className="h-9 w-9 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                      <Send className="h-4 w-4" />
                     </div>
-                    <div className="text-[10px] text-muted-foreground">Submitted: {new Date(s.submittedAt).toLocaleDateString()}</div>
-                    {s.sanctionAmount && <div className="text-[10px]">Sanction: ₹{s.sanctionAmount.toLocaleString()}</div>}
-                    {s.disbursedAmount && <div className="text-[10px] text-success">Disbursed: ₹{s.disbursedAmount.toLocaleString()} on {s.disbursementDate ? new Date(s.disbursementDate).toLocaleDateString() : "—"}</div>}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <SoftPill tone="submitted">STB</SoftPill>
+                        <span className="text-sm font-semibold">{s.partnerName}</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">Submitted {new Date(s.submittedAt).toLocaleDateString()}</p>
+                    </div>
+                    <SoftPill tone={s.status === "approved" || s.status === "disbursed" ? "completed" : s.status === "declined" ? "missed" : "submitted"}>
+                      {s.status.charAt(0).toUpperCase() + s.status.slice(1)}
+                    </SoftPill>
                   </div>
                 ))}
-                {lead.stbSubmissions.length === 0 && <p className="text-xs text-muted-foreground">No STB submissions</p>}
+                {lead.stbSubmissions.length === 0 && (
+                  <div className="px-5 py-12 text-center text-sm text-muted-foreground">No STB submissions</div>
+                )}
               </div>
             </TabsContent>
           </Tabs>
