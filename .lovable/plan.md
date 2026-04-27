@@ -1,76 +1,143 @@
-## Goal
-Redesign **Lead Detail page** (`src/pages/LeadDetailPage.tsx`) to match the uploaded reference — clean, spacious, modern, with clear segmentation and breathing room. The current page is dense and visually busy; the reference uses generous padding, pill badges, simple white cards with subtle borders, and a clear 3-column grid.
+# LMS Prototype Hardening — Implementation Plan
 
-## Visual changes (matching the reference)
+This plan delivers the 9 fixes in dependency order. Mock data, role-switcher, indigo/Inter aesthetic, and shadcn/ui patterns are preserved throughout.
 
-### 1. Leads sidebar (left)
-- Replace dashed borders with clean solid borders (`border-r border-border`).
-- Header row: "Leads" label + collapse chevron in a flat container — no busy borders.
-- Wider sidebar (`w-80` instead of `w-72`) for breathing room.
-- Each lead item: `px-4 py-3.5`, larger spacing.
-  - Row 1: Lead name (semibold) + stage pill on the right (e.g. `New`, `Interested`, `Contacted`) using soft tinted backgrounds (`bg-blue-50 text-blue-700`, `bg-amber-50 text-amber-700`, `bg-emerald-50 text-emerald-700`).
-  - Row 2: Product name (e.g. "Business Loan") on left, "2d" aging on right — both `text-xs text-muted-foreground`.
-- Active lead: soft `bg-primary/5` background + left indigo accent bar.
-- Remove the "Stage + Product + days" triple badge stack — it's too noisy.
+---
 
-### 2. Header section
-- Replace the dense action bar with the reference layout:
-  - **Top row**: "← Back to Leads" (ghost link, left) | spacer | `Log Call` (primary indigo, filled) · `Send to Bank` (outlined) · `EMI Calculator` (outlined) — all in same row, right-aligned.
-- **Name row**: Large `text-2xl font-semibold` name + small "Source: Facebook" inline (only for non-agent roles, already gated). Right side: subtle outlined `Edit` button.
-- **Status pills row** (directly under name): `New` (soft blue pill) and `Cold` (soft cyan pill) sitting side-by-side as standalone tinted chips — not full Badges. Drop the Lead-ID badge here (move into sidebar/secondary metadata).
+## 0. Shared foundations (built first, reused everywhere)
 
-### 3. Three-column main grid
-Change from current dense layout to balanced **3 equal columns** with `gap-6`:
+### 0a. `src/lib/permissions.ts` (new)
+Single source of truth for role permissions.
+- `ROUTE_ACCESS: Record<string, UserRole[]>` mapping every route to allowed roles:
+  - `/`, `/leads`, `/leads/:id`, `/follow-ups`, `/stb`, `/performance` → all roles
+  - `/reports` → manager, cluster_head, data_admin
+  - `/group-*` → manager, cluster_head
+  - `/org-*`, `/staff-management`, `/system-config`, `/audit-trail` → cluster_head, data_admin
+  - `/admin/*` → data_admin (allocation also cluster_head)
+- `can(role, action)` helpers: `canExportPII`, `canExportTeamSummary`, `canReassign`, `canEditLead`, `canSendToBank`, `canBackdateBeyond24h`, `canViewLeadSource`, `canSeeNotification(role, notif)`.
+- `STB_TERMINAL_STATUSES = ["submitted","approved","declined","disbursed"]` and `isLeadLocked(lead)` helper that returns the latest blocking STB submission.
 
-**Column 1 — Customer Profile (titled "Leads" with user icon in reference)**
-- Card title with icon in a tinted square (e.g. small rounded `bg-primary/10` wrapper).
-- Drop the section dividers (Contact / Address / Employment / Loan Requirement). Reference shows a single flat key-value list with consistent row spacing (`py-2.5`), label left in muted gray, value right in foreground.
-- Keep all current fields, but render as one clean list separated only by hairline `divide-y divide-border/60`.
-- Bottom action: full-width primary `Save` button (only when editing) — matches reference's prominent indigo button.
+### 0b. `src/components/RouteGuard.tsx` (new)
+Wraps each `<Route element={...}>` in `App.tsx`. Reads `useRole()`, checks `ROUTE_ACCESS` for `location.pathname`, and either renders children or shows the **Access Restricted** screen (`AccessRestricted.tsx`) — polished card with shield icon, role label, requested path, "Switch role" hint, and "Back to dashboard" button. No XSS, no router redirect (so URL is preserved for context).
 
-**Column 2 — Credit & Obligations + Bank/NBFC Selection**
-- Stack two cards vertically.
-- **Credit & Obligations card**: title + icon, "Credit Score" label with input + small `Save` button inline. "Existing Loans" subheader, then loan items as soft outlined mini-cards (rounded, `border bg-muted/30`, `p-3`) showing partner — product / outstanding / EMI / tenure. Footer: full-width dashed `+ Add Existing Loan` button.
-- **Bank / NBFC Selection card**: Product Type select + Bank/NBFC select stacked, full-width `+ Add` button (outlined), then selected pairs as soft pill chips with × remove (e.g. `Home Loan → HDFC Bank ⓧ`).
+### 0c. `src/contexts/AuditContext.tsx` (new)
+Holds an in-memory `AuditEntry[]` plus `logAudit({ actorId, actorName, actorRole, action, entityType, entityId, before?, after?, reason?, notes? })`. Seeded with a few mock historical entries from `mockData`. Exposes `useAudit()`. Persisted to `sessionStorage` so audit survives page navigation in the prototype but resets on tab close. Replaces the standalone audit array currently inside `AuditTrailPage`.
 
-**Column 3 — STB Status + Notes**
-- **STB Status card**: title + icon, then list of submissions as a simple two-line row: "HDFC Bank" + "Submitted" pill on right, second line "Home Loan Application" + date.
-- **Notes card**: title + icon, textarea "Add a note…" with small `+ Add` primary button below (full width). Past notes listed below as flat rows: bold note text, then "Author · timestamp" muted line.
+### 0d. `src/data/mockData.ts` additions
+- Add `actorRole` to existing `callLogs`/`notes`/`stbSubmissions` seed entries where missing.
+- Add a `notificationScope` field to each `Notification`: `{ scope: "agent"|"team"|"org"|"admin", agentId?, teamId? }`.
+- Helper `getNotificationsForRole(role, agentId, teamId)`.
 
-### 4. Activity History (full-width below the 3-column grid)
-- Single full-width card.
-- Title "Activity History" + tabs: `All 04 · Call 04 · Follow-up 04 · STB 04` (counts in subtle gray pills, active tab gets indigo underline — not filled background).
-- Each event row:
-  - Left: small circular tinted icon (`h-8 w-8 rounded-full bg-muted`) with type icon (phone / clock / file / note).
-  - Middle: type pill (e.g. `Follow-up` soft blue) + bold event title on same line, then muted description below.
-  - Right: status pill (`Pending` amber, `Completed` emerald) + timestamp underneath.
-- Generous `py-4 px-5` per row, `divide-y` between rows.
+---
 
-### 5. Spacing & surfaces
-- Outer wrapper: `space-y-6`, remove the `-m-6` negative margin trick if it forces tight layout; use proper container padding instead.
-- All cards: `shadow-none border border-border rounded-lg` (already mostly there).
-- Card headers: `px-5 pt-5 pb-3` with title + leading icon in a tinted square.
-- Card content: `px-5 pb-5`.
+## 1. Permission fix — route + action guards
 
-### 6. Status pill styling (reusable)
-Introduce small inline helpers (local to the file, no new component file needed) for consistent soft pills:
-- `New` → `bg-blue-50 text-blue-700`
-- `Interested` → `bg-emerald-50 text-emerald-700`
-- `Contacted` → `bg-amber-50 text-amber-700`
-- `Hot` / `Warm` / `Cold` → red / amber / cyan soft tints
-- `Submitted` → `bg-emerald-50 text-emerald-700`
-- `Pending` → `bg-amber-50 text-amber-700`
-- `Completed` → `bg-emerald-50 text-emerald-700`
+**Files:** `src/App.tsx`, new `RouteGuard.tsx`, new `AccessRestricted.tsx`, `permissions.ts` (0a).
 
-These replace the current `Badge variant="destructive|default|secondary"` for status — softer and more modern.
+- Wrap every `<Route>` in `App.tsx` with `<RouteGuard>{element}</RouteGuard>`.
+- Direct-URL access to a forbidden route renders the AccessRestricted card; the sidebar still works so the user can switch role.
+- Inline action guards (using `can()` helpers) added to: Reassign button, Send to Bank button, Export buttons, Edit profile pencil, and the priority override dialog. Disabled buttons get a tooltip explaining why.
 
-## Files to edit
-1. `src/pages/LeadDetailPage.tsx` — main redesign (sidebar, header, 3-col grid, activity history, pill styling).
+## 2. STB flow lock
 
-## Out of scope
-- Leads list page (`LeadsPage.tsx`) — already updated previously and unchanged.
-- No data model changes — purely visual/layout.
-- No new shared components — keep refactor contained to the one page.
+**Files:** `src/pages/LeadDetailPage.tsx`, `src/pages/STBPage.tsx`, `permissions.ts`.
 
-## Acceptance check
-After implementation, navigate to `/leads/lead-1` as an Agent and confirm: clean 3-column grid, spacious sidebar with stage pills, soft status chips under the name, prominent primary `Log Call` button, and activity timeline with circular icons and right-aligned status pills — visually matching the reference.
+- Compute `lockState = isLeadLocked(lead)` once per render. If locked:
+  - Show a sticky **STB Locked** banner above the tabs: bank name, submitted date, current status pill, allowed next action ("Awaiting bank decision" / "Track status only" / "Disbursed — closed").
+  - Disable: Edit profile, obligation add/remove, "Add Existing Loan" dialog trigger, Bank Selection add/remove, "Send to Bank" button (replaced with "Already Sent").
+  - Status updates (submitted → approved/declined/disbursed) only available to `cluster_head` and `data_admin` via a "Update STB Status" small dialog; each update writes an audit entry.
+- On `STBPage.tsx`, the row-level "Send to Bank" CTA hides when `isLeadLocked` is true.
+
+## 3. Call / disposition fix
+
+**Files:** `src/pages/LeadDetailPage.tsx`, `src/data/mockData.ts` (extend `dispositionGroups`).
+
+- Replace existing `CONNECTED_ORDER` / `NOT_CONNECTED_ORDER` constants with the exact lists from the request:
+  - **Connected** → Hot Follow-Up, Warm Follow-Up, Document Follow-Up, Interested, Not Interested, Already Has Loan, Callback Requested.
+  - **Not Connected** → No Response/Ringing, Busy, Switched Off, Invalid Number.
+- Add any missing disposition types to `DispositionType` union and to `dispositionGroups()` mock data.
+- "Next action = Follow-Up" branch:
+  - Date+time inputs become required (validation via inline error).
+  - `min` attribute on the datetime input set to `now - 24h` for agents (uses `canBackdateBeyond24h`); managers/admins unrestricted.
+  - On submit: append `CallLog` + `FollowUp` + audit entry with before/after disposition.
+
+## 4. Immutable audit log
+
+**Files:** `AuditContext.tsx` (0c), `LeadDetailPage.tsx`, `LeadAllocationPage.tsx`, `STBPage.tsx`, `LeadUploadPage.tsx`, `MISExportPage.tsx`, `AuditTrailPage.tsx`.
+
+- Every state-mutating handler (log call, schedule follow-up, edit profile, add/remove obligation, add/remove bank, send to bank, update STB status, reassign, override priority, allocate batch, upload file, export MIS) calls `logAudit(...)` with structured before/after.
+- `LeadDetailPage` Activity Timeline tab is rebuilt to merge: call logs, follow-ups, notes, STB submissions, AND `auditEntries.filter(e => e.entityId === lead.id)` — sorted desc, each row showing actor name + role pill + relative time + action + before→after diff (when present).
+- `AuditTrailPage` switches from its local mock array to `useAudit()` so all newly-created entries appear there too.
+
+## 5. Notification scoping
+
+**Files:** `src/data/mockData.ts`, `src/components/NotificationsDrawer.tsx`.
+
+- Tag every mock notification with a scope (see 0d).
+- Drawer reads `useRole()` and filters via `getNotificationsForRole`.
+- Each notification card gets a small **X (dismiss)** button (stops propagation) that removes it from local state.
+- Click on a card respects `clickTarget`: leadId → `/leads/:id`; allocation → `/admin/allocation`; export → `/admin/mis`; staff → `/staff-management`.
+- Empty state when filtered list is empty.
+
+## 6. Lead Allocation wizard
+
+**Files:** `src/pages/LeadAllocationPage.tsx`.
+
+Replace the current single-screen Allocate dialog with a 4-step wizard inside the same Dialog (stepper at the top):
+
+1. **Select batch** — radio list of unallocated batches with count, source, product, upload date.
+2. **Allocation mode** — Round Robin / To Group / To Team / To Specific Agent (cards with descriptions).
+3. **Capacity preview** — table of candidate agents/teams with current load (`leadsAssigned`), capacity ceiling (mock 50), available headroom, and the count this allocation would add. Warns if any assignee exceeds capacity.
+4. **Confirm** — summary of "X leads → Y assignees", split count per assignee, optional reason textarea.
+
+On confirm: update batch status, call `logAudit({ action: "allocate_batch", before: {status:"awaiting"}, after: {status:"allocated", splits}, reason })`, toast success.
+
+## 7. Reports / export gating
+
+**Files:** `permissions.ts`, `src/pages/ReportsPage.tsx`, `src/pages/GroupReportsPage.tsx`, `src/pages/OrgReportsPage.tsx`, `src/pages/admin/MISExportPage.tsx`.
+
+- Hide the Export button entirely for Agent role.
+- Manager: only "Export team summary (no PII)" visible; PII column toggle disabled with tooltip.
+- Cluster Head & Data Admin: full MIS export available, but clicking **Export with PII** opens an `AlertDialog` warning ("This export contains PAN, Mobile, Email — confirm responsibility"). Only on confirm does the mock CSV download trigger AND `logAudit({ action: "export_pii", entityType: "report", after: { rowCount, columns } })`.
+
+## 8. Follow-Ups redesign
+
+**File:** `src/pages/FollowUpsPage.tsx` (replace).
+
+- Compute four buckets: **Overdue**, **Today**, **Upcoming**, **Completed**.
+- Replace single table with `<Tabs>` (counts in tab labels) + a responsive layout:
+  - ≥1024px: `ConfigurableTable` per tab.
+  - <1024px: card list (one card per follow-up).
+- Each row/card shows: Lead name + mobile, Product badge, Priority pill, Scheduled time (relative + absolute on hover), Retry count badge, Days since allocation.
+- Quick actions: **Call** (toast "Dialing…" + opens lead), **Reschedule** (mini popover with new datetime → audit), **Complete** (marks status `completed` → audit).
+- Filters (priority/product) preserved at the top.
+
+## 9. UI/UX polish
+
+**Files:** `LeadDetailPage.tsx`, all dashboards (`AgentDashboard.tsx`, `ManagerDashboard.tsx`, `ClusterHeadDashboard.tsx`, `AdminDashboard.tsx`), `EmptyState.tsx`, `ConfigurableTable.tsx`, `index.css`.
+
+- **Primary action prominence:** lead detail header CTA derived from stage (`new`→Log Call, `contacted`→Schedule Follow-Up, `interested`→Send to Bank, `bank_selected`→Send to Bank, `stb_*`→Track Status). Secondary actions move into a `DropdownMenu` ("More").
+- **Badge palette:** centralize the SOFT_PILL map from LeadDetailPage into `src/lib/badges.ts` and reuse in tables/dashboards for stage / priority / disposition / STB status consistency.
+- **Spacing & hierarchy:** dashboard stat tiles unified to a single `StatTile` variant with proper title/value/delta hierarchy; remove dense double-row tables; add section dividers and `space-y-6`.
+- **States:** wire `EmptyState` into Leads, Follow-Ups (per tab), STB, Reports, Allocation when results are empty; add skeleton loaders (200ms `useEffect` simulation) for dashboards; error boundary wrapping main routes shows a friendly error card.
+- **Responsive tables:** `ConfigurableTable` gets a `mobileCard` render path: at `<md` it renders each row as a card with primary/secondary fields. Verified at 375 / 768 / 1280.
+- Lead detail right rail collapses below the main content under 1024px.
+
+---
+
+## Out of scope / explicitly NOT changing
+- No backend, no Supabase wiring.
+- No DSA marketplace.
+- Mobile numbers remain unmasked; PAN remains masked.
+- Role switcher stays in the sidebar.
+- No new fonts, no color system change beyond consolidating existing pills.
+
+## Verification checklist (after implementation)
+1. Switch to Agent → visit `/admin/upload` directly → see Access Restricted.
+2. Open a lead with `stage = stb_submitted` → confirm STB locked banner and disabled controls.
+3. Log a call: choose Not Connected → only 4 dispositions visible.
+4. Schedule follow-up dated 2 days ago as Agent → blocked; as Manager → allowed.
+5. Allocate a batch → wizard completes → entry appears in `/audit-trail`.
+6. As Agent → Reports page shows no Export button.
+7. As Cluster Head → Export PII triggers confirmation dialog, then audit entry.
+8. Resize to 375px → Follow-Ups renders cards, Leads table renders cards.

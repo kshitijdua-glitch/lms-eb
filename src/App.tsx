@@ -1,11 +1,14 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { ReactElement } from "react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { RoleProvider } from "@/contexts/RoleContext";
 import { PriorityConfigProvider } from "@/contexts/PriorityConfigContext";
+import { AuditProvider } from "@/contexts/AuditContext";
 import { AppLayout } from "@/components/AppLayout";
+import { RouteGuard } from "@/components/RouteGuard";
 import Index from "./pages/Index";
 import LeadsPage from "./pages/LeadsPage";
 import LeadDetailPage from "./pages/LeadDetailPage";
@@ -38,50 +41,53 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const guard = (el: ReactElement) => <RouteGuard>{el}</RouteGuard>;
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <RoleProvider>
-      <PriorityConfigProvider>
-        <BrowserRouter>
-          <AppLayout>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/leads" element={<LeadsPage />} />
-              <Route path="/leads/:id" element={<LeadDetailPage />} />
-              <Route path="/follow-ups" element={<FollowUpsPage />} />
-              <Route path="/stb" element={<STBPage />} />
-              <Route path="/performance" element={<PerformancePage />} />
-              <Route path="/reports" element={<ReportsPage />} />
-              <Route path="/admin/upload" element={<LeadUploadPage />} />
-              <Route path="/admin/agents" element={<AgentManagementPage />} />
-              <Route path="/admin/config" element={<ConfigPage />} />
-              <Route path="/admin/partners" element={<PartnersPage />} />
-              <Route path="/admin/allocation" element={<LeadAllocationPage />} />
-              <Route path="/admin/pools" element={<LeadPoolsPage />} />
-              <Route path="/admin/mis" element={<MISExportPage />} />
-              
-              <Route path="/admin/staff" element={<AdminStaffPage />} />
-              <Route path="/group-leads" element={<GroupLeadsPage />} />
-              <Route path="/group-follow-ups" element={<GroupFollowUpsPage />} />
-              <Route path="/group-stb" element={<GroupSTBPage />} />
-              <Route path="/group-management" element={<GroupManagementPage />} />
-              <Route path="/group-reports" element={<GroupReportsPage />} />
-              <Route path="/org-leads" element={<OrgLeadsPage />} />
-              <Route path="/org-follow-ups" element={<OrgFollowUpsPage />} />
-              <Route path="/org-stb" element={<OrgSTBPage />} />
-              <Route path="/org-reports" element={<OrgReportsPage />} />
-              <Route path="/staff-management" element={<StaffManagementPage />} />
-              <Route path="/system-config" element={<SystemConfigPage />} />
-              <Route path="/lead-allocation" element={<LeadAllocationPage />} />
-              <Route path="/audit-trail" element={<AuditTrailPage />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </AppLayout>
-        </BrowserRouter>
-      </PriorityConfigProvider>
+        <AuditProvider>
+          <PriorityConfigProvider>
+            <BrowserRouter>
+              <AppLayout>
+                <Routes>
+                  <Route path="/" element={guard(<Index />)} />
+                  <Route path="/leads" element={guard(<LeadsPage />)} />
+                  <Route path="/leads/:id" element={guard(<LeadDetailPage />)} />
+                  <Route path="/follow-ups" element={guard(<FollowUpsPage />)} />
+                  <Route path="/stb" element={guard(<STBPage />)} />
+                  <Route path="/performance" element={guard(<PerformancePage />)} />
+                  <Route path="/reports" element={guard(<ReportsPage />)} />
+                  <Route path="/admin/upload" element={guard(<LeadUploadPage />)} />
+                  <Route path="/admin/agents" element={guard(<AgentManagementPage />)} />
+                  <Route path="/admin/config" element={guard(<ConfigPage />)} />
+                  <Route path="/admin/partners" element={guard(<PartnersPage />)} />
+                  <Route path="/admin/allocation" element={guard(<LeadAllocationPage />)} />
+                  <Route path="/admin/pools" element={guard(<LeadPoolsPage />)} />
+                  <Route path="/admin/mis" element={guard(<MISExportPage />)} />
+                  <Route path="/admin/staff" element={guard(<AdminStaffPage />)} />
+                  <Route path="/group-leads" element={guard(<GroupLeadsPage />)} />
+                  <Route path="/group-follow-ups" element={guard(<GroupFollowUpsPage />)} />
+                  <Route path="/group-stb" element={guard(<GroupSTBPage />)} />
+                  <Route path="/group-management" element={guard(<GroupManagementPage />)} />
+                  <Route path="/group-reports" element={guard(<GroupReportsPage />)} />
+                  <Route path="/org-leads" element={guard(<OrgLeadsPage />)} />
+                  <Route path="/org-follow-ups" element={guard(<OrgFollowUpsPage />)} />
+                  <Route path="/org-stb" element={guard(<OrgSTBPage />)} />
+                  <Route path="/org-reports" element={guard(<OrgReportsPage />)} />
+                  <Route path="/staff-management" element={guard(<StaffManagementPage />)} />
+                  <Route path="/system-config" element={guard(<SystemConfigPage />)} />
+                  <Route path="/lead-allocation" element={guard(<LeadAllocationPage />)} />
+                  <Route path="/audit-trail" element={guard(<AuditTrailPage />)} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </AppLayout>
+            </BrowserRouter>
+          </PriorityConfigProvider>
+        </AuditProvider>
       </RoleProvider>
     </TooltipProvider>
   </QueryClientProvider>

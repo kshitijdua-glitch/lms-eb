@@ -236,21 +236,18 @@ const LeadDetailPage = () => {
   ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
   const groups = dispositionGroups();
-  // Filter + sort dispositions based on selected call outcome.
-  // Connected → outcome-driven groups (Follow-Up first, then progression/closure).
-  // Not Connected → contactability groups only.
-  const CONNECTED_ORDER = ["Follow-Up", "Documents Pending", "Outcome", "Not Interested", "Negative", "Compliance", "Closed"];
-  const NOT_CONNECTED_ORDER = ["Not Contactable", "Compliance"];
+  // Exact disposition lists per the product spec — outcome filters and orders the picker.
+  const CONNECTED_TYPES = ["hot_follow_up", "warm_follow_up", "document_follow_up", "connected_interested", "connected_not_interested", "already_has_loan", "callback_requested"];
+  const NOT_CONNECTED_TYPES = ["no_response", "busy", "switched_off", "invalid_number"];
   const filteredGroups = (() => {
+    const allItems = groups.flatMap(g => g.items);
     if (callOutcome === "connected") {
-      return CONNECTED_ORDER
-        .map(name => groups.find(g => g.group === name))
-        .filter((g): g is { group: string; items: typeof groups[0]["items"] } => !!g);
+      const items = CONNECTED_TYPES.map(t => allItems.find(i => i.type === t)).filter((i): i is NonNullable<typeof i> => !!i);
+      return [{ group: "Connected dispositions", items }];
     }
     if (callOutcome === "not_connected") {
-      return NOT_CONNECTED_ORDER
-        .map(name => groups.find(g => g.group === name))
-        .filter((g): g is { group: string; items: typeof groups[0]["items"] } => !!g);
+      const items = NOT_CONNECTED_TYPES.map(t => allItems.find(i => i.type === t)).filter((i): i is NonNullable<typeof i> => !!i);
+      return [{ group: "Not contactable", items }];
     }
     return groups;
   })();
