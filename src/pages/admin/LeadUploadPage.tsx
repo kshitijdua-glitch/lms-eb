@@ -27,7 +27,6 @@ const stepLabels: Record<Exclude<Step, "done">, string> = {
 const LeadUploadPage = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>("upload");
-  const [dragOver, setDragOver] = useState(false);
   const [fileName, setFileName] = useState("");
   const [batchName, setBatchName] = useState("");
   const [batchSource, setBatchSource] = useState("");
@@ -136,18 +135,18 @@ const LeadUploadPage = () => {
         <Card>
           <CardHeader><CardTitle className="text-base">Upload File (CSV / XLSX)</CardTitle></CardHeader>
           <CardContent>
-            <div
-              className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors ${dragOver ? "border-primary bg-primary/5" : "border-border"}`}
-              onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={e => { e.preventDefault(); setDragOver(false); handleUpload(); }}
-            >
+            <div className="border-2 border-dashed border-border rounded-lg p-12 text-center">
               <Upload className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
-              <p className="text-sm text-muted-foreground mb-2">Drag & drop your CSV or XLSX file here, or click to browse</p>
-              <Button variant="outline" onClick={handleUpload}>
-                <FileText className="h-4 w-4 mr-1" /> Browse Files
-              </Button>
-              <p className="text-xs text-muted-foreground mt-2">Max file size: 50MB. Required: Name, Mobile, Product Type</p>
+              <p className="text-sm text-muted-foreground mb-2">Select a CSV or XLSX file to upload</p>
+              <div className="flex gap-2 justify-center mt-2">
+                <Button onClick={handleUpload}>
+                  <FileText className="h-4 w-4 mr-1" /> Browse Files
+                </Button>
+                <Button variant="outline" onClick={() => toast.success("Sample CSV downloaded — sample_leads_template.csv")}>
+                  <Download className="h-4 w-4 mr-1" /> Download Sample CSV
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-3">Max file size: 50MB. Required: Name, Mobile, Product Type</p>
             </div>
           </CardContent>
         </Card>
