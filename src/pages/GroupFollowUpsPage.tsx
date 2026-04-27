@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useState, useMemo } from "react";
 import { ConfigurableTable } from "@/components/ConfigurableTable";
 import type { ColumnDef } from "@/types/table";
+import { getFollowUpStatus } from "@/lib/followUpStatus";
 
 type GFUItem = {
   id: string; scheduledAt: string; type: string; status: string; notes: string;
@@ -13,15 +14,6 @@ type GFUItem = {
   allocatedAt: string; retryCount: number; disposition: string;
   assignedAgentId: string; assignedTeamId: string;
 };
-
-function getFollowUpStatus(scheduledAt: string, status: string) {
-  if (status === "missed") return { label: "Overdue", variant: "destructive" as const };
-  if (status === "completed") return { label: "Completed", variant: "default" as const };
-  const diff = new Date(scheduledAt).getTime() - Date.now();
-  if (diff < 0) return { label: "Overdue", variant: "destructive" as const };
-  if (diff < 3600000) return { label: "Due Now", variant: "default" as const };
-  return { label: "Upcoming", variant: "secondary" as const };
-}
 
 const GroupFollowUpsPage = () => {
   const navigate = useNavigate();
