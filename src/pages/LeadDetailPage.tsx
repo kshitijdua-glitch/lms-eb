@@ -499,7 +499,7 @@ const LeadDetailPage = () => {
           </div>
         </div>
         {(role === "agent" || role === "manager" || role === "cluster_head") && (
-          <Button variant="outline" size="sm" onClick={() => setIsEditing(!isEditing)} className="h-9">
+          <Button variant="outline" size="sm" onClick={() => setIsEditing(!isEditing)} disabled={isProfileLocked} className="h-9">
             <Edit2 className="h-4 w-4 mr-1.5" /> {isEditing ? "Done" : "Edit"}
           </Button>
         )}
