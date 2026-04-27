@@ -34,8 +34,6 @@ export type DispositionType =
   | "too_many_loans"
   | "high_dpd"
   | "recent_writeoff"
-  // Compliance
-  | "dnd_registered"
   // Documents Pending
   | "pan_not_available"
   | "income_proof_not_ready"
@@ -114,7 +112,6 @@ export interface Lead {
   priority: Priority;
   source: string;
   leadSource: string;
-  dndStatus: "clean" | "dnd_registered";
   assignedAgentId: string;
   assignedTeamId: string;
   creditScore: number | null;
