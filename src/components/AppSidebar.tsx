@@ -51,6 +51,7 @@ const adminNav = [
   { title: "Lead Upload", url: "/admin/upload", icon: Upload },
   { title: "Lead Allocation", url: "/admin/allocation", icon: Users },
   { title: "Lead Pools", url: "/admin/pools", icon: FileText },
+  { title: "Lending Partners", url: "/admin/partners", icon: Send },
   { title: "MIS Export", url: "/admin/mis", icon: BarChart3 },
   { title: "System Config", url: "/system-config", icon: Settings },
   { title: "Staff Mgmt", url: "/admin/staff", icon: UserCog },
