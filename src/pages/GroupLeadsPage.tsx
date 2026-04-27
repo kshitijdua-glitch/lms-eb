@@ -27,7 +27,21 @@ function stageBadgeVariant(stage: string) {
 
 const GroupLeadsPage = () => {
   const navigate = useNavigate();
-  const { logEvent } = useAudit();
+  const { logAudit } = useAudit();
+  const logBulk = (leadId: string, action: string, notes: string, reason?: string) => {
+    const lead = leads.find(l => l.id === leadId);
+    logAudit({
+      actorId: "mgr-1",
+      actorName: "Vikram Mehta",
+      actorRole: "manager",
+      action: action as any,
+      entityType: "lead",
+      entityId: leadId,
+      entityLabel: lead?.name,
+      notes,
+      reason,
+    });
+  };
   const allLeads = leads;
 
   const [search, setSearch] = useState("");
