@@ -403,7 +403,7 @@ const LeadDetailPage = () => {
         </Button>
         <div className="flex-1" />
         <Button size="sm" onClick={() => setShowCallLog(true)} className="h-9"><Phone className="h-4 w-4 mr-1.5" /> Log Call</Button>
-        <Button size="sm" variant="outline" onClick={handleSendToBank} className="h-9"><Send className="h-4 w-4 mr-1.5" /> Send to Bank</Button>
+        <Button size="sm" variant="outline" onClick={handleSendToBank} disabled={isProfileLocked} className="h-9"><Send className="h-4 w-4 mr-1.5" /> Send to Bank</Button>
         <Button size="sm" variant="outline" onClick={() => setShowEMI(true)} className="h-9"><Calculator className="h-4 w-4 mr-1.5" /> EMI Calculator</Button>
         {(role === "manager" || role === "cluster_head") && (
           <Button size="sm" variant="outline" onClick={() => setShowReassign(true)} className="h-9">
@@ -416,6 +416,28 @@ const LeadDetailPage = () => {
           </Button>
         )}
       </div>
+
+      {/* STB Lock Banner */}
+      {isProfileLocked && lockState.submission && (
+        <div className="rounded-lg border border-indigo-200 bg-indigo-50/60 px-4 py-3 flex items-start gap-3">
+          <div className="h-8 w-8 rounded-md bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0">
+            <Lock className="h-4 w-4" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm font-semibold text-indigo-900">STB Locked</span>
+              <SoftPill tone={lockState.submission.status === "approved" || lockState.submission.status === "disbursed" ? "completed" : lockState.submission.status === "declined" ? "missed" : "submitted"}>
+                {lockState.submission.status.charAt(0).toUpperCase() + lockState.submission.status.slice(1)}
+              </SoftPill>
+            </div>
+            <p className="text-xs text-indigo-900/80 mt-1">
+              Submitted to <strong>{lockState.submission.partnerName}</strong> on {new Date(lockState.submission.submittedAt).toLocaleDateString()}.
+              Profile, obligations, bank selection and resubmission are locked.
+            </p>
+            <p className="text-[11px] text-indigo-700 mt-1">Next: {lockState.allowedNextAction}</p>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div className="flex items-start gap-4">
