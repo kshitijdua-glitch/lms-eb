@@ -27,6 +27,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Slider } from "@/components/ui/slider";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis } from "recharts";
+import { useAudit, buildActor } from "@/contexts/AuditContext";
+import { getLeadLockState, can } from "@/lib/permissions";
 
 // Soft pill color map — clean tinted backgrounds for status chips
 const SOFT_PILL: Record<string, string> = {
