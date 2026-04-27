@@ -1373,6 +1373,15 @@ const LeadDetailPage = () => {
             <Button
               disabled={!overrideReason.trim()}
               onClick={() => {
+                logAudit({
+                  ...actor,
+                  action: "override_disposition",
+                  entityType: "lead",
+                  entityId: lead.id,
+                  entityLabel: lead.name,
+                  before: { stage: lead.stage, disposition: lead.disposition },
+                  reason: overrideReason,
+                });
                 toast.success(`Disposition overridden. Lead moved back to active stage.`);
                 setShowOverride(false);
                 setOverrideReason("");
