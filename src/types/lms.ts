@@ -227,12 +227,35 @@ export interface DispositionConfig {
   requiresFollowUp: boolean;
 }
 
+export type NotificationScope = "agent" | "team" | "org" | "admin";
+
 export interface Notification {
   id: string;
-  type: "follow_up_due" | "follow_up_missed" | "lead_expiry" | "consent_received" | "lead_reassigned" | "new_allocation" | "stb_status_update" | "agent_missed_fu" | "nc_escalation" | "agent_not_logged_in" | "stb_initiated_by_agent";
+  type: "follow_up_due" | "follow_up_missed" | "lead_expiry" | "consent_received" | "lead_reassigned" | "new_allocation" | "stb_status_update" | "agent_missed_fu" | "nc_escalation" | "agent_not_logged_in" | "stb_initiated_by_agent" | "batch_uploaded" | "allocation_done" | "export_completed" | "config_changed";
   title: string;
   message: string;
   timestamp: string;
   read: boolean;
   leadId?: string;
+  scope: NotificationScope;
+  agentId?: string;
+  teamId?: string;
+  /** Optional override for click-through navigation. Defaults: leadId → /leads/:id */
+  clickTarget?: string;
+}
+
+export interface AuditEntry {
+  id: string;
+  timestamp: string;
+  actorId: string;
+  actorName: string;
+  actorRole: UserRole;
+  action: string;
+  entityType: "lead" | "batch" | "stb" | "agent" | "config" | "report" | "follow_up";
+  entityId: string;
+  entityLabel?: string;
+  before?: Record<string, unknown>;
+  after?: Record<string, unknown>;
+  reason?: string;
+  notes?: string;
 }
