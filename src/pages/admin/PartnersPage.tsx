@@ -57,7 +57,7 @@ const PartnersPage = () => {
   const activeProducts = products.filter(p => p.status === "active");
 
   if (!canEdit && role === "agent") {
-    return <AccessRestricted requiredRoles={["cluster_head", "data_admin"]} />;
+    return <AccessRestricted />;
   }
 
   const openAdd = () => {
@@ -94,11 +94,11 @@ const PartnersPage = () => {
     if (editingId) {
       const before = partners.find(p => p.id === editingId);
       updatePartner(editingId, result.data as Partial<LendingPartner>);
-      logAudit({ ...actor, action: "partner_updated", entityType: "config", entityId: editingId, entityLabel: result.data.name, before, after: result.data });
+      logAudit({ ...actor, action: "partner_updated", entityType: "config", entityId: editingId, entityLabel: result.data.name, before: before as unknown as Record<string, unknown>, after: result.data as unknown as Record<string, unknown> });
       toast.success(`Updated ${result.data.name}`);
     } else {
       const created = addPartner(result.data as Omit<LendingPartner, "id">);
-      logAudit({ ...actor, action: "partner_created", entityType: "config", entityId: created.id, entityLabel: created.name, after: created });
+      logAudit({ ...actor, action: "partner_created", entityType: "config", entityId: created.id, entityLabel: created.name, after: created as unknown as Record<string, unknown> });
       toast.success(`Added ${created.name}`);
     }
     setDialogOpen(false);
@@ -109,7 +109,7 @@ const PartnersPage = () => {
     const partner = partners.find(p => p.id === deleteId);
     removePartner(deleteId);
     const actor = buildActor(role, currentAgentId);
-    logAudit({ ...actor, action: "partner_deleted", entityType: "config", entityId: deleteId, entityLabel: partner?.name, before: partner });
+    logAudit({ ...actor, action: "partner_deleted", entityType: "config", entityId: deleteId, entityLabel: partner?.name, before: partner as unknown as Record<string, unknown> });
     toast.success(`Removed ${partner?.name ?? "partner"}`);
     setDeleteId(null);
   };
