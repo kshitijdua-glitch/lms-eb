@@ -161,7 +161,7 @@ const ConfigPage = () => {
             <CardContent>
               <div className="space-y-2">
                 {products.map(p => {
-                  const usedBy = partners.filter(lp => lp.products.includes(p.id)).length;
+                  const usedBy = partners.filter(lp => (lp.products as string[]).includes(p.id)).length;
                   return (
                     <div key={p.id} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/30 transition-colors">
                       <div className="flex items-center gap-3">
