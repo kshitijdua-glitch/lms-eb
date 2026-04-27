@@ -20,7 +20,8 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import {
   ArrowLeft, Phone, Send, Calculator, Clock, AlertTriangle,
-  User, Edit2, Lock, FileText, Shield, CalendarIcon, Shuffle, Search, ChevronLeft, ChevronRight, RefreshCw
+  User, Edit2, Lock, FileText, Shield, CalendarIcon, Shuffle, Search, ChevronLeft, ChevronRight, RefreshCw,
+  Building2, StickyNote, Plus, X
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
