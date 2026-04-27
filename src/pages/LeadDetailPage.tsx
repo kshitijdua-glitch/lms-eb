@@ -71,9 +71,9 @@ const LeadDetailPage = () => {
   const [reassignAgent, setReassignAgent] = useState("");
   const [reassignTL, setReassignTL] = useState("");
   const [reassignReason, setReassignReason] = useState("");
-  const [emiAmount, setEmiAmount] = useState("");
-  const [emiRate, setEmiRate] = useState("");
-  const [emiTenure, setEmiTenure] = useState("");
+  const [emiAmount, setEmiAmount] = useState("500000");
+  const [emiRate, setEmiRate] = useState("12");
+  const [emiTenure, setEmiTenure] = useState("36");
   const [isEditing, setIsEditing] = useState(false);
   const [newNote, setNewNote] = useState("");
   const [editCreditScore, setEditCreditScore] = useState(lead?.creditScore?.toString() || "");
