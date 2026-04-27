@@ -1073,18 +1073,107 @@ const LeadDetailPage = () => {
 
       {/* EMI Calculator */}
       <Dialog open={showEMI} onOpenChange={setShowEMI}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle className="text-base">EMI Calculator</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div><Label className="text-xs">Loan Amount (₹)</Label><Input type="number" value={emiAmount} onChange={e => setEmiAmount(e.target.value)} placeholder="500000" className="h-8 text-xs" /></div>
-            <div><Label className="text-xs">Interest Rate (% p.a.)</Label><Input type="number" value={emiRate} onChange={e => setEmiRate(e.target.value)} placeholder="12" className="h-8 text-xs" /></div>
-            <div><Label className="text-xs">Tenure (months)</Label><Input type="number" value={emiTenure} onChange={e => setEmiTenure(e.target.value)} placeholder="36" className="h-8 text-xs" /></div>
-            {emi > 0 && (
-              <div className="p-3 rounded bg-primary/5 text-center">
-                <div className="text-xs text-muted-foreground">Monthly EMI</div>
-                <div className="text-2xl font-bold text-primary">₹{emi.toLocaleString()}</div>
+        <DialogContent className="max-w-2xl p-0 overflow-hidden">
+          <DialogHeader className="px-6 pt-5 pb-4 border-b border-border">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Calculator className="h-4 w-4 text-primary" />
               </div>
-            )}
+              <div>
+                <DialogTitle className="text-base font-semibold">EMI Calculator</DialogTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">Estimate monthly payments and outstanding balance</p>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-0">
+            {/* Inputs */}
+            <div className="md:col-span-2 p-6 space-y-5 border-r border-border bg-muted/20">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs flex items-center gap-1.5 text-muted-foreground"><IndianRupee className="h-3 w-3" /> Loan Amount</Label>
+                  <span className="text-sm font-semibold tabular-nums">₹{(parseFloat(emiAmount) || 0).toLocaleString()}</span>
+                </div>
+                <Input type="number" value={emiAmount} onChange={e => setEmiAmount(e.target.value)} className="h-9 text-sm" />
+                <Slider value={[parseFloat(emiAmount) || 0]} min={50000} max={10000000} step={10000} onValueChange={(v) => setEmiAmount(String(v[0]))} />
+                <div className="flex justify-between text-[10px] text-muted-foreground"><span>₹50K</span><span>₹1Cr</span></div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs flex items-center gap-1.5 text-muted-foreground"><Percent className="h-3 w-3" /> Interest Rate</Label>
+                  <span className="text-sm font-semibold tabular-nums">{emiRate || 0}% p.a.</span>
+                </div>
+                <Input type="number" step="0.1" value={emiRate} onChange={e => setEmiRate(e.target.value)} className="h-9 text-sm" />
+                <Slider value={[parseFloat(emiRate) || 0]} min={5} max={30} step={0.1} onValueChange={(v) => setEmiRate(String(v[0]))} />
+                <div className="flex justify-between text-[10px] text-muted-foreground"><span>5%</span><span>30%</span></div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs flex items-center gap-1.5 text-muted-foreground"><CalendarDays className="h-3 w-3" /> Tenure</Label>
+                  <span className="text-sm font-semibold tabular-nums">{emiTenure || 0} mo</span>
+                </div>
+                <Input type="number" value={emiTenure} onChange={e => setEmiTenure(e.target.value)} className="h-9 text-sm" />
+                <Slider value={[parseInt(emiTenure) || 0]} min={6} max={360} step={6} onValueChange={(v) => setEmiTenure(String(v[0]))} />
+                <div className="flex justify-between text-[10px] text-muted-foreground"><span>6 mo</span><span>30 yr</span></div>
+              </div>
+            </div>
+
+            {/* Results */}
+            <div className="md:col-span-3 p-6 space-y-4">
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+                <div className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">Monthly EMI</div>
+                <div className="text-3xl font-bold text-primary tabular-nums mt-1">₹{emiCalc.emi.toLocaleString()}</div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-lg border border-border p-3">
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Principal</div>
+                  <div className="text-sm font-semibold tabular-nums mt-0.5">₹{(parseFloat(emiAmount) || 0).toLocaleString()}</div>
+                </div>
+                <div className="rounded-lg border border-border p-3">
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Total Interest</div>
+                  <div className="text-sm font-semibold tabular-nums mt-0.5 text-amber-600">₹{emiCalc.totalInterest.toLocaleString()}</div>
+                </div>
+                <div className="rounded-lg border border-border p-3 col-span-2">
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Total Payment</div>
+                  <div className="text-sm font-semibold tabular-nums mt-0.5">₹{emiCalc.totalPayment.toLocaleString()}</div>
+                </div>
+              </div>
+
+              {/* Trend chart */}
+              <div className="rounded-lg border border-border p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <TrendingDown className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-xs font-medium">Outstanding Balance Over Time</span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground">{emiCalc.schedule.length - 1} months</span>
+                </div>
+                <div className="h-40">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={emiCalc.schedule} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="balanceGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.35} />
+                          <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                      <XAxis dataKey="month" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} />
+                      <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} tickFormatter={(v) => v >= 100000 ? `₹${(v / 100000).toFixed(1)}L` : `₹${(v / 1000).toFixed(0)}K`} width={50} />
+                      <RTooltip
+                        contentStyle={{ fontSize: 11, borderRadius: 8, border: "1px solid hsl(var(--border))", background: "hsl(var(--background))" }}
+                        formatter={(val: number, name: string) => [`₹${val.toLocaleString()}`, name === "balance" ? "Balance" : name]}
+                        labelFormatter={(l) => `Month ${l}`}
+                      />
+                      <Area type="monotone" dataKey="balance" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#balanceGrad)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
