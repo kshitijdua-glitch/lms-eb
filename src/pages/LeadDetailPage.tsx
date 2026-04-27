@@ -27,6 +27,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Slider } from "@/components/ui/slider";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis } from "recharts";
+import { useAudit, buildActor } from "@/contexts/AuditContext";
+import { getLeadLockState, can } from "@/lib/permissions";
 
 // Soft pill color map — clean tinted backgrounds for status chips
 const SOFT_PILL: Record<string, string> = {
@@ -62,6 +64,7 @@ const LeadDetailPage = () => {
   const navigate = useNavigate();
   const { role } = useRole();
   const { config } = usePriorityConfig();
+  const { logAudit, forLead } = useAudit();
   const lead = leads.find(l => l.id === id);
   const [showCallLog, setShowCallLog] = useState(false);
   const [showEMI, setShowEMI] = useState(false);
@@ -111,7 +114,9 @@ const LeadDetailPage = () => {
     .slice(0, 50);
 
   const daysSinceAlloc = Math.floor((Date.now() - new Date(lead.allocatedAt).getTime()) / 86400000);
-  const isProfileLocked = lead.stbSubmissions.length > 0;
+  const lockState = getLeadLockState({ stbSubmissions: localStbSubmissions });
+  const isProfileLocked = lockState.locked;
+  const actor = buildActor(role, "agent-1");
 
   const emiCalc = (() => {
     const p = parseFloat(emiAmount) || 0;
@@ -146,32 +151,71 @@ const LeadDetailPage = () => {
       toast.error("Outcome and Disposition are required");
       return;
     }
-    // Validate backdating
+    // Validate backdating per role
     if (callDate) {
       const diff = Date.now() - callDate.getTime();
-      if (diff > 24 * 3600000) {
+      if (diff > 24 * 3600000 && !can.backdateBeyond24h(role)) {
         toast.error("Cannot backdate call more than 24 hours");
         return;
       }
     }
+    if (callNextAction === "follow_up" && !followUpDate) {
+      toast.error("Follow-up date is required");
+      return;
+    }
+    logAudit({
+      ...actor,
+      action: "log_call",
+      entityType: "lead",
+      entityId: lead.id,
+      entityLabel: lead.name,
+      after: {
+        outcome: callOutcome,
+        disposition: callDisposition,
+        duration: callDuration,
+        nextAction: callNextAction,
+        followUpAt: followUpDate ? followUpDate.toISOString() : null,
+      },
+      notes: callNotes || undefined,
+    });
     setShowCallLog(false);
     toast.success("Call logged successfully");
-    // Reset
     setCallOutcome(""); setCallDisposition(""); setCallNotes(""); setCallNextAction(""); setCallDuration("120"); setFollowUpDate(undefined); setFollowUpTime("");
   };
 
   const handleAddNote = () => {
     if (!newNote.trim()) return;
+    logAudit({
+      ...actor,
+      action: "add_note",
+      entityType: "lead",
+      entityId: lead.id,
+      entityLabel: lead.name,
+      notes: newNote.trim(),
+    });
     toast.success("Note added");
     setNewNote("");
   };
 
   const handleSaveCreditScore = () => {
+    logAudit({
+      ...actor,
+      action: "update_credit_score",
+      entityType: "lead",
+      entityId: lead.id,
+      entityLabel: lead.name,
+      before: { creditScore: lead.creditScore },
+      after: { creditScore: Number(editCreditScore) || null },
+    });
     toast.success("Credit score updated");
   };
 
 
   const handleAddPair = () => {
+    if (isProfileLocked) {
+      toast.error("STB locked — cannot modify bank selection");
+      return;
+    }
     if (!selectedProduct || !selectedBank) {
       toast.error("Select both product and bank");
       return;
@@ -186,16 +230,43 @@ const LeadDetailPage = () => {
     setSelectedPairs([...selectedPairs, { partnerId: partner.id, partnerName: partner.name, productType: selectedProduct }]);
     setSelectedProduct("");
     setSelectedBank("");
+    logAudit({
+      ...actor,
+      action: "select_bank",
+      entityType: "lead",
+      entityId: lead.id,
+      entityLabel: lead.name,
+      after: { partner: partner.name, product: selectedProduct },
+    });
     toast.success("Bank added");
   };
 
   const handleRemovePair = (index: number) => {
+    if (isProfileLocked) {
+      toast.error("STB locked — cannot remove bank");
+      return;
+    }
+    const removed = selectedPairs[index];
     setSelectedPairs(selectedPairs.filter((_, i) => i !== index));
+    logAudit({
+      ...actor,
+      action: "remove_bank",
+      entityType: "lead",
+      entityId: lead.id,
+      entityLabel: lead.name,
+      before: { partner: removed?.partnerName, product: removed?.productType },
+    });
     toast.success("Bank removed");
   };
 
 
   const handleSendToBank = () => {
+    if (isProfileLocked) {
+      toast.error("STB already submitted — cannot resubmit", {
+        description: lockState.reason,
+      });
+      return;
+    }
     // Pre-STB checklist
     const checks = [];
     if (selectedPairs.length === 0) checks.push("No banks selected");
@@ -222,17 +293,29 @@ const LeadDetailPage = () => {
 
     setLocalStbSubmissions([...localStbSubmissions, ...newSubmissions]);
     setStbSubmitted(true);
+    newSubmissions.forEach(s => {
+      logAudit({
+        ...actor,
+        action: "send_to_bank",
+        entityType: "stb",
+        entityId: s.id,
+        entityLabel: `${lead.name} → ${s.partnerName}`,
+        after: { partner: s.partnerName, status: s.status },
+      });
+    });
     toast.success(`STB initiated for ${selectedPairs.length} bank(s)`, {
       description: selectedPairs.map(p => `${p.partnerName} (${getProductLabel(p.productType as any)})`).join(", "),
     });
   };
 
-  // Build unified timeline
+  // Build unified timeline (call logs + follow-ups + STB + notes + audit entries)
+  const auditEntries = forLead(lead.id);
   const timelineEvents = [
     ...lead.callLogs.map(cl => ({ type: "call" as const, timestamp: cl.timestamp, data: cl })),
     ...lead.followUps.map(fu => ({ type: "followup" as const, timestamp: fu.scheduledAt, data: fu })),
     ...lead.stbSubmissions.map(s => ({ type: "stb" as const, timestamp: s.submittedAt, data: s })),
     ...(lead.notes || []).map(n => ({ type: "note" as const, timestamp: n.createdAt, data: n })),
+    ...auditEntries.map(a => ({ type: "audit" as const, timestamp: a.timestamp, data: a })),
   ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
   const groups = dispositionGroups();
@@ -322,7 +405,7 @@ const LeadDetailPage = () => {
         </Button>
         <div className="flex-1" />
         <Button size="sm" onClick={() => setShowCallLog(true)} className="h-9"><Phone className="h-4 w-4 mr-1.5" /> Log Call</Button>
-        <Button size="sm" variant="outline" onClick={handleSendToBank} className="h-9"><Send className="h-4 w-4 mr-1.5" /> Send to Bank</Button>
+        <Button size="sm" variant="outline" onClick={handleSendToBank} disabled={isProfileLocked} className="h-9"><Send className="h-4 w-4 mr-1.5" /> Send to Bank</Button>
         <Button size="sm" variant="outline" onClick={() => setShowEMI(true)} className="h-9"><Calculator className="h-4 w-4 mr-1.5" /> EMI Calculator</Button>
         {(role === "manager" || role === "cluster_head") && (
           <Button size="sm" variant="outline" onClick={() => setShowReassign(true)} className="h-9">
@@ -335,6 +418,28 @@ const LeadDetailPage = () => {
           </Button>
         )}
       </div>
+
+      {/* STB Lock Banner */}
+      {isProfileLocked && lockState.submission && (
+        <div className="rounded-lg border border-indigo-200 bg-indigo-50/60 px-4 py-3 flex items-start gap-3">
+          <div className="h-8 w-8 rounded-md bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0">
+            <Lock className="h-4 w-4" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm font-semibold text-indigo-900">STB Locked</span>
+              <SoftPill tone={lockState.submission.status === "approved" || lockState.submission.status === "disbursed" ? "completed" : lockState.submission.status === "declined" ? "missed" : "submitted"}>
+                {lockState.submission.status.charAt(0).toUpperCase() + lockState.submission.status.slice(1)}
+              </SoftPill>
+            </div>
+            <p className="text-xs text-indigo-900/80 mt-1">
+              Submitted to <strong>{lockState.submission.partnerName}</strong> on {new Date(lockState.submission.submittedAt).toLocaleDateString()}.
+              Profile, obligations, bank selection and resubmission are locked.
+            </p>
+            <p className="text-[11px] text-indigo-700 mt-1">Next: {lockState.allowedNextAction}</p>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div className="flex items-start gap-4">
@@ -396,7 +501,7 @@ const LeadDetailPage = () => {
           </div>
         </div>
         {(role === "agent" || role === "manager" || role === "cluster_head") && (
-          <Button variant="outline" size="sm" onClick={() => setIsEditing(!isEditing)} className="h-9">
+          <Button variant="outline" size="sm" onClick={() => setIsEditing(!isEditing)} disabled={isProfileLocked} className="h-9">
             <Edit2 className="h-4 w-4 mr-1.5" /> {isEditing ? "Done" : "Edit"}
           </Button>
         )}
@@ -448,7 +553,11 @@ const LeadDetailPage = () => {
             })()}
             {isEditing && (
               <div className="p-4 border-t">
-                <Button className="w-full h-10" onClick={() => { setIsEditing(false); toast.success("Profile saved"); }}>
+                <Button className="w-full h-10" onClick={() => {
+                  setIsEditing(false);
+                  logAudit({ ...actor, action: "edit_profile", entityType: "lead", entityId: lead.id, entityLabel: lead.name, notes: "Profile fields edited" });
+                  toast.success("Profile saved");
+                }}>
                   Save
                 </Button>
               </div>
@@ -514,7 +623,7 @@ const LeadDetailPage = () => {
                   <p className="text-xs text-muted-foreground">No existing loans recorded</p>
                 )}
               </div>
-              <Button variant="outline" className="w-full h-10 border-dashed" onClick={() => setShowAddLoan(true)}>
+              <Button variant="outline" className="w-full h-10 border-dashed" disabled={isProfileLocked} onClick={() => setShowAddLoan(true)}>
                 <Plus className="h-4 w-4 mr-1.5" /> Add Existing Loan
               </Button>
             </CardContent>
@@ -707,8 +816,9 @@ const LeadDetailPage = () => {
                   const iconBg = ev.type === "call" ? "bg-blue-50 text-blue-600"
                     : ev.type === "stb" ? "bg-indigo-50 text-indigo-600"
                     : ev.type === "note" ? "bg-slate-100 text-slate-600"
+                    : ev.type === "audit" ? "bg-violet-50 text-violet-600"
                     : "bg-amber-50 text-amber-600";
-                  const Icon = ev.type === "call" ? Phone : ev.type === "stb" ? Send : ev.type === "note" ? StickyNote : Clock;
+                  const Icon = ev.type === "call" ? Phone : ev.type === "stb" ? Send : ev.type === "note" ? StickyNote : ev.type === "audit" ? Shield : Clock;
                   const typeLabel = ev.type === "call" ? "Call" : ev.type === "stb" ? "STB" : ev.type === "note" ? "Note" : "Follow-up";
                   const typeTone = ev.type === "call" ? "tone=\"new\"" : ev.type === "stb" ? "tone=\"submitted\"" : ev.type === "note" ? "tone=\"closed_lost\"" : "tone=\"pending\"";
                   return (
@@ -755,6 +865,22 @@ const LeadDetailPage = () => {
                               <span className="text-sm font-semibold text-foreground">{n.text}</span>
                             </div>
                             <p className="text-sm text-muted-foreground mt-1">{n.agentName}</p>
+                          </>;
+                        })()}
+                        {ev.type === "audit" && (() => {
+                          const a = ev.data as typeof auditEntries[0];
+                          const label = a.action.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+                          return <>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <SoftPill tone="bank_selected">Activity</SoftPill>
+                              <span className="text-sm font-semibold text-foreground">{label}</span>
+                              <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{a.actorRole.replace(/_/g, " ")}</span>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {a.actorName}
+                              {a.reason ? ` · ${a.reason}` : ""}
+                              {a.notes ? ` · ${a.notes}` : ""}
+                            </p>
                           </>;
                         })()}
                       </div>
@@ -1221,7 +1347,18 @@ const LeadDetailPage = () => {
             <Button
               disabled={!reassignAgent || lead.stbSubmissions.length > 0}
               onClick={() => {
-                toast.success(`Lead reassigned to ${agents.find(a => a.id === reassignAgent)?.name}`);
+                const newAgent = agents.find(a => a.id === reassignAgent);
+                logAudit({
+                  ...actor,
+                  action: "reassign_lead",
+                  entityType: "lead",
+                  entityId: lead.id,
+                  entityLabel: lead.name,
+                  before: { agentId: lead.assignedAgentId, agentName: agents.find(a => a.id === lead.assignedAgentId)?.name },
+                  after: { agentId: reassignAgent, agentName: newAgent?.name, teamId: reassignTL || lead.assignedTeamId },
+                  reason: reassignReason || undefined,
+                });
+                toast.success(`Lead reassigned to ${newAgent?.name}`);
                 setShowReassign(false);
                 setReassignAgent(""); setReassignTL(""); setReassignReason("");
               }}
@@ -1255,6 +1392,15 @@ const LeadDetailPage = () => {
             <Button
               disabled={!overrideReason.trim()}
               onClick={() => {
+                logAudit({
+                  ...actor,
+                  action: "override_disposition",
+                  entityType: "lead",
+                  entityId: lead.id,
+                  entityLabel: lead.name,
+                  before: { stage: lead.stage, disposition: lead.disposition },
+                  reason: overrideReason,
+                });
                 toast.success(`Disposition overridden. Lead moved back to active stage.`);
                 setShowOverride(false);
                 setOverrideReason("");
