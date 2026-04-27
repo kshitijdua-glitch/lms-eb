@@ -601,17 +601,6 @@ const LeadDetailPage = () => {
               </div>
             </CardContent>
           </Card>
-                  <div key={n.id} className="p-2 rounded border text-xs">
-                    <p>{n.text}</p>
-                    <div className="flex justify-between mt-1 text-[10px] text-muted-foreground">
-                      <span>{n.agentName}</span>
-                      <span>{new Date(n.createdAt).toLocaleString()}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
 
           {lead.retryCount > 0 && (
             <Card>
