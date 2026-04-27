@@ -6,16 +6,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Download, AlertTriangle, FileText, Users, Send, BarChart3, UserCog, Database } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Download, AlertTriangle, FileText, Users, Send, BarChart3, UserCog, Database, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
+import { useRole } from "@/contexts/RoleContext";
+import { useAudit, buildActor } from "@/contexts/AuditContext";
+import { can } from "@/lib/permissions";
 
 const exportTypes = [
   { id: "full_lead", label: "Full Lead Export", icon: Database, description: "All lead data including PII fields", pii: true },
-  { id: "disposition", label: "Disposition Summary", icon: BarChart3, description: "Disposition counts by category, agent, and date" },
-  { id: "stb_pipeline", label: "STB Pipeline", icon: Send, description: "All STB submissions with bank status and timelines" },
-  { id: "source_attribution", label: "Source Attribution", icon: FileText, description: "Lead source performance and conversion metrics" },
-  { id: "agent_activity", label: "Agent Activity", icon: Users, description: "Agent-wise call logs, dispositions, and follow-up compliance" },
-  { id: "staff_profile", label: "Staff Profile", icon: UserCog, description: "All staff profiles with hierarchy and status" },
+  { id: "disposition", label: "Disposition Summary", icon: BarChart3, description: "Disposition counts by category, agent, and date", pii: false },
+  { id: "stb_pipeline", label: "STB Pipeline", icon: Send, description: "All STB submissions with bank status and timelines", pii: false },
+  { id: "source_attribution", label: "Source Attribution", icon: FileText, description: "Lead source performance and conversion metrics", pii: false },
+  { id: "agent_activity", label: "Agent Activity", icon: Users, description: "Agent-wise call logs, dispositions, and follow-up compliance", pii: false },
+  { id: "staff_profile", label: "Staff Profile", icon: UserCog, description: "All staff profiles with hierarchy and status", pii: true },
 ];
 
 const managers = [
@@ -25,23 +30,50 @@ const managers = [
 ];
 
 const MISExportPage = () => {
+  const { role } = useRole();
+  const { logAudit } = useAudit();
+  const actor = buildActor(role, "agent-1");
+
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [dateFrom, setDateFrom] = useState("2026-04-01");
   const [dateTo, setDateTo] = useState("2026-04-14");
   const [manager, setManager] = useState("all");
 
+  const [piiConfirm, setPiiConfirm] = useState<{ id: string; label: string } | null>(null);
+  const [piiReason, setPiiReason] = useState("");
+
+  const runExport = (id: string, label: string, withPii: boolean, reason?: string) => {
+    logAudit({
+      ...actor,
+      action: withPii ? "export_pii" : "export_summary",
+      entityType: "report",
+      entityId: id,
+      entityLabel: label,
+      after: { dateFrom, dateTo, manager },
+      reason,
+    });
+    if (withPii) toast.warning(`PII Export logged in audit trail.`);
+    toast.success(`${label} CSV generated and ready for download.`);
+  };
+
   const handleExport = (type: string) => {
     const exp = exportTypes.find(e => e.id === type);
-    if (exp?.pii) {
-      toast.warning("PII Export: This export contains sensitive personal data. Action logged in audit trail.", { duration: 5000 });
+    if (!exp) return;
+    if (exp.pii) {
+      if (!can.exportPII(role)) {
+        toast.error("You do not have permission to export PII data.");
+        return;
+      }
+      setPiiConfirm({ id: exp.id, label: exp.label });
+      return;
     }
-    toast.success(`${exp?.label} CSV generated and ready for download.`);
+    runExport(exp.id, exp.label, false);
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">MIS & Data Export</h1>
+        <h1 className="text-2xl font-bold">MIS &amp; Data Export</h1>
         <p className="text-muted-foreground text-sm">Generate filtered CSV exports for reporting and analysis</p>
       </div>
 
@@ -82,8 +114,13 @@ const MISExportPage = () => {
                 )}
               </div>
               <p className="text-xs text-muted-foreground">{exp.description}</p>
-              <Button size="sm" className="w-full" onClick={e => { e.stopPropagation(); handleExport(exp.id); }}>
-                <Download className="h-3 w-3 mr-1" /> Export CSV
+              <Button
+                size="sm"
+                className="w-full"
+                disabled={exp.pii && !can.exportPII(role)}
+                onClick={e => { e.stopPropagation(); handleExport(exp.id); }}
+              >
+                <Download className="h-3 w-3 mr-1" /> {exp.pii && !can.exportPII(role) ? "Restricted" : "Export CSV"}
               </Button>
             </CardContent>
           </Card>
@@ -111,6 +148,47 @@ const MISExportPage = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* PII confirm modal */}
+      <Dialog open={!!piiConfirm} onOpenChange={(v) => { if (!v) { setPiiConfirm(null); setPiiReason(""); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5 text-destructive" /> Confirm PII Export
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
+              You are about to export <strong>{piiConfirm?.label}</strong>, which contains personal data (PAN, mobile, etc.).
+              This action will be permanently recorded in the audit trail under your name and role.
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Reason for export *</Label>
+              <Textarea
+                placeholder="e.g. Quarterly compliance review for RBI submission"
+                value={piiReason}
+                onChange={(e) => setPiiReason(e.target.value)}
+                className="min-h-[70px] text-sm"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setPiiConfirm(null); setPiiReason(""); }}>Cancel</Button>
+            <Button
+              variant="destructive"
+              disabled={!piiReason.trim()}
+              onClick={() => {
+                if (!piiConfirm) return;
+                runExport(piiConfirm.id, piiConfirm.label, true, piiReason.trim());
+                setPiiConfirm(null);
+                setPiiReason("");
+              }}
+            >
+              Confirm &amp; Export
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
