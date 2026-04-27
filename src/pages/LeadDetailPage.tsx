@@ -114,7 +114,9 @@ const LeadDetailPage = () => {
     .slice(0, 50);
 
   const daysSinceAlloc = Math.floor((Date.now() - new Date(lead.allocatedAt).getTime()) / 86400000);
-  const isProfileLocked = lead.stbSubmissions.length > 0;
+  const lockState = getLeadLockState({ stbSubmissions: localStbSubmissions });
+  const isProfileLocked = lockState.locked;
+  const actor = buildActor(role, "agent-1");
 
   const emiCalc = (() => {
     const p = parseFloat(emiAmount) || 0;
