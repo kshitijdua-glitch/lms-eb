@@ -29,6 +29,9 @@ import { Slider } from "@/components/ui/slider";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis } from "recharts";
 import { useAudit, buildActor } from "@/contexts/AuditContext";
 import { getLeadLockState, can } from "@/lib/permissions";
+import { evaluateAllPartners, DISPOSITION_BY_OUTCOME } from "@/lib/partnerEligibility";
+import { usePartners } from "@/contexts/PartnersContext";
+import { CheckCircle2, XCircle, Info, ShieldAlert } from "lucide-react";
 
 // Soft pill color map — clean tinted backgrounds for status chips
 const SOFT_PILL: Record<string, string> = {
@@ -319,20 +322,11 @@ const LeadDetailPage = () => {
   ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
   const groups = dispositionGroups();
-  // Exact disposition lists per the product spec — outcome filters and orders the picker.
-  const CONNECTED_TYPES = ["hot_follow_up", "warm_follow_up", "document_follow_up", "connected_interested", "connected_not_interested", "already_has_loan", "callback_requested"];
-  const NOT_CONNECTED_TYPES = ["no_response", "busy", "switched_off", "invalid_number"];
   const filteredGroups = (() => {
-    const allItems = groups.flatMap(g => g.items);
-    if (callOutcome === "connected") {
-      const items = CONNECTED_TYPES.map(t => allItems.find(i => i.type === t)).filter((i): i is NonNullable<typeof i> => !!i);
-      return [{ group: "Connected dispositions", items }];
-    }
-    if (callOutcome === "not_connected") {
-      const items = NOT_CONNECTED_TYPES.map(t => allItems.find(i => i.type === t)).filter((i): i is NonNullable<typeof i> => !!i);
-      return [{ group: "Not contactable", items }];
-    }
-    return groups;
+    if (!callOutcome) return [];
+    const key = (callOutcome as "connected" | "not_connected" | "invalid");
+    const items = DISPOSITION_BY_OUTCOME[key] || [];
+    return [{ group: key === "connected" ? "Connected" : key === "not_connected" ? "Not connected" : "Invalid / Compliance", items: items.map(i => ({ ...i, type: i.type as any, category: "connected" as any, group: "x", requiresFollowUp: false })) }];
   })();
 
   return (
