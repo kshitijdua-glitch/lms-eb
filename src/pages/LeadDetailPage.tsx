@@ -816,8 +816,9 @@ const LeadDetailPage = () => {
                   const iconBg = ev.type === "call" ? "bg-blue-50 text-blue-600"
                     : ev.type === "stb" ? "bg-indigo-50 text-indigo-600"
                     : ev.type === "note" ? "bg-slate-100 text-slate-600"
+                    : ev.type === "audit" ? "bg-violet-50 text-violet-600"
                     : "bg-amber-50 text-amber-600";
-                  const Icon = ev.type === "call" ? Phone : ev.type === "stb" ? Send : ev.type === "note" ? StickyNote : Clock;
+                  const Icon = ev.type === "call" ? Phone : ev.type === "stb" ? Send : ev.type === "note" ? StickyNote : ev.type === "audit" ? Shield : Clock;
                   const typeLabel = ev.type === "call" ? "Call" : ev.type === "stb" ? "STB" : ev.type === "note" ? "Note" : "Follow-up";
                   const typeTone = ev.type === "call" ? "tone=\"new\"" : ev.type === "stb" ? "tone=\"submitted\"" : ev.type === "note" ? "tone=\"closed_lost\"" : "tone=\"pending\"";
                   return (
