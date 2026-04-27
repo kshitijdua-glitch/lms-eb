@@ -325,35 +325,79 @@ const LeadDetailPage = () => {
 
       <div className="grid md:grid-cols-3 gap-4">
         {/* Customer Profile */}
-        <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><User className="h-4 w-4" /> Customer Profile</CardTitle></CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            {[
-              ["Mobile", lead.mobile, true],
-              ["PAN", lead.pan, false],
-              ["DOB", new Date(lead.dob).toLocaleDateString(), true],
-              ["City", lead.city, true],
-              ["State", lead.state, true],
-              ["PIN Code", lead.pinCode, true],
-              ["Company", lead.companyName, true],
-              ["Employment", lead.employmentType.replace(/_/g, " "), true],
-              ["Monthly Income", `₹${lead.monthlyIncome.toLocaleString()}`, true],
-              ["Obligations", `₹${lead.existingObligations.toLocaleString()}`, true],
-              ["FOIR", `${lead.foir}%`, true],
-              ["Product", getProductLabel(lead.productType), true],
-              ["Loan Amount", `₹${lead.loanAmount.toLocaleString()}`, true],
-              ["Days Since Alloc", `${daysSinceAlloc} days`, false],
-            ].map(([label, value, editable]) => (
-              <div key={label as string} className="flex justify-between items-center">
-                <span className="text-muted-foreground text-xs">{label as string}</span>
-                {isEditing && editable ? (
-                  <Input className="w-28 h-6 text-xs" defaultValue={value as string} />
-                ) : (
-                  <span className="font-medium text-xs">{value as string}</span>
-                )}
+        <Card className="shadow-none">
+          <CardHeader className="pb-3 border-b">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <User className="h-4 w-4 text-primary" /> Customer Profile
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0 text-sm">
+            {(() => {
+              const sections: { title: string; fields: [string, string, boolean][] }[] = [
+                {
+                  title: "Contact",
+                  fields: [
+                    ["Mobile", lead.mobile, true],
+                    ["PAN", lead.pan, false],
+                    ["DOB", new Date(lead.dob).toLocaleDateString(), true],
+                  ],
+                },
+                {
+                  title: "Address",
+                  fields: [
+                    ["City", lead.city, true],
+                    ["State", lead.state, true],
+                    ["PIN Code", lead.pinCode, true],
+                  ],
+                },
+                {
+                  title: "Employment",
+                  fields: [
+                    ["Company", lead.companyName, true],
+                    ["Employment Type", lead.employmentType.replace(/_/g, " "), true],
+                    ["Monthly Income", `₹${lead.monthlyIncome.toLocaleString()}`, true],
+                    ["Obligations", `₹${lead.existingObligations.toLocaleString()}`, true],
+                    ["FOIR", `${lead.foir}%`, true],
+                  ],
+                },
+                {
+                  title: "Loan Requirement",
+                  fields: [
+                    ["Product", getProductLabel(lead.productType), true],
+                    ["Loan Amount", `₹${lead.loanAmount.toLocaleString()}`, true],
+                    ["Days Since Alloc", `${daysSinceAlloc} days`, false],
+                  ],
+                },
+              ];
+              return sections.map((section, sIdx) => (
+                <div key={section.title} className={cn(sIdx > 0 && "border-t")}>
+                  <div className="px-4 pt-3 pb-1.5">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      {section.title}
+                    </span>
+                  </div>
+                  <div className="divide-y">
+                    {section.fields.map(([label, value, editable]) => (
+                      <div key={label} className="flex justify-between items-center px-4 py-2.5">
+                        <span className="text-muted-foreground text-xs">{label}</span>
+                        {isEditing && editable ? (
+                          <Input className="w-32 h-7 text-xs" defaultValue={value} />
+                        ) : (
+                          <span className="font-medium text-xs text-foreground">{value}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ));
+            })()}
+            {isEditing && (
+              <div className="p-3 border-t">
+                <Button size="sm" className="w-full" onClick={() => { setIsEditing(false); toast.success("Profile saved"); }}>
+                  Save Changes
+                </Button>
               </div>
-            ))}
-            {isEditing && <Button size="sm" className="w-full mt-2" onClick={() => { setIsEditing(false); toast.success("Profile saved"); }}>Save</Button>}
+            )}
           </CardContent>
         </Card>
 
