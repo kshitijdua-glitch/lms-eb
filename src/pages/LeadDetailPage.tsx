@@ -25,6 +25,35 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 
+// Soft pill color map — clean tinted backgrounds for status chips
+const SOFT_PILL: Record<string, string> = {
+  new: "bg-blue-50 text-blue-700 border border-blue-100",
+  contacted: "bg-amber-50 text-amber-700 border border-amber-100",
+  interested: "bg-emerald-50 text-emerald-700 border border-emerald-100",
+  bank_selected: "bg-violet-50 text-violet-700 border border-violet-100",
+  stb_submitted: "bg-indigo-50 text-indigo-700 border border-indigo-100",
+  approved: "bg-emerald-50 text-emerald-700 border border-emerald-100",
+  declined: "bg-rose-50 text-rose-700 border border-rose-100",
+  disbursed: "bg-emerald-50 text-emerald-700 border border-emerald-100",
+  closed_lost: "bg-slate-100 text-slate-600 border border-slate-200",
+  hot: "bg-rose-50 text-rose-700 border border-rose-100",
+  warm: "bg-amber-50 text-amber-700 border border-amber-100",
+  cold: "bg-cyan-50 text-cyan-700 border border-cyan-100",
+  submitted: "bg-indigo-50 text-indigo-700 border border-indigo-100",
+  pending: "bg-amber-50 text-amber-700 border border-amber-100",
+  completed: "bg-emerald-50 text-emerald-700 border border-emerald-100",
+  missed: "bg-rose-50 text-rose-700 border border-rose-100",
+};
+const SoftPill = ({ tone, children, className }: { tone: string; children: React.ReactNode; className?: string }) => (
+  <span className={cn(
+    "inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium",
+    SOFT_PILL[tone] || "bg-slate-100 text-slate-700 border border-slate-200",
+    className,
+  )}>
+    {children}
+  </span>
+);
+
 const LeadDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
