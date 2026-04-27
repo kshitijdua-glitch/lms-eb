@@ -867,6 +867,22 @@ const LeadDetailPage = () => {
                             <p className="text-sm text-muted-foreground mt-1">{n.agentName}</p>
                           </>;
                         })()}
+                        {ev.type === "audit" && (() => {
+                          const a = ev.data as typeof auditEntries[0];
+                          const label = a.action.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+                          return <>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <SoftPill tone="bank_selected">Activity</SoftPill>
+                              <span className="text-sm font-semibold text-foreground">{label}</span>
+                              <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{a.actorRole.replace(/_/g, " ")}</span>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {a.actorName}
+                              {a.reason ? ` · ${a.reason}` : ""}
+                              {a.notes ? ` · ${a.notes}` : ""}
+                            </p>
+                          </>;
+                        })()}
                       </div>
                       <div className="text-right shrink-0 space-y-1">
                         {ev.type === "followup" && (() => {
