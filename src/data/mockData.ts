@@ -235,7 +235,7 @@ function generateLeads(): Lead[] {
     return {
       id: `lead-${i + 1}`,
       name,
-      mobile: maskMobile(mobile),
+      mobile,
       email: `${name.split(" ")[0].toLowerCase()}@email.com`,
       pan: maskPan(pan),
       dob: `${1970 + randomInt(0, 35)}-${String(randomInt(1, 12)).padStart(2, "0")}-${String(randomInt(1, 28)).padStart(2, "0")}`,
