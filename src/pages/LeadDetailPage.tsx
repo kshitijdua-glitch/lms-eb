@@ -308,12 +308,14 @@ const LeadDetailPage = () => {
     });
   };
 
-  // Build unified timeline
+  // Build unified timeline (call logs + follow-ups + STB + notes + audit entries)
+  const auditEntries = forLead(lead.id);
   const timelineEvents = [
     ...lead.callLogs.map(cl => ({ type: "call" as const, timestamp: cl.timestamp, data: cl })),
     ...lead.followUps.map(fu => ({ type: "followup" as const, timestamp: fu.scheduledAt, data: fu })),
     ...lead.stbSubmissions.map(s => ({ type: "stb" as const, timestamp: s.submittedAt, data: s })),
     ...(lead.notes || []).map(n => ({ type: "note" as const, timestamp: n.createdAt, data: n })),
+    ...auditEntries.map(a => ({ type: "audit" as const, timestamp: a.timestamp, data: a })),
   ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
   const groups = dispositionGroups();
