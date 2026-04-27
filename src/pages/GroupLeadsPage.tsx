@@ -92,26 +92,26 @@ const GroupLeadsPage = () => {
       return;
     }
     const target = agents.find(a => a.id === reassignAgent)?.name;
-    selectedIds.forEach(id => logEvent({ leadId: id, action: "bulk_reassign", actor: "Manager", details: `Reassigned to ${target}. ${reassignReason}` }));
+    selectedIds.forEach(id => logBulk(id, "bulk_reassign", `Reassigned to ${target}`, reassignReason));
     toast.success(`${selectedIds.size} leads reassigned to ${target}`);
     setShowReassign(false); setSelectedIds(new Set()); setReassignAgent(""); setReassignReason("");
   };
 
   const handleBulkEscalate = () => {
-    selectedIds.forEach(id => logEvent({ leadId: id, action: "bulk_escalate", actor: "Manager", details: "Escalated to senior management" }));
+    selectedIds.forEach(id => logBulk(id, "bulk_escalate", "Escalated to senior management"));
     toast.success(`${selectedIds.size} lead(s) escalated`);
     setSelectedIds(new Set());
   };
 
   const handleBulkPriority = () => {
-    selectedIds.forEach(id => logEvent({ leadId: id, action: "bulk_priority", actor: "Manager", details: "Marked as Hot priority" }));
+    selectedIds.forEach(id => logBulk(id, "bulk_priority", "Marked as Hot priority"));
     toast.success(`${selectedIds.size} lead(s) marked Hot`);
     setSelectedIds(new Set());
   };
 
   const handleBulkNote = () => {
     if (!bulkNote.trim()) { toast.error("Enter a note"); return; }
-    selectedIds.forEach(id => logEvent({ leadId: id, action: "bulk_note", actor: "Manager", details: bulkNote }));
+    selectedIds.forEach(id => logBulk(id, "bulk_note", bulkNote));
     toast.success(`Note added to ${selectedIds.size} lead(s)`);
     setShowNote(false); setBulkNote(""); setSelectedIds(new Set());
   };
