@@ -670,15 +670,34 @@ const LeadDetailPage = () => {
                       <SelectValue placeholder={selectedProduct ? "Pick bank…" : "Pick product first"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {lendingPartners
-                        .filter(lp => lp.status === "active" && lp.products.includes(selectedProduct as any))
-                        .map(lp => (
-                          <SelectItem key={lp.id} value={lp.id}>{lp.name}</SelectItem>
-                        ))}
+                      {selectedProduct && evaluateAllPartners(partners, lead, selectedProduct).map(({ partner, eligible, summary }) => (
+                        <SelectItem key={partner.id} value={partner.id} disabled={!eligible}>
+                          <span className="flex items-center gap-2">
+                            {eligible
+                              ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                              : <XCircle className="h-3.5 w-3.5 text-rose-500 shrink-0" />}
+                            <span>{partner.name}</span>
+                            <span className="text-[10px] text-muted-foreground truncate max-w-[200px]">— {summary}</span>
+                          </span>
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
-                <Button variant="outline" className="w-full h-10" onClick={handleAddPair}>
+                {selectedProduct && selectedBank && (() => {
+                  const r = evaluateAllPartners(partners, lead, selectedProduct).find(p => p.partner.id === selectedBank);
+                  if (!r) return null;
+                  return (
+                    <div className={cn("rounded-md border px-3 py-2 text-[11px] space-y-0.5",
+                      r.eligible ? "border-emerald-200 bg-emerald-50/60 text-emerald-800" : "border-rose-200 bg-rose-50/60 text-rose-800")}>
+                      <div className="flex items-center gap-1.5 font-medium">
+                        <Info className="h-3 w-3" /> {r.eligible ? "Eligible" : "Ineligible"} — {r.partner.name}
+                      </div>
+                      {r.reasons.map((reason, i) => <div key={i} className="opacity-80">• {reason}</div>)}
+                    </div>
+                  );
+                })()}
+                <Button variant="outline" className="w-full h-10" onClick={handleAddPair} disabled={isProfileLocked}>
                   <Plus className="h-4 w-4 mr-1.5" /> Add
                 </Button>
               </div>
