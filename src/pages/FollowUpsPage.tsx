@@ -3,10 +3,14 @@ import { useRole } from "@/contexts/RoleContext";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Phone, CalendarClock, Check, Flame, Snowflake, Sun, Clock, AlertTriangle } from "lucide-react";
 import { useState, useMemo } from "react";
-import { ConfigurableTable } from "@/components/ConfigurableTable";
-import type { ColumnDef } from "@/types/table";
+import { toast } from "sonner";
+import { useAudit, buildActor } from "@/contexts/AuditContext";
+import { cn } from "@/lib/utils";
 
 type FUItem = {
   id: string; scheduledAt: string; type: string; status: string; notes: string;
@@ -14,26 +18,41 @@ type FUItem = {
   productType: string; allocatedAt: string; retryCount: number; disposition: string;
 };
 
-function getFollowUpStatus(scheduledAt: string, status: string): { label: string; variant: "destructive" | "default" | "secondary" } {
-  if (status === "missed") return { label: "Overdue", variant: "destructive" };
-  if (status === "completed") return { label: "Completed", variant: "default" };
-  const diff = new Date(scheduledAt).getTime() - Date.now();
-  if (diff < 0) return { label: "Overdue", variant: "destructive" };
-  if (diff < 3600000) return { label: "Due Now", variant: "default" };
-  return { label: "Upcoming", variant: "secondary" };
+type Bucket = "overdue" | "today" | "upcoming" | "completed";
+
+function bucketOf(scheduledAt: string, status: string): Bucket {
+  if (status === "completed") return "completed";
+  const sched = new Date(scheduledAt).getTime();
+  const now = Date.now();
+  const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
+  const endOfToday = new Date(); endOfToday.setHours(23, 59, 59, 999);
+  if (status === "missed" || sched < startOfToday.getTime()) return "overdue";
+  if (sched <= endOfToday.getTime()) return "today";
+  return "upcoming";
 }
+
+const PRIORITY_TONE: Record<string, { icon: typeof Flame; cls: string; label: string }> = {
+  hot: { icon: Flame, cls: "bg-rose-50 text-rose-700 border-rose-100", label: "Hot" },
+  warm: { icon: Sun, cls: "bg-amber-50 text-amber-700 border-amber-100", label: "Warm" },
+  cold: { icon: Snowflake, cls: "bg-cyan-50 text-cyan-700 border-cyan-100", label: "Cold" },
+};
 
 const FollowUpsPage = () => {
   const { role } = useRole();
   const navigate = useNavigate();
+  const { logAudit } = useAudit();
+  const actor = buildActor(role, "agent-1");
+
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [productFilter, setProductFilter] = useState("all");
+  const [tab, setTab] = useState<Bucket>("overdue");
+  const [completedLocal, setCompletedLocal] = useState<Record<string, true>>({});
 
   const allLeads = role === "agent" ? getLeadsForAgent("agent-1") : leads;
 
-  const allFollowUps = useMemo(() => {
+  const allFollowUps: FUItem[] = useMemo(() => {
     return allLeads.flatMap(l =>
-      l.followUps.filter(f => f.status !== "completed").map(f => ({
+      l.followUps.map(f => ({
         ...f, leadId: l.id, leadName: l.name, leadMobile: l.mobile,
         priority: l.priority, productType: l.productType, allocatedAt: l.allocatedAt,
         retryCount: l.retryCount, disposition: l.disposition,
@@ -42,58 +61,136 @@ const FollowUpsPage = () => {
       if (priorityFilter !== "all" && f.priority !== priorityFilter) return false;
       if (productFilter !== "all" && f.productType !== productFilter) return false;
       return true;
-    }).sort((a, b) => {
-      const order = { "Overdue": 0, "Due Now": 1, "Upcoming": 2, "Completed": 3 };
-      return (order[getFollowUpStatus(a.scheduledAt, a.status).label as keyof typeof order] ?? 3) - (order[getFollowUpStatus(b.scheduledAt, b.status).label as keyof typeof order] ?? 3);
     });
   }, [allLeads, priorityFilter, productFilter]);
 
-  const overdue = allFollowUps.filter(f => getFollowUpStatus(f.scheduledAt, f.status).label === "Overdue");
-  const dueNow = allFollowUps.filter(f => getFollowUpStatus(f.scheduledAt, f.status).label === "Due Now");
-  const upcoming = allFollowUps.filter(f => getFollowUpStatus(f.scheduledAt, f.status).label === "Upcoming");
+  const buckets = useMemo(() => {
+    const out: Record<Bucket, FUItem[]> = { overdue: [], today: [], upcoming: [], completed: [] };
+    for (const f of allFollowUps) {
+      const isCompleted = f.status === "completed" || completedLocal[f.id];
+      const b = isCompleted ? "completed" : bucketOf(f.scheduledAt, f.status);
+      out[b].push(f);
+    }
+    out.overdue.sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
+    out.today.sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
+    out.upcoming.sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
+    return out;
+  }, [allFollowUps, completedLocal]);
 
-  const columns: ColumnDef<FUItem>[] = [
-    { id: "leadId", label: "Lead ID", render: (f) => <span className="text-xs text-muted-foreground">{f.leadId}</span> },
-    { id: "name", label: "Name", render: (f) => (
-      <span className="font-medium text-sm">{f.leadName}<span className="text-muted-foreground text-xs ml-1">{f.leadMobile}</span></span>
-    )},
-    { id: "type", label: "Type", render: (f) => <span className="text-sm capitalize">{f.type.replace(/_/g, " ")}</span> },
-    { id: "scheduled", label: "Scheduled Time", render: (f) => <span className="text-sm text-muted-foreground">{new Date(f.scheduledAt).toLocaleString()}</span> },
-    { id: "status", label: "Status", render: (f) => { const s = getFollowUpStatus(f.scheduledAt, f.status); return <Badge variant={s.variant} className="text-xs">{s.label}</Badge>; }},
-    { id: "priority", label: "Priority", render: (f) => <Badge variant={f.priority === "hot" ? "destructive" : f.priority === "warm" ? "default" : "secondary"} className="text-xs">{f.priority}</Badge> },
-    { id: "daysSinceAlloc", label: "Days Since Alloc", render: (f) => <span className="text-sm">{Math.floor((Date.now() - new Date(f.allocatedAt).getTime()) / 86400000)}d</span> },
-    { id: "retry", label: "Retry Info", render: (f) => (
-      <span className="text-xs text-muted-foreground">
-        {f.retryCount > 0 ? <span>{f.retryCount}/5 retries {f.retryCount >= 5 && <Badge variant="destructive" className="text-[9px] ml-1">Manager Review</Badge>}</span> : "—"}
-      </span>
-    )},
-    { id: "disposition", label: "Disposition", defaultVisible: false, render: (f) => <span className="text-xs">{getDispositionLabel(f.disposition as any)}</span> },
-    { id: "product", label: "Product", defaultVisible: false, render: (f) => <Badge variant="outline" className="text-xs">{getProductLabel(f.productType as any)}</Badge> },
-  ];
+  const handleCall = (f: FUItem) => {
+    logAudit({ ...actor, action: "call_initiated", entityType: "follow_up", entityId: f.id, entityLabel: f.leadName, after: { mobile: f.leadMobile } });
+    toast.success(`Calling ${f.leadName}…`);
+  };
+
+  const handleReschedule = (f: FUItem) => {
+    logAudit({ ...actor, action: "reschedule_follow_up", entityType: "follow_up", entityId: f.id, entityLabel: f.leadName, before: { scheduledAt: f.scheduledAt } });
+    toast.info(`Rescheduling for ${f.leadName} — open lead detail to set new time.`);
+    navigate(`/leads/${f.leadId}`);
+  };
+
+  const handleComplete = (f: FUItem) => {
+    setCompletedLocal(prev => ({ ...prev, [f.id]: true }));
+    logAudit({ ...actor, action: "complete_follow_up", entityType: "follow_up", entityId: f.id, entityLabel: f.leadName, after: { status: "completed" } });
+    toast.success(`Follow-up marked complete for ${f.leadName}`);
+  };
+
+  const FollowUpCard = ({ f, bucket }: { f: FUItem; bucket: Bucket }) => {
+    const days = Math.floor((Date.now() - new Date(f.allocatedAt).getTime()) / 86400000);
+    const sched = new Date(f.scheduledAt);
+    const PriBadge = PRIORITY_TONE[f.priority] ?? PRIORITY_TONE.cold;
+    const PIcon = PriBadge.icon;
+    const isCompleted = bucket === "completed";
+
+    return (
+      <div className="border border-border rounded-lg bg-card p-4 hover:border-primary/30 transition-colors">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <button className="text-left min-w-0 flex-1" onClick={() => navigate(`/leads/${f.leadId}`)}>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-semibold text-sm text-foreground truncate">{f.leadName}</span>
+              <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border", PriBadge.cls)}>
+                <PIcon className="h-3 w-3" /> {PriBadge.label}
+              </span>
+              {bucket === "overdue" && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-rose-50 text-rose-700 border border-rose-100">
+                  <AlertTriangle className="h-3 w-3" /> Overdue
+                </span>
+              )}
+            </div>
+            <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
+              <span className="font-mono">{f.leadMobile}</span>
+              <span className="opacity-50">·</span>
+              <Badge variant="outline" className="text-[10px] py-0">{getProductLabel(f.productType as any)}</Badge>
+              <span className="opacity-50">·</span>
+              <span className="capitalize">{f.type.replace(/_/g, " ")}</span>
+            </div>
+          </button>
+
+          <div className="text-right shrink-0">
+            <div className="text-sm font-medium tabular-nums">{sched.toLocaleString([], { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</div>
+            <div className="text-[10px] text-muted-foreground">scheduled</div>
+          </div>
+        </div>
+
+        <div className="mt-3 flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+            <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" /> {days}d since alloc</span>
+            <span className="opacity-50">·</span>
+            <span>Retry {f.retryCount}/5</span>
+            {f.retryCount >= 5 && <Badge variant="destructive" className="text-[9px]">Manager review</Badge>}
+          </div>
+          {!isCompleted && (
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleCall(f)}>
+                <Phone className="h-3 w-3 mr-1" /> Call
+              </Button>
+              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleReschedule(f)}>
+                <CalendarClock className="h-3 w-3 mr-1" /> Reschedule
+              </Button>
+              <Button size="sm" className="h-7 text-xs" onClick={() => handleComplete(f)}>
+                <Check className="h-3 w-3 mr-1" /> Complete
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const Empty = ({ label }: { label: string }) => (
+    <div className="border border-dashed border-border rounded-lg p-10 text-center text-sm text-muted-foreground">
+      No {label} follow-ups
+    </div>
+  );
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Follow-Ups</h1>
-          <p className="text-muted-foreground text-sm">
-            {allFollowUps.length} total · <span className="text-destructive">{overdue.length} overdue</span> · <span className="text-warning">{dueNow.length} due now</span> · {upcoming.length} upcoming
+          <h1 className="text-2xl font-semibold tracking-tight">Follow-Ups</h1>
+          <p className="text-sm text-muted-foreground">
+            <span className="text-rose-600 font-medium">{buckets.overdue.length} overdue</span>
+            <span className="opacity-50 mx-1.5">·</span>
+            <span className="text-amber-600 font-medium">{buckets.today.length} today</span>
+            <span className="opacity-50 mx-1.5">·</span>
+            <span>{buckets.upcoming.length} upcoming</span>
+            <span className="opacity-50 mx-1.5">·</span>
+            <span>{buckets.completed.length} completed</span>
           </p>
         </div>
         <div className="flex gap-2">
           <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-            <SelectTrigger className="w-28"><SelectValue placeholder="Priority" /></SelectTrigger>
+            <SelectTrigger className="w-32 h-9"><SelectValue placeholder="Priority" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="all">All priority</SelectItem>
               <SelectItem value="hot">Hot</SelectItem>
               <SelectItem value="warm">Warm</SelectItem>
               <SelectItem value="cold">Cold</SelectItem>
             </SelectContent>
           </Select>
           <Select value={productFilter} onValueChange={setProductFilter}>
-            <SelectTrigger className="w-36"><SelectValue placeholder="Product" /></SelectTrigger>
+            <SelectTrigger className="w-40 h-9"><SelectValue placeholder="Product" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Products</SelectItem>
+              <SelectItem value="all">All products</SelectItem>
               {["personal_loan","home_loan","business_loan","credit_card","loan_against_property"].map(p => (
                 <SelectItem key={p} value={p}>{getProductLabel(p as any)}</SelectItem>
               ))}
@@ -102,16 +199,37 @@ const FollowUpsPage = () => {
         </div>
       </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <ConfigurableTable
-            tableId="follow-ups"
-            columns={columns}
-            data={allFollowUps}
-            onRowClick={(f) => navigate(`/leads/${f.leadId}`)}
-          />
-        </CardContent>
-      </Card>
+      <Tabs value={tab} onValueChange={(v) => setTab(v as Bucket)}>
+        <TabsList className="bg-transparent p-0 h-auto gap-6 border-b border-border w-full justify-start rounded-none">
+          {([
+            { v: "overdue", label: "Overdue", count: buckets.overdue.length },
+            { v: "today", label: "Today", count: buckets.today.length },
+            { v: "upcoming", label: "Upcoming", count: buckets.upcoming.length },
+            { v: "completed", label: "Completed", count: buckets.completed.length },
+          ] as { v: Bucket; label: string; count: number }[]).map(t => (
+            <TabsTrigger
+              key={t.v}
+              value={t.v}
+              className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 pb-3 -mb-px text-sm font-medium text-muted-foreground"
+            >
+              {t.label}
+              <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground tabular-nums">
+                {String(t.count).padStart(2, "0")}
+              </span>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        {(["overdue", "today", "upcoming", "completed"] as Bucket[]).map(b => (
+          <TabsContent key={b} value={b} className="mt-5">
+            <div className="grid gap-3 md:grid-cols-1 lg:grid-cols-2">
+              {buckets[b].length > 0
+                ? buckets[b].map(f => <FollowUpCard key={f.id} f={f} bucket={b} />)
+                : <div className="lg:col-span-2"><Empty label={b} /></div>}
+            </div>
+          </TabsContent>
+        ))}
+      </Tabs>
     </div>
   );
 };
