@@ -64,6 +64,7 @@ const LeadDetailPage = () => {
   const navigate = useNavigate();
   const { role } = useRole();
   const { config } = usePriorityConfig();
+  const { logAudit } = useAudit();
   const lead = leads.find(l => l.id === id);
   const [showCallLog, setShowCallLog] = useState(false);
   const [showEMI, setShowEMI] = useState(false);
