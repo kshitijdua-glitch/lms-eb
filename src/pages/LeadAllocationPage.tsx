@@ -7,11 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Upload, Shuffle, Plus, Trash2 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Upload, Shuffle, ChevronRight, ChevronLeft, Check, AlertTriangle, Users } from "lucide-react";
 import { toast } from "sonner";
 import { ConfigurableTable } from "@/components/ConfigurableTable";
 import type { ColumnDef } from "@/types/table";
+import { useRole } from "@/contexts/RoleContext";
+import { useAudit, buildActor } from "@/contexts/AuditContext";
+import { cn } from "@/lib/utils";
 
 const managers = [
   { id: "mgr-1", name: "Vikram Mehta", teams: ["team-1"] },
@@ -49,112 +52,111 @@ const statusVariant: Record<BatchRow["status"], "default" | "secondary" | "outli
   allocated: "default",
 };
 
-type AllocSplit = {
-  id: string;
-  mode: "round_robin" | "to_group" | "to_team" | "to_agent";
-  managerId: string;
-  teamId: string;
-  agentId: string;
-  count: number;
+type AllocMode = "round_robin" | "to_group" | "to_team" | "to_agent";
+
+const MODE_LABELS: Record<AllocMode, string> = {
+  round_robin: "Round Robin (auto-balance across active agents)",
+  to_group: "Assign to a Manager group",
+  to_team: "Assign to a Team",
+  to_agent: "Assign to a single Agent",
 };
 
-let splitIdCounter = 0;
-const newSplit = (count: number): AllocSplit => ({
-  id: `split-${++splitIdCounter}`,
-  mode: "round_robin",
-  count,
-  managerId: "",
-  teamId: "",
-  agentId: "",
-});
+const STEP_TITLES = ["Select batch", "Allocation mode", "Capacity preview", "Confirm"];
 
 const LeadAllocationPage = () => {
-  const [showAllocate, setShowAllocate] = useState(false);
-  const [selectedBatch, setSelectedBatch] = useState<string | null>(null);
-  const [splitMode, setSplitMode] = useState(false);
-  const [splits, setSplits] = useState<AllocSplit[]>([]);
+  const { role } = useRole();
+  const { logAudit } = useAudit();
+  const actor = buildActor(role, "agent-1");
 
-  // single-allocation state (when split is off)
-  const [allocMode, setAllocMode] = useState("round_robin");
+  const [showWizard, setShowWizard] = useState(false);
+  const [step, setStep] = useState(0);
+
+  const [selectedBatch, setSelectedBatch] = useState<string | null>(null);
+  const [allocMode, setAllocMode] = useState<AllocMode>("round_robin");
   const [targetManager, setTargetManager] = useState("");
   const [targetTeam, setTargetTeam] = useState("");
   const [targetAgent, setTargetAgent] = useState("");
 
   const currentBatch = unallocatedBatches.find(b => b.id === selectedBatch);
 
-  const openDialog = (batchId: string) => {
-    setSelectedBatch(batchId);
-    const batch = unallocatedBatches.find(b => b.id === batchId)!;
-    setSplitMode(false);
-    setSplits([newSplit(batch.count)]);
+  const openWizard = (batchId?: string) => {
+    setSelectedBatch(batchId ?? null);
+    setStep(batchId ? 1 : 0);
     setAllocMode("round_robin");
     setTargetManager("");
     setTargetTeam("");
     setTargetAgent("");
-    setShowAllocate(true);
+    setShowWizard(true);
   };
 
-  const teamsForManager = (mgrId: string) => {
-    if (!mgrId) return teams;
-    const mgr = managers.find(m => m.id === mgrId);
-    return mgr ? teams.filter(t => mgr.teams.includes(t.id)) : [];
-  };
+  const teamsForManager = (mgrId: string) =>
+    !mgrId ? teams : teams.filter(t => managers.find(m => m.id === mgrId)?.teams.includes(t.id));
+  const agentsForTeam = (teamId: string) =>
+    !teamId ? [] : agents.filter(a => a.teamId === teamId && a.status === "active");
 
-  const agentsForTeam = (teamId: string) => {
-    if (!teamId) return [];
-    return agents.filter(a => a.teamId === teamId && a.status === "active");
-  };
-
-  const totalSplitCount = splits.reduce((s, sp) => s + sp.count, 0);
-  const splitCountValid = currentBatch ? totalSplitCount === currentBatch.count : false;
-
-  const updateSplit = (id: string, patch: Partial<AllocSplit>) => {
-    setSplits(prev => prev.map(s => s.id === id ? { ...s, ...patch } : s));
-  };
-
-  const addSplit = () => {
-    if (!currentBatch) return;
-    const used = splits.reduce((s, sp) => s + sp.count, 0);
-    const remaining = Math.max(0, currentBatch.count - used);
-    setSplits(prev => [...prev, newSplit(remaining)]);
-  };
-
-  const removeSplit = (id: string) => {
-    setSplits(prev => prev.filter(s => s.id !== id));
-  };
-
-  const handleAllocate = () => {
-    if (!currentBatch) return;
-
-    if (splitMode) {
-      if (!splitCountValid) {
-        toast.error(`Split counts must add up to ${currentBatch.count} (currently ${totalSplitCount})`);
-        return;
-      }
-      for (const sp of splits) {
-        if (sp.count <= 0) { toast.error("Each split must have at least 1 lead"); return; }
-        if (sp.mode === "to_agent" && !sp.agentId) { toast.error("Select an agent for each split"); return; }
-        if (sp.mode === "to_team" && !sp.teamId) { toast.error("Select a team for each split"); return; }
-        if (sp.mode === "to_group" && !sp.managerId) { toast.error("Select a manager for each split"); return; }
-      }
-      const summary = splits.map(sp => {
-        const target = sp.mode === "round_robin" ? "Round Robin"
-          : sp.mode === "to_agent" ? agents.find(a => a.id === sp.agentId)?.name
-          : sp.mode === "to_team" ? teams.find(t => t.id === sp.teamId)?.name
-          : managers.find(m => m.id === sp.managerId)?.name;
-        return `${sp.count} → ${target}`;
-      }).join(", ");
-      toast.success(`"${currentBatch.batchName}" split-allocated: ${summary}`);
-    } else {
-      if (allocMode === "round_robin") toast.success(`${currentBatch.count} leads from "${currentBatch.batchName}" auto-allocated via Round Robin`);
-      else if (allocMode === "to_agent" && targetAgent) toast.success(`${currentBatch.count} leads allocated to ${agents.find(a => a.id === targetAgent)?.name}`);
-      else if (allocMode === "to_team" && targetTeam) toast.success(`${currentBatch.count} leads allocated to team ${teams.find(t => t.id === targetTeam)?.name}`);
-      else if (allocMode === "to_group" && targetManager) toast.success(`${currentBatch.count} leads allocated to ${managers.find(m => m.id === targetManager)?.name}'s group`);
-      else { toast.error("Select a valid allocation target"); return; }
+  // Capacity preview — distribute count across selected assignees
+  const capacityPreview = useMemo(() => {
+    if (!currentBatch) return [];
+    const count = currentBatch.count;
+    if (allocMode === "to_agent" && targetAgent) {
+      const a = agents.find(x => x.id === targetAgent);
+      return a ? [{ id: a.id, name: a.name, sub: a.teamName, current: a.leadsAssigned, incoming: count }] : [];
     }
+    if (allocMode === "to_team" && targetTeam) {
+      const ags = agentsForTeam(targetTeam);
+      const per = Math.floor(count / Math.max(ags.length, 1));
+      const rem = count - per * ags.length;
+      return ags.map((a, i) => ({ id: a.id, name: a.name, sub: a.teamName, current: a.leadsAssigned, incoming: per + (i < rem ? 1 : 0) }));
+    }
+    if (allocMode === "to_group" && targetManager) {
+      const tIds = managers.find(m => m.id === targetManager)?.teams ?? [];
+      const ags = agents.filter(a => tIds.includes(a.teamId) && a.status === "active");
+      const per = Math.floor(count / Math.max(ags.length, 1));
+      const rem = count - per * ags.length;
+      return ags.map((a, i) => ({ id: a.id, name: a.name, sub: a.teamName, current: a.leadsAssigned, incoming: per + (i < rem ? 1 : 0) }));
+    }
+    if (allocMode === "round_robin") {
+      const ags = agents.filter(a => a.status === "active");
+      const per = Math.floor(count / Math.max(ags.length, 1));
+      const rem = count - per * ags.length;
+      return ags.map((a, i) => ({ id: a.id, name: a.name, sub: a.teamName, current: a.leadsAssigned, incoming: per + (i < rem ? 1 : 0) }));
+    }
+    return [];
+  }, [currentBatch, allocMode, targetAgent, targetTeam, targetManager]);
 
-    setShowAllocate(false);
+  const canProceed = () => {
+    if (step === 0) return !!selectedBatch;
+    if (step === 1) {
+      if (allocMode === "to_agent") return !!targetAgent;
+      if (allocMode === "to_team") return !!targetTeam;
+      if (allocMode === "to_group") return !!targetManager;
+      return true;
+    }
+    if (step === 2) return capacityPreview.length > 0;
+    return true;
+  };
+
+  const handleConfirm = () => {
+    if (!currentBatch) return;
+    const target =
+      allocMode === "round_robin" ? `Round Robin · ${capacityPreview.length} agents`
+      : allocMode === "to_agent" ? `Agent ${agents.find(a => a.id === targetAgent)?.name}`
+      : allocMode === "to_team" ? `Team ${teams.find(t => t.id === targetTeam)?.name}`
+      : `Manager ${managers.find(m => m.id === targetManager)?.name}`;
+
+    logAudit({
+      ...actor,
+      action: "allocate_batch",
+      entityType: "batch",
+      entityId: currentBatch.id,
+      entityLabel: currentBatch.batchName,
+      after: { mode: allocMode, target, count: currentBatch.count, distribution: capacityPreview.map(p => `${p.name}:${p.incoming}`) },
+    });
+
+    toast.success(`${currentBatch.count} leads from "${currentBatch.batchName}" allocated`, { description: target });
+    setShowWizard(false);
     setSelectedBatch(null);
+    setStep(0);
   };
 
   const totalUnallocated = unallocatedBatches.filter(b => b.status !== "allocated").reduce((s, b) => s + b.count, 0);
@@ -170,52 +172,12 @@ const LeadAllocationPage = () => {
     { id: "status", label: "Status", render: (b) => <Badge variant={statusVariant[b.status]} className="text-[10px]">{statusLabels[b.status]}</Badge> },
     { id: "action", label: "Action", locked: "end", render: (b) => (
       <div onClick={e => e.stopPropagation()}>
-        <Button size="sm" variant="outline" className="h-7 text-xs" disabled={b.status === "allocated"} onClick={() => openDialog(b.id)}>
+        <Button size="sm" variant="outline" className="h-7 text-xs" disabled={b.status === "allocated"} onClick={() => openWizard(b.id)}>
           <Upload className="h-3 w-3 mr-1" /> Allocate
         </Button>
       </div>
     )},
   ];
-
-  const renderTargetSelectors = (
-    mode: string,
-    managerId: string,
-    teamId: string,
-    agentId: string,
-    onManager: (v: string) => void,
-    onTeam: (v: string) => void,
-    onAgent: (v: string) => void,
-  ) => (
-    <>
-      {(mode === "to_group" || mode === "to_team" || mode === "to_agent") && (
-        <div>
-          <Label className="text-xs">Manager</Label>
-          <Select value={managerId} onValueChange={v => { onManager(v); onTeam(""); onAgent(""); }}>
-            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
-            <SelectContent>{managers.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
-      )}
-      {(mode === "to_team" || mode === "to_agent") && (
-        <div>
-          <Label className="text-xs">Team</Label>
-          <Select value={teamId} onValueChange={v => { onTeam(v); onAgent(""); }}>
-            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
-            <SelectContent>{teamsForManager(managerId).map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
-      )}
-      {mode === "to_agent" && (
-        <div>
-          <Label className="text-xs">Agent</Label>
-          <Select value={agentId} onValueChange={onAgent}>
-            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
-            <SelectContent>{agentsForTeam(teamId).map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
-      )}
-    </>
-  );
 
   return (
     <div className="space-y-6">
@@ -224,8 +186,8 @@ const LeadAllocationPage = () => {
           <h1 className="text-2xl font-bold">Lead Allocation</h1>
           <p className="text-muted-foreground text-sm">{totalUnallocated} unallocated leads across {activeBatches} batches</p>
         </div>
-        <Button variant="outline" onClick={() => toast.success("Auto Round Robin triggered for all batches")}>
-          <Shuffle className="h-4 w-4 mr-1" /> Auto Allocate All
+        <Button onClick={() => openWizard()}>
+          <Shuffle className="h-4 w-4 mr-1.5" /> New Allocation
         </Button>
       </div>
 
@@ -242,85 +204,176 @@ const LeadAllocationPage = () => {
         </CardContent>
       </Card>
 
-      <Dialog open={showAllocate} onOpenChange={setShowAllocate}>
-        <DialogContent className="max-w-lg">
+      <Dialog open={showWizard} onOpenChange={(v) => { setShowWizard(v); if (!v) setStep(0); }}>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Allocate — {currentBatch?.batchName} ({currentBatch?.count} leads)</DialogTitle>
+            <DialogTitle className="text-base">Allocate Leads — {STEP_TITLES[step]}</DialogTitle>
           </DialogHeader>
 
-          <div className="flex items-center gap-2 pb-2 border-b">
-            <Switch checked={splitMode} onCheckedChange={v => { setSplitMode(v); if (v && splits.length < 2 && currentBatch) { const half = Math.floor(currentBatch.count / 2); setSplits([newSplit(half), newSplit(currentBatch.count - half)]); } }} />
-            <Label className="text-sm">Split batch across multiple targets</Label>
+          {/* Stepper */}
+          <div className="flex items-center gap-2">
+            {STEP_TITLES.map((t, i) => (
+              <div key={t} className="flex-1 flex items-center gap-2">
+                <div className={cn(
+                  "h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-semibold shrink-0",
+                  i < step ? "bg-primary text-primary-foreground"
+                  : i === step ? "bg-primary/15 text-primary border border-primary"
+                  : "bg-muted text-muted-foreground",
+                )}>
+                  {i < step ? <Check className="h-3.5 w-3.5" /> : i + 1}
+                </div>
+                <span className={cn("text-xs hidden md:inline", i === step ? "font-semibold text-foreground" : "text-muted-foreground")}>{t}</span>
+                {i < STEP_TITLES.length - 1 && <div className="flex-1 h-px bg-border" />}
+              </div>
+            ))}
           </div>
 
-          {!splitMode ? (
-            <div className="space-y-3">
-              <div>
-                <Label>Allocation Mode</Label>
-                <Select value={allocMode} onValueChange={setAllocMode}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="round_robin">Auto Round Robin</SelectItem>
-                    <SelectItem value="to_group">Assign to Manager Group</SelectItem>
-                    <SelectItem value="to_team">Assign to Team</SelectItem>
-                    <SelectItem value="to_agent">Assign to Agent</SelectItem>
-                  </SelectContent>
-                </Select>
+          {/* Step content */}
+          <div className="min-h-[280px] py-2">
+            {step === 0 && (
+              <div className="space-y-2">
+                <Label className="text-xs">Pick a batch to allocate</Label>
+                <div className="border border-border rounded-lg divide-y divide-border max-h-72 overflow-auto">
+                  {unallocatedBatches.filter(b => b.status !== "allocated").map(b => (
+                    <button
+                      key={b.id}
+                      onClick={() => setSelectedBatch(b.id)}
+                      className={cn(
+                        "w-full text-left p-3 hover:bg-muted/40 transition-colors flex items-center justify-between gap-3",
+                        selectedBatch === b.id && "bg-primary/5",
+                      )}
+                    >
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium">{b.batchName}</div>
+                        <div className="text-xs text-muted-foreground">{b.source} · {b.product} · {b.uploadDate}</div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="text-sm font-semibold tabular-nums">{b.count}</div>
+                        <div className="text-[10px] text-muted-foreground">leads</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
-              {renderTargetSelectors(allocMode, targetManager, targetTeam, targetAgent, setTargetManager, setTargetTeam, setTargetAgent)}
-            </div>
-          ) : (
-            <div className="space-y-3 max-h-80 overflow-y-auto">
-              {splits.map((sp, idx) => (
-                <Card key={sp.id} className="p-3 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-muted-foreground">Split {idx + 1}</span>
-                    {splits.length > 2 && (
-                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => removeSplit(sp.id)}>
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    )}
+            )}
+
+            {step === 1 && currentBatch && (
+              <div className="space-y-4">
+                <div className="text-xs text-muted-foreground">
+                  Batch: <span className="font-medium text-foreground">{currentBatch.batchName}</span> · {currentBatch.count} leads
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Allocation mode</Label>
+                  <div className="grid gap-2">
+                    {(Object.keys(MODE_LABELS) as AllocMode[]).map(m => (
+                      <button
+                        key={m}
+                        onClick={() => { setAllocMode(m); setTargetManager(""); setTargetTeam(""); setTargetAgent(""); }}
+                        className={cn(
+                          "border border-border rounded-lg px-3 py-2.5 text-left text-sm hover:border-primary/40 transition-colors flex items-center gap-2",
+                          allocMode === m && "border-primary bg-primary/5",
+                        )}
+                      >
+                        <div className={cn("h-3.5 w-3.5 rounded-full border", allocMode === m ? "border-primary bg-primary" : "border-muted-foreground/40")} />
+                        <span>{MODE_LABELS[m]}</span>
+                      </button>
+                    ))}
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                </div>
+                {allocMode !== "round_robin" && (
+                  <div className="grid grid-cols-3 gap-2">
                     <div>
-                      <Label className="text-xs">Lead Count</Label>
-                      <Input type="number" min={1} max={currentBatch?.count} value={sp.count} onChange={e => updateSplit(sp.id, { count: Math.max(0, parseInt(e.target.value) || 0) })} className="h-8 text-xs" />
-                    </div>
-                    <div>
-                      <Label className="text-xs">Mode</Label>
-                      <Select value={sp.mode} onValueChange={v => updateSplit(sp.id, { mode: v as AllocSplit["mode"], managerId: "", teamId: "", agentId: "" })}>
-                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="round_robin">Round Robin</SelectItem>
-                          <SelectItem value="to_group">Manager Group</SelectItem>
-                          <SelectItem value="to_team">Team</SelectItem>
-                          <SelectItem value="to_agent">Agent</SelectItem>
-                        </SelectContent>
+                      <Label className="text-xs">Manager</Label>
+                      <Select value={targetManager} onValueChange={(v) => { setTargetManager(v); setTargetTeam(""); setTargetAgent(""); }}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+                        <SelectContent>{managers.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
+                    {(allocMode === "to_team" || allocMode === "to_agent") && (
+                      <div>
+                        <Label className="text-xs">Team</Label>
+                        <Select value={targetTeam} onValueChange={(v) => { setTargetTeam(v); setTargetAgent(""); }} disabled={!targetManager}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+                          <SelectContent>{teamsForManager(targetManager).map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    {allocMode === "to_agent" && (
+                      <div>
+                        <Label className="text-xs">Agent</Label>
+                        <Select value={targetAgent} onValueChange={setTargetAgent} disabled={!targetTeam}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+                          <SelectContent>{agentsForTeam(targetTeam).map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                    )}
                   </div>
-                  {renderTargetSelectors(
-                    sp.mode, sp.managerId, sp.teamId, sp.agentId,
-                    v => updateSplit(sp.id, { managerId: v, teamId: "", agentId: "" }),
-                    v => updateSplit(sp.id, { teamId: v, agentId: "" }),
-                    v => updateSplit(sp.id, { agentId: v }),
+                )}
+              </div>
+            )}
+
+            {step === 2 && currentBatch && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-semibold flex items-center gap-2"><Users className="h-4 w-4 text-primary" /> Capacity preview</div>
+                    <div className="text-xs text-muted-foreground">{capacityPreview.length} assignees · {currentBatch.count} leads</div>
+                  </div>
+                  {capacityPreview.some(p => p.current + p.incoming > 200) && (
+                    <Badge variant="outline" className="text-[10px] gap-1"><AlertTriangle className="h-3 w-3 text-amber-600" /> High load</Badge>
                   )}
-                </Card>
-              ))}
-              <Button variant="outline" size="sm" className="w-full" onClick={addSplit}>
-                <Plus className="h-3 w-3 mr-1" /> Add Split
-              </Button>
-              {currentBatch && (
-                <div className={`text-xs text-center ${splitCountValid ? "text-green-600" : "text-destructive"}`}>
-                  {totalSplitCount} / {currentBatch.count} leads assigned {splitCountValid ? "✓" : `(${currentBatch.count - totalSplitCount} remaining)`}
                 </div>
+                <div className="border border-border rounded-lg divide-y divide-border max-h-72 overflow-auto">
+                  {capacityPreview.map(p => {
+                    const total = p.current + p.incoming;
+                    const pct = Math.min(100, Math.round((total / 200) * 100));
+                    return (
+                      <div key={p.id} className="p-3 grid grid-cols-12 gap-3 items-center">
+                        <div className="col-span-4 min-w-0">
+                          <div className="text-sm font-medium truncate">{p.name}</div>
+                          <div className="text-xs text-muted-foreground truncate">{p.sub}</div>
+                        </div>
+                        <div className="col-span-5">
+                          <Progress value={pct} className="h-2" />
+                          <div className="text-[10px] text-muted-foreground mt-1">{total}/200 capacity</div>
+                        </div>
+                        <div className="col-span-3 text-right">
+                          <div className="text-sm font-semibold tabular-nums">+{p.incoming}</div>
+                          <div className="text-[10px] text-muted-foreground">incoming</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {step === 3 && currentBatch && (
+              <div className="space-y-3">
+                <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 space-y-1">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">Confirm allocation</div>
+                  <div className="text-base font-semibold">{currentBatch.count} leads from {currentBatch.batchName}</div>
+                  <div className="text-sm text-muted-foreground">{MODE_LABELS[allocMode]}</div>
+                  <div className="text-xs text-muted-foreground">Distributed across {capacityPreview.length} assignee(s). Action will be logged in audit trail.</div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="flex !justify-between">
+            <Button variant="ghost" onClick={() => setStep(s => Math.max(0, s - 1))} disabled={step === 0}>
+              <ChevronLeft className="h-4 w-4 mr-1" /> Back
+            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setShowWizard(false)}>Cancel</Button>
+              {step < STEP_TITLES.length - 1 ? (
+                <Button onClick={() => setStep(s => s + 1)} disabled={!canProceed()}>
+                  Next <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              ) : (
+                <Button onClick={handleConfirm}><Check className="h-4 w-4 mr-1" /> Confirm Allocation</Button>
               )}
             </div>
-          )}
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAllocate(false)}>Cancel</Button>
-            <Button onClick={handleAllocate}>Allocate</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
