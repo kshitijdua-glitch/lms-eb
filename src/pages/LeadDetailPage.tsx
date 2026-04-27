@@ -113,13 +113,33 @@ const LeadDetailPage = () => {
   const daysSinceAlloc = Math.floor((Date.now() - new Date(lead.allocatedAt).getTime()) / 86400000);
   const isProfileLocked = lead.stbSubmissions.length > 0;
 
-  const emi = emiAmount && emiRate && emiTenure ? (() => {
-    const p = parseFloat(emiAmount);
-    const r = parseFloat(emiRate) / 12 / 100;
-    const n = parseInt(emiTenure);
-    if (!p || !r || !n) return 0;
-    return Math.round((p * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1));
-  })() : 0;
+  const emiCalc = (() => {
+    const p = parseFloat(emiAmount) || 0;
+    const annualRate = parseFloat(emiRate) || 0;
+    const r = annualRate / 12 / 100;
+    const n = parseInt(emiTenure) || 0;
+    if (!p || !r || !n) return { emi: 0, totalInterest: 0, totalPayment: 0, schedule: [] as { month: number; balance: number; principalPaid: number; interestPaid: number }[] };
+    const emiVal = (p * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+    let balance = p;
+    let cumPrincipal = 0;
+    let cumInterest = 0;
+    const schedule = [{ month: 0, balance: p, principalPaid: 0, interestPaid: 0 }];
+    for (let m = 1; m <= n; m++) {
+      const interest = balance * r;
+      const principal = emiVal - interest;
+      balance = Math.max(0, balance - principal);
+      cumPrincipal += principal;
+      cumInterest += interest;
+      schedule.push({ month: m, balance: Math.round(balance), principalPaid: Math.round(cumPrincipal), interestPaid: Math.round(cumInterest) });
+    }
+    return {
+      emi: Math.round(emiVal),
+      totalInterest: Math.round(cumInterest),
+      totalPayment: Math.round(emiVal * n),
+      schedule,
+    };
+  })();
+  const emi = emiCalc.emi;
 
   const handleLogCall = () => {
     if (!callOutcome || !callDisposition) {
