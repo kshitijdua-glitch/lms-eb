@@ -960,7 +960,11 @@ const LeadDetailPage = () => {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs">Outcome *</Label>
-                <Select value={callOutcome} onValueChange={(v) => { setCallOutcome(v); if (v === "not_connected") setCallDuration("0"); }}>
+                <Select value={callOutcome} onValueChange={(v) => {
+                  setCallOutcome(v);
+                  setCallDisposition("");
+                  if (v === "not_connected") setCallDuration("0");
+                }}>
                   <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="connected">Connected</SelectItem>
@@ -975,10 +979,12 @@ const LeadDetailPage = () => {
             </div>
             <div>
               <Label className="text-xs">Disposition *</Label>
-              <Select value={callDisposition} onValueChange={setCallDisposition}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select disposition" /></SelectTrigger>
+              <Select value={callDisposition} onValueChange={setCallDisposition} disabled={!callOutcome}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder={callOutcome ? "Select disposition" : "Select outcome first"} />
+                </SelectTrigger>
                 <SelectContent>
-                  {groups.map(g => (
+                  {filteredGroups.map(g => (
                     <SelectGroup key={g.group}>
                       <SelectLabel className="text-[10px] font-bold">{g.group}</SelectLabel>
                       {g.items.map(d => (
