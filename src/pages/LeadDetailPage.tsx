@@ -365,74 +365,50 @@ const LeadDetailPage = () => {
         {/* Customer Profile */}
         <Card className="shadow-none">
           <CardHeader className="pb-3 border-b">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <User className="h-4 w-4 text-primary" /> Customer Profile
+            <CardTitle className="text-sm flex items-center gap-2.5">
+              <span className="h-7 w-7 rounded-md bg-primary/10 text-primary flex items-center justify-center">
+                <User className="h-4 w-4" />
+              </span>
+              Customer Profile
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0 text-sm">
             {(() => {
-              const sections: { title: string; fields: [string, string, boolean][] }[] = [
-                {
-                  title: "Contact",
-                  fields: [
-                    ["Mobile", lead.mobile, true],
-                    ["PAN", lead.pan, false],
-                    ["DOB", new Date(lead.dob).toLocaleDateString(), true],
-                  ],
-                },
-                {
-                  title: "Address",
-                  fields: [
-                    ["City", lead.city, true],
-                    ["State", lead.state, true],
-                    ["PIN Code", lead.pinCode, true],
-                  ],
-                },
-                {
-                  title: "Employment",
-                  fields: [
-                    ["Company", lead.companyName, true],
-                    ["Employment Type", lead.employmentType.replace(/_/g, " "), true],
-                    ["Monthly Income", `₹${lead.monthlyIncome.toLocaleString()}`, true],
-                    ["Obligations", `₹${lead.existingObligations.toLocaleString()}`, true],
-                    ["FOIR", `${lead.foir}%`, true],
-                  ],
-                },
-                {
-                  title: "Loan Requirement",
-                  fields: [
-                    ["Product", getProductLabel(lead.productType), true],
-                    ["Loan Amount", `₹${lead.loanAmount.toLocaleString()}`, true],
-                    ["Days Since Alloc", `${daysSinceAlloc} days`, false],
-                  ],
-                },
+              const fields: [string, string, boolean][] = [
+                ["Mobile", lead.mobile, true],
+                ["PAN", lead.pan, false],
+                ["DOB", new Date(lead.dob).toLocaleDateString(), true],
+                ["City", lead.city, true],
+                ["State", lead.state, true],
+                ["PIN Code", lead.pinCode, true],
+                ["Company", lead.companyName, true],
+                ["Employment", lead.employmentType.replace(/_/g, " "), true],
+                ["Monthly Income", `₹${lead.monthlyIncome.toLocaleString()}`, true],
+                ["Obligation", `₹${lead.existingObligations.toLocaleString()}`, true],
+                ["FOIR", `${lead.foir}%`, true],
+                ["Product", getProductLabel(lead.productType), true],
+                ["Loan Amount", `₹${lead.loanAmount.toLocaleString()}`, true],
+                ["Days Since Alloc", `${daysSinceAlloc} days`, false],
               ];
-              return sections.map((section, sIdx) => (
-                <div key={section.title} className={cn(sIdx > 0 && "border-t")}>
-                  <div className="px-4 pt-3 pb-1.5">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      {section.title}
-                    </span>
-                  </div>
-                  <div className="divide-y">
-                    {section.fields.map(([label, value, editable]) => (
-                      <div key={label} className="flex justify-between items-center px-4 py-2.5">
-                        <span className="text-muted-foreground text-xs">{label}</span>
-                        {isEditing && editable ? (
-                          <Input className="w-32 h-7 text-xs" defaultValue={value} />
-                        ) : (
-                          <span className="font-medium text-xs text-foreground">{value}</span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+              return (
+                <div className="divide-y divide-border/60">
+                  {fields.map(([label, value, editable]) => (
+                    <div key={label} className="flex justify-between items-center px-5 py-3">
+                      <span className="text-muted-foreground text-sm">{label}</span>
+                      {isEditing && editable ? (
+                        <Input className="w-36 h-8 text-sm" defaultValue={value} />
+                      ) : (
+                        <span className="font-medium text-sm text-foreground capitalize">{value}</span>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              ));
+              );
             })()}
             {isEditing && (
-              <div className="p-3 border-t">
-                <Button size="sm" className="w-full" onClick={() => { setIsEditing(false); toast.success("Profile saved"); }}>
-                  Save Changes
+              <div className="p-4 border-t">
+                <Button className="w-full h-10" onClick={() => { setIsEditing(false); toast.success("Profile saved"); }}>
+                  Save
                 </Button>
               </div>
             )}
@@ -440,10 +416,17 @@ const LeadDetailPage = () => {
         </Card>
 
         {/* Credit & Obligations + Bank Selection */}
-        <div className="space-y-4">
-          <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><Shield className="h-4 w-4" /> Credit & Obligations</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
+        <div className="space-y-6">
+          <Card className="shadow-none">
+            <CardHeader className="pb-3 border-b">
+              <CardTitle className="text-sm flex items-center gap-2.5">
+                <span className="h-7 w-7 rounded-md bg-primary/10 text-primary flex items-center justify-center">
+                  <Shield className="h-4 w-4" />
+                </span>
+                Credit &amp; Obligations
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 pt-5">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-muted-foreground">Credit Score</span>
                 <div className="flex items-center gap-2">
