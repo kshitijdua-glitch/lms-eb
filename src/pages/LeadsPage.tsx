@@ -109,7 +109,7 @@ const LeadsPage = () => {
       </div>
     )},
     { id: "mobile", label: "Mobile", render: (lead) => <span className="text-muted-foreground text-sm tabular-nums">{lead.mobile}</span> },
-    { id: "source", label: "Source", render: (lead) => <span className="text-xs text-muted-foreground">{lead.leadSource}</span> },
+    ...(role !== "agent" ? [{ id: "source", label: "Source", render: (lead: Lead) => <span className="text-xs text-muted-foreground">{lead.leadSource}</span> } as ColumnDef<Lead>] : []),
     { id: "product", label: "Product", render: (lead) => <Badge variant="outline" className="text-xs font-normal">{getProductLabel(lead.productType)}</Badge> },
     { id: "stage", label: "Stage", render: (lead) => <Badge variant={stageBadgeVariant(lead.stage) as any} className="text-xs font-normal">{getStageLabel(lead.stage)}</Badge> },
     { id: "disposition", label: "Last Disposition", render: (lead) => <span className="text-sm">{getDispositionLabel(lead.disposition)}</span> },
@@ -217,13 +217,15 @@ const LeadsPage = () => {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={sourceFilter} onValueChange={setSourceFilter}>
-              <SelectTrigger className="w-40 h-10"><SelectValue placeholder="Source" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Sources</SelectItem>
-                {sources.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            {role !== "agent" && (
+              <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                <SelectTrigger className="w-40 h-10"><SelectValue placeholder="Source" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Sources</SelectItem>
+                  {sources.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )}
             <Select value={followUpFilter} onValueChange={setFollowUpFilter}>
               <SelectTrigger className="w-44 h-10"><SelectValue placeholder="Follow-Up" /></SelectTrigger>
               <SelectContent>
