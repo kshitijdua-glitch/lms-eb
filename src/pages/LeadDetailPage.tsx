@@ -29,6 +29,9 @@ import { Slider } from "@/components/ui/slider";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis } from "recharts";
 import { useAudit, buildActor } from "@/contexts/AuditContext";
 import { getLeadLockState, can } from "@/lib/permissions";
+import { evaluateAllPartners, DISPOSITION_BY_OUTCOME } from "@/lib/partnerEligibility";
+import { usePartners } from "@/contexts/PartnersContext";
+import { CheckCircle2, XCircle, Info, ShieldAlert } from "lucide-react";
 
 // Soft pill color map — clean tinted backgrounds for status chips
 const SOFT_PILL: Record<string, string> = {
@@ -65,6 +68,7 @@ const LeadDetailPage = () => {
   const { role } = useRole();
   const { config } = usePriorityConfig();
   const { logAudit, forLead } = useAudit();
+  const { partners } = usePartners();
   const lead = leads.find(l => l.id === id);
   const [showCallLog, setShowCallLog] = useState(false);
   const [showEMI, setShowEMI] = useState(false);
@@ -319,20 +323,11 @@ const LeadDetailPage = () => {
   ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
   const groups = dispositionGroups();
-  // Exact disposition lists per the product spec — outcome filters and orders the picker.
-  const CONNECTED_TYPES = ["hot_follow_up", "warm_follow_up", "document_follow_up", "connected_interested", "connected_not_interested", "already_has_loan", "callback_requested"];
-  const NOT_CONNECTED_TYPES = ["no_response", "busy", "switched_off", "invalid_number"];
   const filteredGroups = (() => {
-    const allItems = groups.flatMap(g => g.items);
-    if (callOutcome === "connected") {
-      const items = CONNECTED_TYPES.map(t => allItems.find(i => i.type === t)).filter((i): i is NonNullable<typeof i> => !!i);
-      return [{ group: "Connected dispositions", items }];
-    }
-    if (callOutcome === "not_connected") {
-      const items = NOT_CONNECTED_TYPES.map(t => allItems.find(i => i.type === t)).filter((i): i is NonNullable<typeof i> => !!i);
-      return [{ group: "Not contactable", items }];
-    }
-    return groups;
+    if (!callOutcome) return [];
+    const key = (callOutcome as "connected" | "not_connected" | "invalid");
+    const items = DISPOSITION_BY_OUTCOME[key] || [];
+    return [{ group: key === "connected" ? "Connected" : key === "not_connected" ? "Not connected" : "Invalid / Compliance", items: items.map(i => ({ ...i, type: i.type as any, category: "connected" as any, group: "x", requiresFollowUp: false })) }];
   })();
 
   return (
@@ -419,6 +414,21 @@ const LeadDetailPage = () => {
         )}
       </div>
 
+      {/* Compliance Banner */}
+      {lead.consentStatus !== "received" && lead.callLogs.length > 0 && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3 flex items-start gap-3">
+          <div className="h-8 w-8 rounded-md bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+            <ShieldAlert className="h-4 w-4" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-semibold text-amber-900">Consent required</div>
+            <p className="text-xs text-amber-900/80 mt-0.5">
+              Customer consent is <strong>{lead.consentStatus.replace(/_/g, " ")}</strong>. Capture consent before sharing data with partner banks.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* STB Lock Banner */}
       {isProfileLocked && lockState.submission && (
         <div className="rounded-lg border border-indigo-200 bg-indigo-50/60 px-4 py-3 flex items-start gap-3">
@@ -447,7 +457,7 @@ const LeadDetailPage = () => {
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl font-semibold tracking-tight">{lead.name}</h1>
             {isProfileLocked && <Lock className="h-4 w-4 text-muted-foreground" />}
-            {lead.dndStatus === "dnd_registered" && <SoftPill tone="missed">DND</SoftPill>}
+            
             {role !== "agent" && (
               <span className="text-xs text-muted-foreground">
                 <span className="opacity-60">·</span> Source: <span className="font-medium text-foreground">{lead.leadSource}</span>
@@ -660,15 +670,34 @@ const LeadDetailPage = () => {
                       <SelectValue placeholder={selectedProduct ? "Pick bank…" : "Pick product first"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {lendingPartners
-                        .filter(lp => lp.status === "active" && lp.products.includes(selectedProduct as any))
-                        .map(lp => (
-                          <SelectItem key={lp.id} value={lp.id}>{lp.name}</SelectItem>
-                        ))}
+                      {selectedProduct && evaluateAllPartners(partners, lead, selectedProduct).map(({ partner, eligible, summary }) => (
+                        <SelectItem key={partner.id} value={partner.id} disabled={!eligible}>
+                          <span className="flex items-center gap-2">
+                            {eligible
+                              ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                              : <XCircle className="h-3.5 w-3.5 text-rose-500 shrink-0" />}
+                            <span>{partner.name}</span>
+                            <span className="text-[10px] text-muted-foreground truncate max-w-[200px]">— {summary}</span>
+                          </span>
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
-                <Button variant="outline" className="w-full h-10" onClick={handleAddPair}>
+                {selectedProduct && selectedBank && (() => {
+                  const r = evaluateAllPartners(partners, lead, selectedProduct).find(p => p.partner.id === selectedBank);
+                  if (!r) return null;
+                  return (
+                    <div className={cn("rounded-md border px-3 py-2 text-[11px] space-y-0.5",
+                      r.eligible ? "border-emerald-200 bg-emerald-50/60 text-emerald-800" : "border-rose-200 bg-rose-50/60 text-rose-800")}>
+                      <div className="flex items-center gap-1.5 font-medium">
+                        <Info className="h-3 w-3" /> {r.eligible ? "Eligible" : "Ineligible"} — {r.partner.name}
+                      </div>
+                      {r.reasons.map((reason, i) => <div key={i} className="opacity-80">• {reason}</div>)}
+                    </div>
+                  );
+                })()}
+                <Button variant="outline" className="w-full h-10" onClick={handleAddPair} disabled={isProfileLocked}>
                   <Plus className="h-4 w-4 mr-1.5" /> Add
                 </Button>
               </div>
@@ -1114,6 +1143,7 @@ const LeadDetailPage = () => {
                   <SelectContent>
                     <SelectItem value="connected">Connected</SelectItem>
                     <SelectItem value="not_connected">Not Connected</SelectItem>
+                    <SelectItem value="invalid">Invalid / Compliance</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

@@ -63,8 +63,6 @@ export const dispositionConfigs: DispositionConfig[] = [
   { type: "too_many_loans", label: "Too Many Active Loans", category: "bre_ineligible", group: "BRE Ineligible", requiresFollowUp: false },
   { type: "high_dpd", label: "High DPD", category: "bre_ineligible", group: "BRE Ineligible", requiresFollowUp: false },
   { type: "recent_writeoff", label: "Recent Write-Off", category: "bre_ineligible", group: "BRE Ineligible", requiresFollowUp: false },
-  // Compliance
-  { type: "dnd_registered", label: "DND Registered", category: "compliance", group: "Compliance", requiresFollowUp: false },
   // Documents Pending
   { type: "pan_not_available", label: "PAN Not Available", category: "documents_pending", group: "Documents Pending", requiresFollowUp: true },
   { type: "income_proof_not_ready", label: "Income Proof Not Ready", category: "documents_pending", group: "Documents Pending", requiresFollowUp: true },
@@ -253,7 +251,7 @@ function generateLeads(): Lead[] {
       priority: "cold" as Priority, // will be recalculated by engine
       source,
       leadSource: source,
-      dndStatus: Math.random() > 0.85 ? "dnd_registered" : "clean",
+      
       assignedAgentId: `agent-${agentIdx}`,
       assignedTeamId: teamId,
       creditScore,
@@ -318,7 +316,7 @@ export const mockNotifications: Notification[] = [
   { id: "n-17", type: "stb_status_update", title: "Group STB Update", message: "Bajaj Finserv declined loan for Manoj Tiwari — Manager: Vikram Mehta, Agent: Meera Patel", timestamp: daysAgo(0), read: false, leadId: "lead-15", scope: "org" },
   { id: "n-18", type: "lead_reassigned", title: "Override Confirmation", message: "You overrode a Closed/Lost disposition on lead Arjun Rao — lead moved to Contacted", timestamp: daysAgo(1), read: true, leadId: "lead-9", scope: "org" },
   { id: "n-19", type: "agent_not_logged_in", title: "Manager Not Logged In", message: "Manager Anjali Kapoor has not logged in today", timestamp: daysAgo(0), read: false, scope: "org", clickTarget: "/staff-management" },
-  { id: "n-20", type: "nc_escalation", title: "DND Risk Alert", message: "3 DND-registered leads contacted without consent in South Zone", timestamp: daysAgo(0), read: false, scope: "org", clickTarget: "/audit-trail" },
+  { id: "n-20", type: "nc_escalation", title: "Consent Risk Alert", message: "3 leads contacted without consent in South Zone", timestamp: daysAgo(0), read: false, scope: "org", clickTarget: "/audit-trail" },
   // Admin / data-admin-scoped
   { id: "n-21", type: "new_allocation", title: "Unallocated Pool Alert", message: "22 leads from Partner source remain unallocated for 48 hours", timestamp: daysAgo(0), read: false, scope: "admin", clickTarget: "/admin/allocation" },
   { id: "n-22", type: "stb_status_update", title: "Stale STB Pool", message: "5 STB submissions pending >7 days across organisation", timestamp: daysAgo(0), read: false, scope: "admin", clickTarget: "/admin/pools" },

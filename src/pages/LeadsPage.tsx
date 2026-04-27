@@ -81,7 +81,7 @@ const LeadsPage = () => {
     }
     setShowCreateLead(false);
     toast.success("Lead created and assigned to you");
-    toast.info("DND check: Number is clean ✓", { duration: 3000 });
+    
     setNewLeadName(""); setNewLeadMobile(""); setNewLeadProduct(""); setNewLeadSource("");
     setNewLeadCity(""); setNewLeadIncome(""); setNewLeadLoanAmt(""); setNewLeadNotes("");
   };
@@ -105,7 +105,6 @@ const LeadsPage = () => {
           <span className="font-medium text-sm leading-tight">{lead.name}</span>
           <span className="text-[11px] text-muted-foreground">{lead.id}</span>
         </div>
-        {lead.dndStatus === "dnd_registered" && <Badge variant="destructive" className="text-[9px] ml-1 px-1">DND</Badge>}
       </div>
     )},
     { id: "mobile", label: "Mobile", render: (lead) => <span className="text-muted-foreground text-sm tabular-nums">{lead.mobile}</span> },

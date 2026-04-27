@@ -11,6 +11,7 @@ import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { useAudit, buildActor } from "@/contexts/AuditContext";
 import { cn } from "@/lib/utils";
+import { getFollowUpBucket, type FollowUpBucket } from "@/lib/followUpStatus";
 
 type FUItem = {
   id: string; scheduledAt: string; type: string; status: string; notes: string;
@@ -18,18 +19,8 @@ type FUItem = {
   productType: string; allocatedAt: string; retryCount: number; disposition: string;
 };
 
-type Bucket = "overdue" | "today" | "upcoming" | "completed";
-
-function bucketOf(scheduledAt: string, status: string): Bucket {
-  if (status === "completed") return "completed";
-  const sched = new Date(scheduledAt).getTime();
-  const now = Date.now();
-  const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
-  const endOfToday = new Date(); endOfToday.setHours(23, 59, 59, 999);
-  if (status === "missed" || sched < startOfToday.getTime()) return "overdue";
-  if (sched <= endOfToday.getTime()) return "today";
-  return "upcoming";
-}
+type Bucket = FollowUpBucket;
+const bucketOf = getFollowUpBucket;
 
 const PRIORITY_TONE: Record<string, { icon: typeof Flame; cls: string; label: string }> = {
   hot: { icon: Flame, cls: "bg-rose-50 text-rose-700 border-rose-100", label: "Hot" },

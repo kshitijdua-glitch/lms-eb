@@ -55,7 +55,7 @@ export function ClusterHeadDashboard() {
   // System alerts
   const today = new Date().toISOString().split("T")[0];
   const inactiveAgents = agents.filter(a => a.status === "inactive").length;
-  const dndLeads = leads.filter(l => l.dndStatus === "dnd_registered").length;
+  const consentMissing = leads.filter(l => l.consentStatus === "not_sent" && l.callLogs.length > 0).length;
   const missedFUs = leads.flatMap(l => l.followUps).filter(f => f.status === "missed").length;
   const staleSTBs = leads.flatMap(l => l.stbSubmissions).filter(s => {
     const days = Math.floor((Date.now() - new Date(s.submittedAt).getTime()) / 86400000);
@@ -68,7 +68,7 @@ export function ClusterHeadDashboard() {
 
   const alerts = [
     { label: "Inactive Agents", value: inactiveAgents, severity: inactiveAgents > 0 ? "warning" : "ok" },
-    { label: "DND Violations Risk", value: dndLeads, severity: dndLeads > 3 ? "error" : "ok" },
+    { label: "Consent Missing", value: consentMissing, severity: consentMissing > 3 ? "error" : "ok" },
     { label: "Missed Follow-Ups", value: missedFUs, severity: missedFUs > 5 ? "error" : missedFUs > 0 ? "warning" : "ok" },
     { label: "Stale STBs (>7d)", value: staleSTBs, severity: staleSTBs > 0 ? "warning" : "ok" },
     { label: "Expiring Leads (7d)", value: expiringLeads, severity: expiringLeads > 3 ? "error" : expiringLeads > 0 ? "warning" : "ok" },
