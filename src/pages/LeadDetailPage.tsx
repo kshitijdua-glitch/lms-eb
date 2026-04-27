@@ -212,33 +212,33 @@ const LeadDetailPage = () => {
   const groups = dispositionGroups();
 
   return (
-    <div className="flex gap-0 -m-6">
+    <div className="flex gap-0 -m-6 min-h-screen">
       {/* Lead List Sidebar */}
       <div className={cn(
-        "border-r border-dashed bg-card shrink-0 flex flex-col transition-all duration-200",
-        leadSidebarOpen ? "w-72" : "w-10"
+        "border-r border-border bg-card shrink-0 flex flex-col transition-all duration-200",
+        leadSidebarOpen ? "w-80" : "w-12"
       )}>
-        <div className="flex items-center justify-between p-2 border-b border-dashed">
-          {leadSidebarOpen && <span className="text-xs font-semibold px-1">Leads</span>}
-          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setLeadSidebarOpen(!leadSidebarOpen)}>
-            {leadSidebarOpen ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+          {leadSidebarOpen && <span className="text-sm font-semibold">Leads</span>}
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setLeadSidebarOpen(!leadSidebarOpen)}>
+            {leadSidebarOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           </Button>
         </div>
         {leadSidebarOpen && (
           <>
-            <div className="p-2 border-b border-dashed">
+            <div className="p-3 border-b border-border">
               <div className="relative">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input
-                  placeholder="Search..."
+                  placeholder="Search"
                   value={leadListSearch}
                   onChange={e => setLeadListSearch(e.target.value)}
-                  className="h-7 text-xs pl-7"
+                  className="h-9 text-xs pl-8 bg-background"
                 />
               </div>
             </div>
             <ScrollArea className="flex-1">
-              <div className="divide-y divide-dashed">
+              <div className="divide-y divide-border">
                 {filteredLeads.map(l => {
                   const daysSince = Math.floor((Date.now() - new Date(l.lastActivityAt || l.allocatedAt).getTime()) / 86400000);
                   const isCurrent = l.id === id;
@@ -246,22 +246,25 @@ const LeadDetailPage = () => {
                     <button
                       key={l.id}
                       className={cn(
-                        "w-full text-left px-3 py-2.5 hover:bg-muted/50 transition-colors",
-                        isCurrent && "bg-muted border-l-2 border-primary"
+                        "w-full text-left px-4 py-3.5 hover:bg-muted/40 transition-colors relative",
+                        isCurrent && "bg-primary/5"
                       )}
                       onClick={() => navigate(`/leads/${l.id}`)}
                     >
-                      <div className="text-xs font-medium truncate">{l.name}</div>
-                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                        <Badge variant="outline" className="text-[10px] px-1 py-0">{getStageLabel(l.stage)}</Badge>
-                        <Badge variant="secondary" className="text-[10px] px-1 py-0">{getProductLabel(l.productType)}</Badge>
-                        <span className="text-[10px] text-muted-foreground ml-auto">{daysSince}d</span>
+                      {isCurrent && <span className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary" />}
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <span className="text-sm font-semibold text-foreground truncate">{l.name}</span>
+                        <SoftPill tone={l.stage}>{getStageLabel(l.stage)}</SoftPill>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>{getProductLabel(l.productType)}</span>
+                        <span>{daysSince}d</span>
                       </div>
                     </button>
                   );
                 })}
                 {filteredLeads.length === 0 && (
-                  <div className="p-4 text-xs text-muted-foreground text-center">No leads found</div>
+                  <div className="p-6 text-xs text-muted-foreground text-center">No leads found</div>
                 )}
               </div>
             </ScrollArea>
@@ -270,23 +273,23 @@ const LeadDetailPage = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 min-w-0 p-6 overflow-auto space-y-4">
+      <div className="flex-1 min-w-0 p-8 overflow-auto space-y-6">
       {/* Action Bar */}
       <div className="flex items-center gap-3 flex-wrap">
-        <Button variant="ghost" size="sm" onClick={() => navigate("/leads")}>
-          <ArrowLeft className="h-4 w-4 mr-1" /> Back to Leads
+        <Button variant="ghost" size="sm" onClick={() => navigate("/leads")} className="text-muted-foreground hover:text-foreground -ml-2">
+          <ArrowLeft className="h-4 w-4 mr-1.5" /> Back to Leads
         </Button>
         <div className="flex-1" />
-        <Button size="sm" onClick={() => setShowCallLog(true)}><Phone className="h-4 w-4 mr-1" /> Log Call</Button>
-        <Button size="sm" variant="outline" onClick={handleSendToBank}><Send className="h-4 w-4 mr-1" /> Send to Bank</Button>
-        <Button size="sm" variant="outline" onClick={() => setShowEMI(true)}><Calculator className="h-4 w-4 mr-1" /> EMI Calc</Button>
+        <Button size="sm" onClick={() => setShowCallLog(true)} className="h-9"><Phone className="h-4 w-4 mr-1.5" /> Log Call</Button>
+        <Button size="sm" variant="outline" onClick={handleSendToBank} className="h-9"><Send className="h-4 w-4 mr-1.5" /> Send to Bank</Button>
+        <Button size="sm" variant="outline" onClick={() => setShowEMI(true)} className="h-9"><Calculator className="h-4 w-4 mr-1.5" /> EMI Calculator</Button>
         {(role === "manager" || role === "cluster_head") && (
-          <Button size="sm" variant="outline" onClick={() => setShowReassign(true)}>
-            <Shuffle className="h-4 w-4 mr-1" /> Reassign
+          <Button size="sm" variant="outline" onClick={() => setShowReassign(true)} className="h-9">
+            <Shuffle className="h-4 w-4 mr-1.5" /> Reassign
           </Button>
         )}
         {(role === "manager" || role === "cluster_head") && (lead.stage === "closed_lost" || lead.stage === "declined") && (
-          <Button size="sm" variant="secondary" onClick={() => setShowOverride(true)}>
+          <Button size="sm" variant="secondary" onClick={() => setShowOverride(true)} className="h-9">
             Override
           </Button>
         )}
