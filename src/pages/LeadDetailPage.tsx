@@ -615,133 +615,189 @@ const LeadDetailPage = () => {
       </div>
 
       {/* Unified History Timeline */}
-      <Card>
-        <CardHeader className="pb-2"><CardTitle className="text-sm">Activity History</CardTitle></CardHeader>
-        <CardContent>
+      <Card className="shadow-none">
+        <CardHeader className="pb-3 border-b">
+          <CardTitle className="text-sm flex items-center gap-2.5">
+            <span className="h-7 w-7 rounded-md bg-primary/10 text-primary flex items-center justify-center">
+              <Clock className="h-4 w-4" />
+            </span>
+            Activity History
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
           <Tabs defaultValue="all">
-            <TabsList>
-              <TabsTrigger value="all" className="text-xs">All ({timelineEvents.length})</TabsTrigger>
-              <TabsTrigger value="calls" className="text-xs">Calls ({lead.callLogs.length})</TabsTrigger>
-              <TabsTrigger value="followups" className="text-xs">Follow-Ups ({lead.followUps.length})</TabsTrigger>
-              <TabsTrigger value="stb" className="text-xs">STB ({lead.stbSubmissions.length})</TabsTrigger>
-            </TabsList>
-            <TabsContent value="all" className="mt-3">
-              <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                {timelineEvents.map((ev, idx) => (
-                  <div key={idx} className="flex gap-3 p-2 rounded border text-xs">
-                    <div className={`h-6 w-6 rounded-full flex items-center justify-center shrink-0 ${
-                      ev.type === "call" ? ((ev.data as any).outcome === "connected" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive")
-                      : ev.type === "stb" ? "bg-primary/10 text-primary"
-                      : ev.type === "note" ? "bg-muted text-muted-foreground"
-                      : "bg-warning/10 text-warning"
-                    }`}>
-                      {ev.type === "call" ? <Phone className="h-3 w-3" /> : ev.type === "stb" ? <Send className="h-3 w-3" /> : ev.type === "note" ? <FileText className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+            <div className="px-5 pt-4">
+              <TabsList className="bg-transparent p-0 h-auto gap-6 border-b border-border w-full justify-start rounded-none">
+                {[
+                  { v: "all", label: "All", count: timelineEvents.length },
+                  { v: "calls", label: "Call", count: lead.callLogs.length },
+                  { v: "followups", label: "Follow-up", count: lead.followUps.length },
+                  { v: "stb", label: "STB", count: lead.stbSubmissions.length },
+                ].map(t => (
+                  <TabsTrigger
+                    key={t.v}
+                    value={t.v}
+                    className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 pb-3 -mb-px text-sm font-medium text-muted-foreground"
+                  >
+                    {t.label}
+                    <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground tabular-nums">
+                      {String(t.count).padStart(2, "0")}
+                    </span>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
+            <TabsContent value="all" className="mt-0">
+              <div className="divide-y divide-border/60">
+                {timelineEvents.map((ev, idx) => {
+                  const iconBg = ev.type === "call" ? "bg-blue-50 text-blue-600"
+                    : ev.type === "stb" ? "bg-indigo-50 text-indigo-600"
+                    : ev.type === "note" ? "bg-slate-100 text-slate-600"
+                    : "bg-amber-50 text-amber-600";
+                  const Icon = ev.type === "call" ? Phone : ev.type === "stb" ? Send : ev.type === "note" ? StickyNote : Clock;
+                  const typeLabel = ev.type === "call" ? "Call" : ev.type === "stb" ? "STB" : ev.type === "note" ? "Note" : "Follow-up";
+                  const typeTone = ev.type === "call" ? "tone=\"new\"" : ev.type === "stb" ? "tone=\"submitted\"" : ev.type === "note" ? "tone=\"closed_lost\"" : "tone=\"pending\"";
+                  return (
+                    <div key={idx} className="flex items-start gap-4 px-5 py-4">
+                      <div className={cn("h-9 w-9 rounded-full flex items-center justify-center shrink-0", iconBg)}>
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        {ev.type === "call" && (() => {
+                          const cl = ev.data as typeof lead.callLogs[0];
+                          return <>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <SoftPill tone="new">Call</SoftPill>
+                              <span className="text-sm font-semibold text-foreground">{cl.outcome === "connected" ? "Connected" : "Not Connected"}</span>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">{cl.notes || getDispositionLabel(cl.disposition)}</p>
+                          </>;
+                        })()}
+                        {ev.type === "followup" && (() => {
+                          const fu = ev.data as typeof lead.followUps[0];
+                          return <>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <SoftPill tone="pending">Follow-up</SoftPill>
+                              <span className="text-sm font-semibold text-foreground capitalize">{fu.type.replace(/_/g, " ")}</span>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">Scheduled for {new Date(fu.scheduledAt).toLocaleString()}</p>
+                          </>;
+                        })()}
+                        {ev.type === "stb" && (() => {
+                          const s = ev.data as typeof lead.stbSubmissions[0];
+                          return <>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <SoftPill tone="submitted">STB</SoftPill>
+                              <span className="text-sm font-semibold text-foreground">{s.partnerName}</span>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">{s.remarks || "Submission update"}</p>
+                          </>;
+                        })()}
+                        {ev.type === "note" && (() => {
+                          const n = ev.data as typeof lead.notes[0];
+                          return <>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <SoftPill tone="closed_lost">Note</SoftPill>
+                              <span className="text-sm font-semibold text-foreground">{n.text}</span>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">{n.agentName}</p>
+                          </>;
+                        })()}
+                      </div>
+                      <div className="text-right shrink-0 space-y-1">
+                        {ev.type === "followup" && (() => {
+                          const fu = ev.data as typeof lead.followUps[0];
+                          return <SoftPill tone={fu.status === "completed" ? "completed" : fu.status === "missed" ? "missed" : "pending"}>
+                            {fu.status.charAt(0).toUpperCase() + fu.status.slice(1)}
+                          </SoftPill>;
+                        })()}
+                        {ev.type === "stb" && (() => {
+                          const s = ev.data as typeof lead.stbSubmissions[0];
+                          return <SoftPill tone={s.status === "approved" || s.status === "disbursed" ? "completed" : s.status === "declined" ? "missed" : "submitted"}>
+                            {s.status.charAt(0).toUpperCase() + s.status.slice(1)}
+                          </SoftPill>;
+                        })()}
+                        {ev.type === "note" && <SoftPill tone="completed">Completed</SoftPill>}
+                        <div className="text-xs text-muted-foreground tabular-nums">
+                          {new Date(ev.timestamp).toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                {timelineEvents.length === 0 && (
+                  <div className="px-5 py-12 text-center text-sm text-muted-foreground">No activity yet</div>
+                )}
+              </div>
+            </TabsContent>
+            <TabsContent value="calls" className="mt-0">
+              <div className="divide-y divide-border/60">
+                {lead.callLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).map(cl => (
+                  <div key={cl.id} className="flex items-start gap-4 px-5 py-4">
+                    <div className="h-9 w-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                      <Phone className="h-4 w-4" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      {ev.type === "call" && (() => {
-                        const cl = ev.data as typeof lead.callLogs[0];
-                        return <>
-                          <div className="flex items-center gap-1 flex-wrap">
-                            <Badge variant="outline" className="text-[9px]">Call</Badge>
-                            {cl.agentId === "agent-9" && <Badge className="text-[9px] bg-primary/20 text-primary">Manager</Badge>}
-                            {role === "cluster_head" && <Badge className="text-[9px] bg-warning/20 text-warning">Cluster Head</Badge>}
-                            <span className="font-medium">{cl.outcome === "connected" ? "Connected" : "Not Connected"}</span>
-                            <Badge variant="outline" className="text-[9px]">{getDispositionLabel(cl.disposition)}</Badge>
-                            <span className="text-muted-foreground">{Math.floor(cl.duration / 60)}m {cl.duration % 60}s</span>
-                          </div>
-                          <p className="text-muted-foreground mt-0.5">{cl.notes}</p>
-                          <div className="text-[10px] text-muted-foreground mt-0.5">{new Date(cl.timestamp).toLocaleString()} · {cl.agentName}</div>
-                        </>;
-                      })()}
-                      {ev.type === "followup" && (() => {
-                        const fu = ev.data as typeof lead.followUps[0];
-                        return <>
-                          <div className="flex items-center gap-1">
-                            <Badge variant="outline" className="text-[9px]">Follow-Up</Badge>
-                            <span className="font-medium capitalize">{fu.type.replace(/_/g, " ")}</span>
-                            <Badge variant={fu.status === "completed" ? "default" : fu.status === "missed" ? "destructive" : "secondary"} className="text-[9px]">{fu.status}</Badge>
-                          </div>
-                          <div className="text-[10px] text-muted-foreground mt-0.5">{new Date(fu.scheduledAt).toLocaleString()}</div>
-                        </>;
-                      })()}
-                      {ev.type === "stb" && (() => {
-                        const s = ev.data as typeof lead.stbSubmissions[0];
-                        return <>
-                          <div className="flex items-center gap-1">
-                            <Badge variant="outline" className="text-[9px]">STB</Badge>
-                            <span className="font-medium">{s.partnerName}</span>
-                            <Badge variant={s.status === "approved" ? "default" : s.status === "declined" ? "destructive" : "secondary"} className="text-[9px]">{s.status}</Badge>
-                          </div>
-                          <div className="text-[10px] text-muted-foreground mt-0.5">{new Date(s.submittedAt).toLocaleString()}</div>
-                        </>;
-                      })()}
-                      {ev.type === "note" && (() => {
-                        const n = ev.data as typeof lead.notes[0];
-                        return <>
-                          <div className="flex items-center gap-1">
-                            <Badge variant="outline" className="text-[9px]">Note</Badge>
-                            <span>{n.text}</span>
-                          </div>
-                          <div className="text-[10px] text-muted-foreground mt-0.5">{new Date(n.createdAt).toLocaleString()} · {n.agentName}</div>
-                        </>;
-                      })()}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </TabsContent>
-            <TabsContent value="calls" className="mt-3">
-              <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                {lead.callLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).map(cl => (
-                  <div key={cl.id} className="flex gap-3 p-2 rounded border text-xs">
-                    <div className={`h-6 w-6 rounded-full flex items-center justify-center shrink-0 ${cl.outcome === "connected" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}`}>
-                      <Phone className="h-3 w-3" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-1 flex-wrap">
-                        <span className="font-medium">{cl.outcome === "connected" ? "Connected" : "Not Connected"}</span>
-                        <Badge variant="outline" className="text-[9px]">{getDispositionLabel(cl.disposition)}</Badge>
-                        <span className="text-muted-foreground">{Math.floor(cl.duration / 60)}m {cl.duration % 60}s</span>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <SoftPill tone="new">Call</SoftPill>
+                        <span className="text-sm font-semibold">{cl.outcome === "connected" ? "Connected" : "Not Connected"}</span>
                       </div>
-                      <p className="text-muted-foreground mt-0.5">{cl.notes}</p>
-                      <div className="text-[10px] text-muted-foreground mt-0.5">{new Date(cl.timestamp).toLocaleString()} · {cl.agentName}</div>
+                      <p className="text-sm text-muted-foreground mt-1">{cl.notes || getDispositionLabel(cl.disposition)}</p>
                     </div>
+                    <div className="text-xs text-muted-foreground tabular-nums shrink-0">{new Date(cl.timestamp).toLocaleString()}</div>
                   </div>
                 ))}
+                {lead.callLogs.length === 0 && (
+                  <div className="px-5 py-12 text-center text-sm text-muted-foreground">No calls logged</div>
+                )}
               </div>
             </TabsContent>
-            <TabsContent value="followups" className="mt-3">
-              <div className="space-y-2">
+            <TabsContent value="followups" className="mt-0">
+              <div className="divide-y divide-border/60">
                 {lead.followUps.map(fu => (
-                  <div key={fu.id} className="flex gap-3 p-2 rounded border text-xs">
-                    <div className={`h-6 w-6 rounded-full flex items-center justify-center shrink-0 ${fu.status === "completed" ? "bg-success/10 text-success" : fu.status === "missed" ? "bg-destructive/10 text-destructive" : "bg-warning/10 text-warning"}`}>
-                      <Clock className="h-3 w-3" />
+                  <div key={fu.id} className="flex items-start gap-4 px-5 py-4">
+                    <div className="h-9 w-9 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                      <Clock className="h-4 w-4" />
                     </div>
-                    <div>
-                      <div className="flex items-center gap-1">
-                        <span className="font-medium capitalize">{fu.type.replace(/_/g, " ")}</span>
-                        <Badge variant={fu.status === "completed" ? "default" : fu.status === "missed" ? "destructive" : "secondary"} className="text-[9px]">{fu.status}</Badge>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <SoftPill tone="pending">Follow-up</SoftPill>
+                        <span className="text-sm font-semibold capitalize">{fu.type.replace(/_/g, " ")}</span>
                       </div>
-                      <div className="text-[10px] text-muted-foreground mt-0.5">{new Date(fu.scheduledAt).toLocaleString()}</div>
+                      <p className="text-sm text-muted-foreground mt-1">{new Date(fu.scheduledAt).toLocaleString()}</p>
                     </div>
+                    <SoftPill tone={fu.status === "completed" ? "completed" : fu.status === "missed" ? "missed" : "pending"}>
+                      {fu.status.charAt(0).toUpperCase() + fu.status.slice(1)}
+                    </SoftPill>
                   </div>
                 ))}
+                {lead.followUps.length === 0 && (
+                  <div className="px-5 py-12 text-center text-sm text-muted-foreground">No follow-ups</div>
+                )}
               </div>
             </TabsContent>
-            <TabsContent value="stb" className="mt-3">
-              <div className="space-y-2">
+            <TabsContent value="stb" className="mt-0">
+              <div className="divide-y divide-border/60">
                 {lead.stbSubmissions.map(s => (
-                  <div key={s.id} className="p-2 rounded border text-xs space-y-1">
-                    <div className="flex justify-between">
-                      <span className="font-medium">{s.partnerName}</span>
-                      <Badge variant={s.status === "disbursed" ? "default" : s.status === "approved" ? "default" : s.status === "declined" ? "destructive" : "secondary"} className="text-[9px]">{s.status}</Badge>
+                  <div key={s.id} className="flex items-start gap-4 px-5 py-4">
+                    <div className="h-9 w-9 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                      <Send className="h-4 w-4" />
                     </div>
-                    <div className="text-[10px] text-muted-foreground">Submitted: {new Date(s.submittedAt).toLocaleDateString()}</div>
-                    {s.sanctionAmount && <div className="text-[10px]">Sanction: ₹{s.sanctionAmount.toLocaleString()}</div>}
-                    {s.disbursedAmount && <div className="text-[10px] text-success">Disbursed: ₹{s.disbursedAmount.toLocaleString()} on {s.disbursementDate ? new Date(s.disbursementDate).toLocaleDateString() : "—"}</div>}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <SoftPill tone="submitted">STB</SoftPill>
+                        <span className="text-sm font-semibold">{s.partnerName}</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">Submitted {new Date(s.submittedAt).toLocaleDateString()}</p>
+                    </div>
+                    <SoftPill tone={s.status === "approved" || s.status === "disbursed" ? "completed" : s.status === "declined" ? "missed" : "submitted"}>
+                      {s.status.charAt(0).toUpperCase() + s.status.slice(1)}
+                    </SoftPill>
                   </div>
                 ))}
-                {lead.stbSubmissions.length === 0 && <p className="text-xs text-muted-foreground">No STB submissions</p>}
+                {lead.stbSubmissions.length === 0 && (
+                  <div className="px-5 py-12 text-center text-sm text-muted-foreground">No STB submissions</div>
+                )}
               </div>
             </TabsContent>
           </Tabs>
