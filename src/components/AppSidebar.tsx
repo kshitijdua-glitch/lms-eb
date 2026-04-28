@@ -80,7 +80,7 @@ export function AppSidebar() {
       <SidebarHeader className="p-4">
         {!collapsed && (
           <div className="flex items-center gap-2 mb-4">
-            <div className="h-8 w-8 rounded-lg bg-sidebar-primary flex items-center justify-center overflow-hidden">
+            <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center overflow-hidden ring-1 ring-sidebar-border shadow-sm">
               <img src={logoUrl} alt="Smart LMS logo" className="h-5 w-5 object-contain" />
             </div>
             <span className="font-semibold text-lg text-sidebar-foreground">Smart LMS</span>
@@ -88,7 +88,7 @@ export function AppSidebar() {
         )}
         {collapsed && (
           <div className="flex justify-center mb-2">
-            <div className="h-8 w-8 rounded-lg bg-sidebar-primary flex items-center justify-center overflow-hidden">
+            <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center overflow-hidden ring-1 ring-sidebar-border shadow-sm">
               <img src={logoUrl} alt="Smart LMS logo" className="h-5 w-5 object-contain" />
             </div>
           </div>
