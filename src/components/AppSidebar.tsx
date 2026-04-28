@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UserRole } from "@/types/lms";
+import logoUrl from "@/assets/logo.png";
 
 const agentNav = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -79,16 +80,16 @@ export function AppSidebar() {
       <SidebarHeader className="p-4">
         {!collapsed && (
           <div className="flex items-center gap-2 mb-4">
-            <div className="h-8 w-8 rounded-lg bg-sidebar-primary flex items-center justify-center">
-              <span className="text-sidebar-primary-foreground text-sm font-bold">S</span>
+            <div className="h-8 w-8 rounded-lg bg-sidebar-primary flex items-center justify-center overflow-hidden">
+              <img src={logoUrl} alt="Smart LMS logo" className="h-5 w-5 object-contain" />
             </div>
             <span className="font-semibold text-lg text-sidebar-foreground">Smart LMS</span>
           </div>
         )}
         {collapsed && (
           <div className="flex justify-center mb-2">
-            <div className="h-8 w-8 rounded-lg bg-sidebar-primary flex items-center justify-center">
-              <span className="text-sidebar-primary-foreground text-sm font-bold">S</span>
+            <div className="h-8 w-8 rounded-lg bg-sidebar-primary flex items-center justify-center overflow-hidden">
+              <img src={logoUrl} alt="Smart LMS logo" className="h-5 w-5 object-contain" />
             </div>
           </div>
         )}
