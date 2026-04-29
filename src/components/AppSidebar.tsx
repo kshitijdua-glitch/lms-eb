@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UserRole } from "@/types/lms";
+import { useAuth } from "@/contexts/AuthContext";
 import logoUrl from "@/assets/logo.png";
 
 const agentNav = [
@@ -72,8 +73,15 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { role, setRole } = useRole();
+  const { user, updateRole } = useAuth();
   const location = useLocation();
   const nav = getNav(role);
+
+  const handleRoleChange = (v: string) => {
+    const next = v as UserRole;
+    setRole(next);
+    updateRole(next);
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -94,7 +102,7 @@ export function AppSidebar() {
           </div>
         )}
         {!collapsed && (
-          <Select value={role} onValueChange={(v) => setRole(v as UserRole)}>
+          <Select value={role} onValueChange={handleRoleChange}>
             <SelectTrigger className="w-full bg-sidebar-accent text-sidebar-foreground border-sidebar-border text-xs">
               <SelectValue />
             </SelectTrigger>
@@ -134,8 +142,13 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="p-4">
         {!collapsed && (
-          <div className="text-xs text-sidebar-foreground/50">
-            v1.0 Prototype
+          <div className="space-y-1">
+            {user && (
+              <div className="text-xs text-sidebar-foreground/70 truncate">
+                Signed in as <span className="font-medium text-sidebar-foreground">{user.name}</span>
+              </div>
+            )}
+            <div className="text-xs text-sidebar-foreground/50">v1.0 Prototype</div>
           </div>
         )}
       </SidebarFooter>

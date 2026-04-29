@@ -3,6 +3,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { useRole, roleLabels } from "@/contexts/RoleContext";
 import { Badge } from "@/components/ui/badge";
 import { NotificationsDrawer } from "@/components/NotificationsDrawer";
+import { ProfileMenu } from "@/components/ProfileMenu";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { role } = useRole();
@@ -19,9 +20,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               {roleLabels[role]}
             </Badge>
             <NotificationsDrawer />
-            <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground text-xs font-medium">AV</span>
-            </div>
+            <ProfileMenu />
           </header>
           <main className="flex-1 overflow-auto p-6">
             {children}
