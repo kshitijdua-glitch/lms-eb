@@ -13,7 +13,7 @@ import { UserRole } from "@/types/lms";
 import logoUrl from "@/assets/logo.png";
 
 const agentNav = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Dashboard", url: "/app", icon: LayoutDashboard },
   { title: "My Leads", url: "/leads", icon: Users },
   { title: "Follow-Ups", url: "/follow-ups", icon: Clock },
   { title: "My STB", url: "/stb", icon: Send },
@@ -21,7 +21,7 @@ const agentNav = [
 ];
 
 const managerNav = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Dashboard", url: "/app", icon: LayoutDashboard },
   { title: "My Leads", url: "/leads", icon: Users },
   { title: "My Follow-Ups", url: "/follow-ups", icon: Clock },
   { title: "My STB", url: "/stb", icon: Send },
@@ -35,7 +35,7 @@ const managerNav = [
 ];
 
 const clusterHeadNav = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Dashboard", url: "/app", icon: LayoutDashboard },
   { title: "Org Leads", url: "/org-leads", icon: Users },
   { title: "Org Follow-Ups", url: "/org-follow-ups", icon: Clock },
   { title: "Org STB", url: "/org-stb", icon: Send },
@@ -48,7 +48,7 @@ const clusterHeadNav = [
 ];
 
 const adminNav = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Dashboard", url: "/app", icon: LayoutDashboard },
   { title: "Lead Upload", url: "/admin/upload", icon: Upload },
   { title: "Lead Allocation", url: "/admin/allocation", icon: Users },
   { title: "Lead Pools", url: "/admin/pools", icon: FileText },
@@ -118,7 +118,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink
                       to={item.url}
-                      end={item.url === "/"}
+                      end={item.url === "/app"}
                       className="hover:bg-sidebar-accent/50"
                       activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                     >
