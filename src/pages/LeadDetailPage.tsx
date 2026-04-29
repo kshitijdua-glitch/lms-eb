@@ -451,7 +451,25 @@ const LeadDetailPage = () => {
         </Button>
         <div className="flex-1" />
         <Button size="sm" onClick={() => setShowCallLog(true)} className="h-9"><Phone className="h-4 w-4 mr-1.5" /> Log Call</Button>
-        <Button size="sm" variant="outline" onClick={handleSendToBank} disabled={isProfileLocked} className="h-9"><Send className="h-4 w-4 mr-1.5" /> Send to Bank</Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span tabIndex={0}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleSendToBank}
+                disabled={isProfileLocked || !consentReceived}
+                className="h-9"
+                aria-label="Send to Bank"
+              >
+                <Send className="h-4 w-4 mr-1.5" /> Send to Bank
+              </Button>
+            </span>
+          </TooltipTrigger>
+          {!consentReceived && !isProfileLocked && (
+            <TooltipContent>Customer consent required before STB</TooltipContent>
+          )}
+        </Tooltip>
         <Button size="sm" variant="outline" onClick={() => setShowEMI(true)} className="h-9"><Calculator className="h-4 w-4 mr-1.5" /> EMI Calculator</Button>
         {(role === "manager" || role === "cluster_head") && (
           <Button size="sm" variant="outline" onClick={() => setShowReassign(true)} className="h-9">
