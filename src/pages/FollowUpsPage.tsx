@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Phone, CalendarClock, Check, Flame, Snowflake, Sun, Clock, AlertTriangle } from "lucide-react";
+import { CalendarClock, UserRound, Flame, Snowflake, Sun, Clock, AlertTriangle } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { useAudit, buildActor } from "@/contexts/AuditContext";
@@ -37,7 +37,7 @@ const FollowUpsPage = () => {
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [productFilter, setProductFilter] = useState("all");
   const [tab, setTab] = useState<Bucket>("overdue");
-  const [completedLocal, setCompletedLocal] = useState<Record<string, true>>({});
+  
 
   const allLeads = role === "agent" ? getLeadsForAgent("agent-1") : leads;
 
@@ -58,7 +58,7 @@ const FollowUpsPage = () => {
   const buckets = useMemo(() => {
     const out: Record<Bucket, FUItem[]> = { overdue: [], today: [], upcoming: [], completed: [] };
     for (const f of allFollowUps) {
-      const isCompleted = f.status === "completed" || completedLocal[f.id];
+      const isCompleted = f.status === "completed";
       const b = isCompleted ? "completed" : bucketOf(f.scheduledAt, f.status);
       out[b].push(f);
     }
@@ -66,12 +66,7 @@ const FollowUpsPage = () => {
     out.today.sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
     out.upcoming.sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
     return out;
-  }, [allFollowUps, completedLocal]);
-
-  const handleCall = (f: FUItem) => {
-    logAudit({ ...actor, action: "call_initiated", entityType: "follow_up", entityId: f.id, entityLabel: f.leadName, after: { mobile: f.leadMobile } });
-    toast.success(`Calling ${f.leadName}…`);
-  };
+  }, [allFollowUps]);
 
   const handleReschedule = (f: FUItem) => {
     logAudit({ ...actor, action: "reschedule_follow_up", entityType: "follow_up", entityId: f.id, entityLabel: f.leadName, before: { scheduledAt: f.scheduledAt } });
@@ -79,10 +74,9 @@ const FollowUpsPage = () => {
     navigate(`/leads/${f.leadId}`);
   };
 
-  const handleComplete = (f: FUItem) => {
-    setCompletedLocal(prev => ({ ...prev, [f.id]: true }));
-    logAudit({ ...actor, action: "complete_follow_up", entityType: "follow_up", entityId: f.id, entityLabel: f.leadName, after: { status: "completed" } });
-    toast.success(`Follow-up marked complete for ${f.leadName}`);
+  const handleContact = (f: FUItem) => {
+    logAudit({ ...actor, action: "view_lead_from_followup", entityType: "follow_up", entityId: f.id, entityLabel: f.leadName });
+    navigate(`/leads/${f.leadId}`);
   };
 
   const FollowUpCard = ({ f, bucket }: { f: FUItem; bucket: Bucket }) => {
@@ -131,14 +125,11 @@ const FollowUpsPage = () => {
           </div>
           {!isCompleted && (
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleCall(f)}>
-                <Phone className="h-3 w-3 mr-1" /> Call
-              </Button>
               <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleReschedule(f)}>
                 <CalendarClock className="h-3 w-3 mr-1" /> Reschedule
               </Button>
-              <Button size="sm" className="h-7 text-xs" onClick={() => handleComplete(f)}>
-                <Check className="h-3 w-3 mr-1" /> Complete
+              <Button size="sm" className="h-7 text-xs" onClick={() => handleContact(f)}>
+                <UserRound className="h-3 w-3 mr-1" /> Contact
               </Button>
             </div>
           )}
