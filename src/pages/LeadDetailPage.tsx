@@ -484,17 +484,68 @@ const LeadDetailPage = () => {
       </div>
 
       {/* Compliance Banner */}
-      {lead.consentStatus !== "received" && lead.callLogs.length > 0 && (
+      {!consentReceived ? (
         <div className="rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3 flex items-start gap-3">
           <div className="h-8 w-8 rounded-md bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
             <ShieldAlert className="h-4 w-4" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-semibold text-amber-900">Consent required</div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm font-semibold text-amber-900">Consent required</span>
+              <SoftPill tone={consentStatus === "sent" ? "pending" : consentStatus === "expired" ? "missed" : "warm"}>
+                {consentStatus.replace(/_/g, " ")}
+              </SoftPill>
+            </div>
             <p className="text-xs text-amber-900/80 mt-0.5">
-              Customer consent is <strong>{lead.consentStatus.replace(/_/g, " ")}</strong>. Capture consent before sharing data with partner banks.
+              {consentStatus === "sent" && consentSentAt
+                ? <>SMS consent sent to <strong>{lead.mobile}</strong> at {consentSentAt.toLocaleTimeString()}. Awaiting customer response.</>
+                : <>Customer consent must be captured before sharing data with partner banks. STB is disabled until consent is received.</>}
             </p>
           </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleTriggerConsent}
+              className="h-8 bg-white border-amber-300 text-amber-900 hover:bg-amber-100"
+              aria-label="Trigger SMS consent"
+            >
+              <Send className="h-3.5 w-3.5 mr-1.5" />
+              {consentStatus === "sent" ? "Resend SMS" : "Trigger SMS Consent"}
+            </Button>
+            {consentStatus === "sent" && (
+              <Button
+                size="sm"
+                onClick={handleMarkConsentReceived}
+                className="h-8 bg-amber-700 hover:bg-amber-800 text-white"
+                aria-label="Mark consent received"
+              >
+                <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                Mark Received
+              </Button>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 px-4 py-3 flex items-center gap-3">
+          <div className="h-8 w-8 rounded-md bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="h-4 w-4" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-semibold text-emerald-900">Consent received</div>
+            <p className="text-xs text-emerald-900/80 mt-0.5">Customer has authorized data sharing with partner banks. STB is unlocked.</p>
+          </div>
+          {(role === "manager" || role === "cluster_head" || role === "data_admin") && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleClearConsent}
+              className="h-8 text-emerald-900 hover:bg-emerald-100"
+              aria-label="Clear consent flag"
+            >
+              Clear flag
+            </Button>
+          )}
         </div>
       )}
 
