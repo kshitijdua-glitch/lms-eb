@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Phone, CalendarClock, Check, Flame, Snowflake, Sun, Clock, AlertTriangle } from "lucide-react";
+import { CalendarClock, UserRound, Flame, Snowflake, Sun, Clock, AlertTriangle } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { useAudit, buildActor } from "@/contexts/AuditContext";
