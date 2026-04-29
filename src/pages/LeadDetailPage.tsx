@@ -109,6 +109,8 @@ const LeadDetailPage = () => {
   const [leadSidebarOpen, setLeadSidebarOpen] = useState(true);
   const [leadListSearch, setLeadListSearch] = useState("");
   const [priorityOverride, setPriorityOverride] = useState<string | null>(null);
+  const [consentStatus, setConsentStatus] = useState<"not_sent" | "sent" | "received" | "expired">(lead?.consentStatus || "not_sent");
+  const [consentSentAt, setConsentSentAt] = useState<Date | null>(null);
 
   if (!lead) return <div className="p-8 text-center text-muted-foreground">Lead not found</div>;
 
