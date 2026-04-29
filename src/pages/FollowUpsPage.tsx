@@ -58,7 +58,7 @@ const FollowUpsPage = () => {
   const buckets = useMemo(() => {
     const out: Record<Bucket, FUItem[]> = { overdue: [], today: [], upcoming: [], completed: [] };
     for (const f of allFollowUps) {
-      const isCompleted = f.status === "completed" || completedLocal[f.id];
+      const isCompleted = f.status === "completed";
       const b = isCompleted ? "completed" : bucketOf(f.scheduledAt, f.status);
       out[b].push(f);
     }
@@ -66,12 +66,7 @@ const FollowUpsPage = () => {
     out.today.sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
     out.upcoming.sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
     return out;
-  }, [allFollowUps, completedLocal]);
-
-  const handleCall = (f: FUItem) => {
-    logAudit({ ...actor, action: "call_initiated", entityType: "follow_up", entityId: f.id, entityLabel: f.leadName, after: { mobile: f.leadMobile } });
-    toast.success(`Calling ${f.leadName}…`);
-  };
+  }, [allFollowUps]);
 
   const handleReschedule = (f: FUItem) => {
     logAudit({ ...actor, action: "reschedule_follow_up", entityType: "follow_up", entityId: f.id, entityLabel: f.leadName, before: { scheduledAt: f.scheduledAt } });
@@ -79,10 +74,9 @@ const FollowUpsPage = () => {
     navigate(`/leads/${f.leadId}`);
   };
 
-  const handleComplete = (f: FUItem) => {
-    setCompletedLocal(prev => ({ ...prev, [f.id]: true }));
-    logAudit({ ...actor, action: "complete_follow_up", entityType: "follow_up", entityId: f.id, entityLabel: f.leadName, after: { status: "completed" } });
-    toast.success(`Follow-up marked complete for ${f.leadName}`);
+  const handleContact = (f: FUItem) => {
+    logAudit({ ...actor, action: "view_lead_from_followup", entityType: "follow_up", entityId: f.id, entityLabel: f.leadName });
+    navigate(`/leads/${f.leadId}`);
   };
 
   const FollowUpCard = ({ f, bucket }: { f: FUItem; bucket: Bucket }) => {
