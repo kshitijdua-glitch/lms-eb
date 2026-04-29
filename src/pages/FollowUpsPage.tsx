@@ -37,7 +37,7 @@ const FollowUpsPage = () => {
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [productFilter, setProductFilter] = useState("all");
   const [tab, setTab] = useState<Bucket>("overdue");
-  const [completedLocal, setCompletedLocal] = useState<Record<string, true>>({});
+  
 
   const allLeads = role === "agent" ? getLeadsForAgent("agent-1") : leads;
 
