@@ -125,14 +125,11 @@ const FollowUpsPage = () => {
           </div>
           {!isCompleted && (
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleCall(f)}>
-                <Phone className="h-3 w-3 mr-1" /> Call
-              </Button>
               <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleReschedule(f)}>
                 <CalendarClock className="h-3 w-3 mr-1" /> Reschedule
               </Button>
-              <Button size="sm" className="h-7 text-xs" onClick={() => handleComplete(f)}>
-                <Check className="h-3 w-3 mr-1" /> Complete
+              <Button size="sm" className="h-7 text-xs" onClick={() => handleContact(f)}>
+                <UserRound className="h-3 w-3 mr-1" /> Contact
               </Button>
             </div>
           )}
