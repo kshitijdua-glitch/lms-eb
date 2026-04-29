@@ -38,6 +38,7 @@ import StaffManagementPage from "./pages/StaffManagementPage";
 import SystemConfigPage from "./pages/SystemConfigPage";
 import LeadAllocationPage from "./pages/LeadAllocationPage";
 import AuditTrailPage from "./pages/AuditTrailPage";
+import LandingPage from "./pages/LandingPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
