@@ -8,6 +8,8 @@ import { RoleProvider } from "@/contexts/RoleContext";
 import { PriorityConfigProvider } from "@/contexts/PriorityConfigContext";
 import { AuditProvider } from "@/contexts/AuditContext";
 import { PartnersProvider } from "@/contexts/PartnersContext";
+import { AuthProvider } from "@/contexts/AuthContext";
+import LoginPage from "./pages/LoginPage";
 import { AppLayout } from "@/components/AppLayout";
 import { RouteGuard } from "@/components/RouteGuard";
 import Index from "./pages/Index";
@@ -50,6 +52,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <AuthProvider>
       <RoleProvider>
         <AuditProvider>
           <PartnersProvider>
@@ -57,6 +60,7 @@ const App = () => (
             <BrowserRouter>
               <Routes>
                 <Route path="/" element={<LandingPage />} />
+                <Route path="/login" element={<LoginPage />} />
                 <Route
                   path="/*"
                   element={
@@ -101,6 +105,7 @@ const App = () => (
           </PartnersProvider>
         </AuditProvider>
       </RoleProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
