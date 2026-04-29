@@ -9,6 +9,7 @@ type RouteRule = { path: string; roles: UserRole[]; prefix?: boolean };
 const RULES: RouteRule[] = [
   // Open to all authenticated roles
   { path: "/", roles: ["agent", "manager", "cluster_head", "data_admin"] },
+  { path: "/app", roles: ["agent", "manager", "cluster_head", "data_admin"] },
   { path: "/leads", roles: ["agent", "manager", "cluster_head", "data_admin"], prefix: true },
   { path: "/follow-ups", roles: ["agent", "manager", "cluster_head", "data_admin"] },
   { path: "/stb", roles: ["agent", "manager", "cluster_head", "data_admin"] },
