@@ -26,7 +26,7 @@ export default function LoginPage() {
     setSubmitting(true);
     const result = login(email, password);
     setSubmitting(false);
-    if (!result.ok) {
+    if (result.ok === false) {
       toast({ title: "Sign in failed", description: result.error, variant: "destructive" });
       return;
     }
