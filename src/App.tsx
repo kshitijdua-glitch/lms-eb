@@ -55,39 +55,47 @@ const App = () => (
           <PartnersProvider>
           <PriorityConfigProvider>
             <BrowserRouter>
-              <AppLayout>
-                <Routes>
-                  <Route path="/" element={guard(<Index />)} />
-                  <Route path="/leads" element={guard(<LeadsPage />)} />
-                  <Route path="/leads/:id" element={guard(<LeadDetailPage />)} />
-                  <Route path="/follow-ups" element={guard(<FollowUpsPage />)} />
-                  <Route path="/stb" element={guard(<STBPage />)} />
-                  <Route path="/performance" element={guard(<PerformancePage />)} />
-                  <Route path="/reports" element={guard(<ReportsPage />)} />
-                  <Route path="/admin/upload" element={guard(<LeadUploadPage />)} />
-                  <Route path="/admin/agents" element={guard(<AgentManagementPage />)} />
-                  <Route path="/admin/config" element={guard(<ConfigPage />)} />
-                  <Route path="/admin/partners" element={guard(<PartnersPage />)} />
-                  <Route path="/admin/allocation" element={guard(<LeadAllocationPage />)} />
-                  <Route path="/admin/pools" element={guard(<LeadPoolsPage />)} />
-                  <Route path="/admin/mis" element={guard(<MISExportPage />)} />
-                  <Route path="/admin/staff" element={guard(<AdminStaffPage />)} />
-                  <Route path="/group-leads" element={guard(<GroupLeadsPage />)} />
-                  <Route path="/group-follow-ups" element={guard(<GroupFollowUpsPage />)} />
-                  <Route path="/group-stb" element={guard(<GroupSTBPage />)} />
-                  <Route path="/group-management" element={guard(<GroupManagementPage />)} />
-                  <Route path="/group-reports" element={guard(<GroupReportsPage />)} />
-                  <Route path="/org-leads" element={guard(<OrgLeadsPage />)} />
-                  <Route path="/org-follow-ups" element={guard(<OrgFollowUpsPage />)} />
-                  <Route path="/org-stb" element={guard(<OrgSTBPage />)} />
-                  <Route path="/org-reports" element={guard(<OrgReportsPage />)} />
-                  <Route path="/staff-management" element={guard(<StaffManagementPage />)} />
-                  <Route path="/system-config" element={guard(<SystemConfigPage />)} />
-                  <Route path="/lead-allocation" element={guard(<LeadAllocationPage />)} />
-                  <Route path="/audit-trail" element={guard(<AuditTrailPage />)} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </AppLayout>
+              <Routes>
+                <Route path="/" element={<LandingPage />} />
+                <Route
+                  path="/*"
+                  element={
+                    <AppLayout>
+                      <Routes>
+                        <Route path="/app" element={guard(<Index />)} />
+                        <Route path="/leads" element={guard(<LeadsPage />)} />
+                        <Route path="/leads/:id" element={guard(<LeadDetailPage />)} />
+                        <Route path="/follow-ups" element={guard(<FollowUpsPage />)} />
+                        <Route path="/stb" element={guard(<STBPage />)} />
+                        <Route path="/performance" element={guard(<PerformancePage />)} />
+                        <Route path="/reports" element={guard(<ReportsPage />)} />
+                        <Route path="/admin/upload" element={guard(<LeadUploadPage />)} />
+                        <Route path="/admin/agents" element={guard(<AgentManagementPage />)} />
+                        <Route path="/admin/config" element={guard(<ConfigPage />)} />
+                        <Route path="/admin/partners" element={guard(<PartnersPage />)} />
+                        <Route path="/admin/allocation" element={guard(<LeadAllocationPage />)} />
+                        <Route path="/admin/pools" element={guard(<LeadPoolsPage />)} />
+                        <Route path="/admin/mis" element={guard(<MISExportPage />)} />
+                        <Route path="/admin/staff" element={guard(<AdminStaffPage />)} />
+                        <Route path="/group-leads" element={guard(<GroupLeadsPage />)} />
+                        <Route path="/group-follow-ups" element={guard(<GroupFollowUpsPage />)} />
+                        <Route path="/group-stb" element={guard(<GroupSTBPage />)} />
+                        <Route path="/group-management" element={guard(<GroupManagementPage />)} />
+                        <Route path="/group-reports" element={guard(<GroupReportsPage />)} />
+                        <Route path="/org-leads" element={guard(<OrgLeadsPage />)} />
+                        <Route path="/org-follow-ups" element={guard(<OrgFollowUpsPage />)} />
+                        <Route path="/org-stb" element={guard(<OrgSTBPage />)} />
+                        <Route path="/org-reports" element={guard(<OrgReportsPage />)} />
+                        <Route path="/staff-management" element={guard(<StaffManagementPage />)} />
+                        <Route path="/system-config" element={guard(<SystemConfigPage />)} />
+                        <Route path="/lead-allocation" element={guard(<LeadAllocationPage />)} />
+                        <Route path="/audit-trail" element={guard(<AuditTrailPage />)} />
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </AppLayout>
+                  }
+                />
+              </Routes>
             </BrowserRouter>
           </PriorityConfigProvider>
           </PartnersProvider>
