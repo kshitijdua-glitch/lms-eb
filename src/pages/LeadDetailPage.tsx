@@ -266,11 +266,60 @@ const LeadDetailPage = () => {
   };
 
 
+  const consentReceived = consentStatus === "received";
+
+  const handleTriggerConsent = () => {
+    setConsentStatus("sent");
+    setConsentSentAt(new Date());
+    logAudit({
+      ...actor,
+      action: "trigger_sms_consent",
+      entityType: "lead",
+      entityId: lead.id,
+      entityLabel: lead.name,
+      after: { channel: "sms", status: "sent" },
+    });
+    toast.success("Consent SMS triggered", { description: `Sent to ${lead.mobile}` });
+  };
+
+  const handleMarkConsentReceived = () => {
+    setConsentStatus("received");
+    logAudit({
+      ...actor,
+      action: "mark_consent_received",
+      entityType: "lead",
+      entityId: lead.id,
+      entityLabel: lead.name,
+      before: { consentStatus },
+      after: { consentStatus: "received" },
+    });
+    toast.success("Consent marked as received");
+  };
+
+  const handleClearConsent = () => {
+    setConsentStatus("not_sent");
+    setConsentSentAt(null);
+    logAudit({
+      ...actor,
+      action: "clear_consent_flag",
+      entityType: "lead",
+      entityId: lead.id,
+      entityLabel: lead.name,
+      before: { consentStatus },
+      after: { consentStatus: "not_sent" },
+    });
+    toast.success("Consent flag cleared");
+  };
+
   const handleSendToBank = () => {
     if (isProfileLocked) {
       toast.error("STB already submitted — cannot resubmit", {
         description: lockState.reason,
       });
+      return;
+    }
+    if (!consentReceived) {
+      toast.error("Customer consent required", { description: "Trigger SMS consent and mark as received before STB." });
       return;
     }
     // Pre-STB checklist
