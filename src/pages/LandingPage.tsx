@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, Workflow, ShieldCheck, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useAuth } from "@/contexts/AuthContext";
 import logoUrl from "@/assets/logo.png";
 
 const features = [
@@ -23,6 +24,9 @@ const features = [
 ];
 
 export default function LandingPage() {
+  const { isAuthenticated } = useAuth();
+  const ctaTo = isAuthenticated ? "/app" : "/login";
+  const ctaLabel = isAuthenticated ? "Enter LMS" : "Sign in";
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       {/* Header */}
@@ -35,8 +39,8 @@ export default function LandingPage() {
             <span className="font-semibold text-base tracking-tight">Smart LMS</span>
           </Link>
           <Button asChild size="sm">
-            <Link to="/app">
-              Enter LMS
+            <Link to={ctaTo}>
+              {ctaLabel}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
@@ -68,13 +72,13 @@ export default function LandingPage() {
           </p>
           <div className="mt-8 flex items-center justify-center gap-3">
             <Button asChild size="lg">
-              <Link to="/app">
-                Enter LMS
+              <Link to={ctaTo}>
+                {ctaLabel}
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
             <Button asChild variant="ghost" size="lg">
-              <Link to="/app">View dashboard</Link>
+              <Link to={ctaTo}>{isAuthenticated ? "View dashboard" : "Explore as demo user"}</Link>
             </Button>
           </div>
         </section>
