@@ -34,6 +34,7 @@ import { usePartners } from "@/contexts/PartnersContext";
 import { CheckCircle2, XCircle, Info, ShieldAlert } from "lucide-react";
 import { ManualCallPanel } from "@/components/ManualCallPanel";
 import { ManualCallLogDialog, type ManualCallSubmission } from "@/components/ManualCallLogDialog";
+import { STBWizardDialog, type STBWizardSubmission } from "@/components/STBWizardDialog";
 
 // Soft pill color map — clean tinted backgrounds for status chips
 const SOFT_PILL: Record<string, string> = {
@@ -77,6 +78,7 @@ const LeadDetailPage = () => {
   const [showEMI, setShowEMI] = useState(false);
   const [showReassign, setShowReassign] = useState(false);
   const [showOverride, setShowOverride] = useState(false);
+  const [showSTBWizard, setShowSTBWizard] = useState(false);
   const [overrideReason, setOverrideReason] = useState("");
   const [reassignAgent, setReassignAgent] = useState("");
   const [reassignTL, setReassignTL] = useState("");
