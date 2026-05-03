@@ -155,23 +155,7 @@ const LeadDetailPage = () => {
   })();
   const emi = emiCalc.emi;
 
-  const handleLogCall = () => {
-    if (!callOutcome || !callDisposition) {
-      toast.error("Outcome and Disposition are required");
-      return;
-    }
-    // Validate backdating per role
-    if (callDate) {
-      const diff = Date.now() - callDate.getTime();
-      if (diff > 24 * 3600000 && !can.backdateBeyond24h(role)) {
-        toast.error("Cannot backdate call more than 24 hours");
-        return;
-      }
-    }
-    if (callNextAction === "follow_up" && !followUpDate) {
-      toast.error("Follow-up date is required");
-      return;
-    }
+  const handleManualCallSubmit = (data: ManualCallSubmission) => {
     logAudit({
       ...actor,
       action: "log_call",
@@ -179,17 +163,23 @@ const LeadDetailPage = () => {
       entityId: lead.id,
       entityLabel: lead.name,
       after: {
-        outcome: callOutcome,
-        disposition: callDisposition,
-        duration: callDuration,
-        nextAction: callNextAction,
-        followUpAt: followUpDate ? followUpDate.toISOString() : null,
+        outcome: data.outcome,
+        disposition: data.disposition,
+        durationSec: data.durationSeconds,
+        nextAction: data.nextAction,
+        followUpAt: data.followUpAt ? data.followUpAt.toISOString() : null,
+        customerInterest: data.customerInterest || undefined,
+        escalated: data.escalate || undefined,
       },
-      notes: callNotes || undefined,
+      reason: data.backdatedReason || undefined,
+      notes: data.notes || undefined,
     });
+    if (data.escalate) {
+      toast.info("Escalation flagged — manager will be notified.");
+    }
     setShowCallLog(false);
-    toast.success("Call logged successfully");
-    setCallOutcome(""); setCallDisposition(""); setCallNotes(""); setCallNextAction(""); setCallDuration("120"); setFollowUpDate(undefined); setFollowUpTime("");
+    setPendingDuration(0);
+    toast.success("Manual call logged");
   };
 
   const handleAddNote = () => {
