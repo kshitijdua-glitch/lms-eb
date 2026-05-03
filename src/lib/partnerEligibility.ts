@@ -75,29 +75,87 @@ export function evaluateAllPartners(
 }
 
 /**
- * Disposition taxonomy filtered by call outcome.
- * Aligned with product spec.
+ * Outcome → disposition taxonomy.
+ * Aligned with Section 5.6 of the Frontend Change Requirements:
+ * - Connected:  Interested, Not Interested, Callback Requested, Documents Pending, Needs More Information
+ * - Not Connected: Switched Off, Number Busy, No Response, Ringing, Not Reachable
+ * - Invalid: Wrong Number, Invalid Number, Duplicate Lead
+ * - Compliance: Do Not Contact, Consent Missing, Customer Complaint
  */
-export const DISPOSITION_BY_OUTCOME: Record<"connected" | "not_connected" | "invalid", { type: string; label: string }[]> = {
+export type CallOutcome = "connected" | "not_connected" | "invalid" | "compliance";
+
+export const OUTCOME_LABELS: Record<CallOutcome, string> = {
+  connected: "Connected",
+  not_connected: "Not Connected",
+  invalid: "Invalid",
+  compliance: "Compliance",
+};
+
+export const DISPOSITION_BY_OUTCOME: Record<CallOutcome, { type: string; label: string }[]> = {
   connected: [
     { type: "connected_interested", label: "Interested" },
-    { type: "hot_follow_up", label: "Hot Follow-Up" },
-    { type: "warm_follow_up", label: "Warm Follow-Up" },
-    { type: "document_follow_up", label: "Document Follow-Up" },
-    { type: "stb_qualified", label: "STB Qualified" },
-    { type: "already_has_loan", label: "Already Has Loan" },
     { type: "connected_not_interested", label: "Not Interested" },
     { type: "callback_requested", label: "Callback Requested" },
+    { type: "documents_pending", label: "Documents Pending" },
+    { type: "needs_more_information", label: "Needs More Information" },
   ],
   not_connected: [
-    { type: "no_response", label: "No Response / Ringing" },
-    { type: "number_busy", label: "Busy" },
     { type: "switched_off", label: "Switched Off" },
-    { type: "not_contactable", label: "Not Reachable" },
+    { type: "number_busy", label: "Number Busy" },
+    { type: "no_response", label: "No Response" },
+    { type: "ringing", label: "Ringing" },
+    { type: "not_reachable", label: "Not Reachable" },
   ],
   invalid: [
+    { type: "wrong_number", label: "Wrong Number" },
     { type: "invalid_number", label: "Invalid Number" },
-    { type: "pan_not_available", label: "PAN Not Available" },
-    { type: "income_proof_not_ready", label: "Income Proof Not Ready" },
+    { type: "duplicate_lead", label: "Duplicate Lead" },
+  ],
+  compliance: [
+    { type: "do_not_contact", label: "Do Not Contact" },
+    { type: "consent_missing", label: "Consent Missing" },
+    { type: "customer_complaint", label: "Customer Complaint" },
   ],
 };
+
+/**
+ * Default behavioural rules per outcome — drive conditional fields.
+ * These can be overridden by the Configuration > Call Rules screen later.
+ */
+export const OUTCOME_RULES: Record<CallOutcome, {
+  notesRequired: boolean;
+  followUpRequired: boolean;
+  durationRequired: boolean;
+  blocksFurtherCalls: boolean;
+}> = {
+  connected:     { notesRequired: false, followUpRequired: false, durationRequired: true,  blocksFurtherCalls: false },
+  not_connected: { notesRequired: false, followUpRequired: true,  durationRequired: false, blocksFurtherCalls: false },
+  invalid:       { notesRequired: true,  followUpRequired: false, durationRequired: false, blocksFurtherCalls: false },
+  compliance:    { notesRequired: true,  followUpRequired: false, durationRequired: false, blocksFurtherCalls: true  },
+};
+
+/** Dispositions where notes are required regardless of outcome rule. */
+export const DISPOSITION_NOTES_REQUIRED = new Set<string>([
+  "connected_not_interested",
+  "callback_requested",
+  "documents_pending",
+  "needs_more_information",
+  "wrong_number",
+  "duplicate_lead",
+  "do_not_contact",
+  "consent_missing",
+  "customer_complaint",
+]);
+
+/** Dispositions that require a follow-up to be scheduled. */
+export const DISPOSITION_FOLLOWUP_REQUIRED = new Set<string>([
+  "callback_requested",
+  "documents_pending",
+  "needs_more_information",
+  "switched_off",
+  "number_busy",
+  "no_response",
+  "ringing",
+  "not_reachable",
+]);
+
