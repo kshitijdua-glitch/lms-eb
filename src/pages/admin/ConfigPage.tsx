@@ -15,6 +15,8 @@ import { usePartners } from "@/contexts/PartnersContext";
 import { useRole } from "@/contexts/RoleContext";
 import { useAudit, buildActor } from "@/contexts/AuditContext";
 import { can } from "@/lib/permissions";
+import { loadConfig, saveConfig, type AppConfig } from "@/lib/configStore";
+import { useEffect } from "react";
 
 const ConfigPage = () => {
   const { products, partners, addProduct, updateProduct, toggleProductStatus, removeProduct, getProductLabel } = usePartners();
@@ -210,6 +212,16 @@ const ConfigPage = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="call-rules" className="mt-4">
+          <CallRulesTab canEdit={canEdit} />
+        </TabsContent>
+        <TabsContent value="follow-up-sla" className="mt-4">
+          <FollowUpSLATab canEdit={canEdit} />
+        </TabsContent>
+        <TabsContent value="notifications" className="mt-4">
+          <NotificationsTab canEdit={canEdit} />
         </TabsContent>
       </Tabs>
 
