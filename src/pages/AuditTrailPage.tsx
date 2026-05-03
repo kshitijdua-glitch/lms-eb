@@ -37,15 +37,19 @@ const AuditTrailPage = () => {
   const [search, setSearch] = useState("");
   const [actionFilter, setActionFilter] = useState("All");
   const [roleFilter, setRoleFilter] = useState("All");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   const filtered = useMemo(() => {
     return mockAuditLog.filter(e => {
       if (actionFilter !== "All" && e.actionType !== actionFilter) return false;
       if (roleFilter !== "All" && e.actorRole !== roleFilter) return false;
       if (search && !e.target.toLowerCase().includes(search.toLowerCase()) && !e.actor.toLowerCase().includes(search.toLowerCase())) return false;
+      if (dateFrom && new Date(e.timestamp) < new Date(dateFrom)) return false;
+      if (dateTo && new Date(e.timestamp) > new Date(dateTo + "T23:59:59")) return false;
       return true;
     });
-  }, [search, actionFilter, roleFilter]);
+  }, [search, actionFilter, roleFilter, dateFrom, dateTo]);
 
   const columns: ColumnDef<AuditEntry>[] = [
     { id: "timestamp", label: "Timestamp", render: (e) => <span className="text-xs text-muted-foreground whitespace-nowrap">{new Date(e.timestamp).toLocaleString()}</span> },
@@ -91,6 +95,8 @@ const AuditTrailPage = () => {
             {roles.map(r => <SelectItem key={r} value={r}>{r === "All" ? "All Roles" : actionLabel(r)}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="w-36" aria-label="From date" />
+        <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="w-36" aria-label="To date" />
       </div>
 
       <Card>
