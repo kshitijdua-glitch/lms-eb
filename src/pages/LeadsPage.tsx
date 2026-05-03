@@ -43,14 +43,6 @@ const LeadsPage = () => {
   const [followUpFilter, setFollowUpFilter] = useState("all");
   const [showCreateLead, setShowCreateLead] = useState(searchParams.get("create") === "true");
 
-  const [newLeadName, setNewLeadName] = useState("");
-  const [newLeadMobile, setNewLeadMobile] = useState("");
-  const [newLeadProduct, setNewLeadProduct] = useState("");
-  const [newLeadSource, setNewLeadSource] = useState("");
-  const [newLeadCity, setNewLeadCity] = useState("");
-  const [newLeadIncome, setNewLeadIncome] = useState("");
-  const [newLeadLoanAmt, setNewLeadLoanAmt] = useState("");
-  const [newLeadNotes, setNewLeadNotes] = useState("");
 
   // Scope per Section 4.3:
   // - Agent: leads they own
@@ -88,21 +80,6 @@ const LeadsPage = () => {
     });
   }, [allLeads, search, stageFilter, productFilter, sourceFilter, followUpFilter]);
 
-  const handleCreateLead = () => {
-    if (!newLeadName || !newLeadMobile || !newLeadSource) {
-      toast.error("Name, Mobile, and Lead Source are required");
-      return;
-    }
-    const existing = allLeads.find(l => l.mobile.endsWith(newLeadMobile.slice(-4)));
-    if (existing) {
-      toast.warning(`Possible duplicate: ${existing.name} has similar mobile number`);
-    }
-    setShowCreateLead(false);
-    toast.success("Lead created and assigned to you");
-    
-    setNewLeadName(""); setNewLeadMobile(""); setNewLeadProduct(""); setNewLeadSource("");
-    setNewLeadCity(""); setNewLeadIncome(""); setNewLeadLoanAmt(""); setNewLeadNotes("");
-  };
 
   const sources = [...new Set(allLeads.map(l => l.leadSource))];
 
