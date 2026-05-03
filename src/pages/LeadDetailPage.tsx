@@ -443,9 +443,9 @@ const LeadDetailPage = () => {
                 onClick={handleSendToBank}
                 disabled={isProfileLocked || !consentReceived}
                 className="h-9"
-                aria-label="Send to Bank"
+                aria-label="Submit to Lending Partner"
               >
-                <Send className="h-4 w-4 mr-1.5" /> Send to Bank
+                <Send className="h-4 w-4 mr-1.5" /> Submit to Lending Partner
               </Button>
             </span>
           </TooltipTrigger>
