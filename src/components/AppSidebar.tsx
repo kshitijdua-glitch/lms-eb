@@ -1,14 +1,12 @@
 import {
-  LayoutDashboard, Users, Phone, Send, Clock, BarChart3, Upload, Settings, UserCog, FileText, ChevronDown, TrendingUp, Shield,
+  LayoutDashboard, Users, Phone, Send, Clock, BarChart3, Upload, Settings, UserCog, FileText, TrendingUp, Shield,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
 import { useRole, roleLabels } from "@/contexts/RoleContext";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UserRole } from "@/types/lms";
 import { useAuth } from "@/contexts/AuthContext";
 import logoUrl from "@/assets/logo.png";
@@ -72,22 +70,15 @@ function getNav(role: UserRole) {
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const { role, setRole } = useRole();
-  const { user, updateRole } = useAuth();
-  const location = useLocation();
+  const { role } = useRole();
+  const { user } = useAuth();
   const nav = getNav(role);
-
-  const handleRoleChange = (v: string) => {
-    const next = v as UserRole;
-    setRole(next);
-    updateRole(next);
-  };
 
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-4">
         {!collapsed && (
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center gap-2 mb-2">
             <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center overflow-hidden ring-1 ring-sidebar-border shadow-sm">
               <img src={logoUrl} alt="Smart LMS logo" className="h-5 w-5 object-contain" />
             </div>
@@ -101,17 +92,11 @@ export function AppSidebar() {
             </div>
           </div>
         )}
-        {!collapsed && (
-          <Select value={role} onValueChange={handleRoleChange}>
-            <SelectTrigger className="w-full bg-sidebar-accent text-sidebar-foreground border-sidebar-border text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {(Object.keys(roleLabels) as UserRole[]).map((r) => (
-                <SelectItem key={r} value={r}>{roleLabels[r]}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        {!collapsed && user && (
+          <div className="rounded-md bg-sidebar-accent/40 px-2.5 py-1.5">
+            <div className="text-[11px] font-medium text-sidebar-foreground truncate">{user.name}</div>
+            <div className="text-[10px] text-sidebar-foreground/60">{roleLabels[role]}</div>
+          </div>
         )}
       </SidebarHeader>
       <SidebarContent>

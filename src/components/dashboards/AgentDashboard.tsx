@@ -3,12 +3,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { StatTile } from "@/components/StatTile";
+import { ScopeChip } from "@/components/ScopeChip";
 import { leads, getLeadsForAgent, getDispositionLabel, getStageLabel } from "@/data/mockData";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { AlertTriangle, Calendar, CheckCircle, Clock, Phone, Plus, Send, Target, TrendingUp, Users } from "lucide-react";
 
 export function AgentDashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const firstName = user?.name.split(" ")[0] || "Agent";
   const myLeads = getLeadsForAgent("agent-1");
   const today = new Date().toISOString().split("T")[0];
 
@@ -54,8 +58,11 @@ export function AgentDashboard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1>Welcome back, Amit!</h1>
-          <p className="text-sm text-muted-foreground mt-1">Here's your daily overview</p>
+          <h1>Welcome back, {firstName}!</h1>
+          <div className="flex items-center gap-2 mt-1.5">
+            <p className="text-sm text-muted-foreground">Here's your daily overview</p>
+            <ScopeChip />
+          </div>
         </div>
         <div className="text-sm text-muted-foreground">
           Never Contacted: <span className="font-semibold text-[hsl(var(--warning))]">{neverContacted.length}</span>

@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { ConfigurableTable } from "@/components/ConfigurableTable";
+import { ScopeChip } from "@/components/ScopeChip";
 import type { ColumnDef } from "@/types/table";
 import type { Lead } from "@/types/lms";
 
@@ -31,7 +32,7 @@ function agingColor(days: number) {
 }
 
 const LeadsPage = () => {
-  const { role } = useRole();
+  const { role, currentAgentId } = useRole();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState("");
@@ -50,7 +51,23 @@ const LeadsPage = () => {
   const [newLeadLoanAmt, setNewLeadLoanAmt] = useState("");
   const [newLeadNotes, setNewLeadNotes] = useState("");
 
-  const allLeads = role === "agent" ? getLeadsForAgent("agent-1") : leads;
+  // Scope per Section 4.3:
+  // - Agent: leads they own
+  // - Manager: leads directly owned by the manager (NOT team-wide — that's /group-leads)
+  // - Cluster Head / Data Admin: all leads
+  const allLeads =
+    role === "agent" ? getLeadsForAgent("agent-1")
+    : role === "manager" ? getLeadsForAgent(currentAgentId)
+    : leads;
+
+  const pageTitle =
+    role === "agent" ? "My Leads"
+    : role === "manager" ? "My Leads"
+    : "All Leads";
+  const pageSubtitle =
+    role === "manager"
+      ? "Leads directly owned by you. For team-wide view, use Group Leads."
+      : undefined;
 
   const today = new Date().toISOString().split("T")[0];
   const workedToday = allLeads.filter(l => l.lastActivityAt.split("T")[0] === today).length;
@@ -135,8 +152,12 @@ const LeadsPage = () => {
     <div className="space-y-6 max-w-[1600px] mx-auto">
       {/* Page header */}
       <div className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">{role === "agent" ? "My Leads" : "All Leads"}</h1>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight">{pageTitle}</h1>
+            <ScopeChip />
+          </div>
+          {pageSubtitle && <p className="text-xs text-muted-foreground">{pageSubtitle}</p>}
           <p className="text-sm text-muted-foreground">
             Showing <span className="font-medium text-foreground">{filtered.length}</span> of {allLeads.length} leads
           </p>
