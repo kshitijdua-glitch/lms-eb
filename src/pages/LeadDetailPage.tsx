@@ -1222,7 +1222,18 @@ const LeadDetailPage = () => {
         onSubmit={handleManualCallSubmit}
       />
 
-      {/* EMI Calculator */}
+      {/* STB Wizard (Section 6) */}
+      <STBWizardDialog
+        open={showSTBWizard}
+        onOpenChange={setShowSTBWizard}
+        customerName={lead.name}
+        selectedPairs={selectedPairs}
+        consentReceived={consentReceived}
+        creditScore={lead.creditScore ?? null}
+        onSubmit={handleSTBWizardSubmit}
+      />
+
+
       <Dialog open={showEMI} onOpenChange={setShowEMI}>
         <DialogContent className="max-w-2xl p-0 overflow-hidden">
           <DialogHeader className="px-6 pt-5 pb-4 border-b border-border">
