@@ -73,6 +73,7 @@ const LeadDetailPage = () => {
   const { partners } = usePartners();
   const lead = leads.find(l => l.id === id);
   const [showCallLog, setShowCallLog] = useState(false);
+  const [pendingDuration, setPendingDuration] = useState(0);
   const [showEMI, setShowEMI] = useState(false);
   const [showReassign, setShowReassign] = useState(false);
   const [showOverride, setShowOverride] = useState(false);
