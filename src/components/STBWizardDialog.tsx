@@ -85,7 +85,7 @@ export function STBWizardDialog({ open, onOpenChange, customerName, selectedPair
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-base">Send to Bank — {customerName}</DialogTitle>
+          <DialogTitle className="text-base">Submit to Lending Partner — {customerName}</DialogTitle>
         </DialogHeader>
 
         {/* Stepper */}
@@ -201,7 +201,7 @@ export function STBWizardDialog({ open, onOpenChange, customerName, selectedPair
           )}
           {step === 4 && (
             <Button onClick={handleSubmit}>
-              <Send className="h-4 w-4 mr-1.5" /> Submit to {activePairs.length} Bank{activePairs.length === 1 ? "" : "s"}
+              <Send className="h-4 w-4 mr-1.5" /> Submit to {activePairs.length} Lending Partner{activePairs.length === 1 ? "" : "s"}
             </Button>
           )}
         </DialogFooter>

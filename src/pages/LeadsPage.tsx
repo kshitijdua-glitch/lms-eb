@@ -9,12 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Plus, Download, Users, CheckCircle2, Clock4, AlertCircle } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { ConfigurableTable } from "@/components/ConfigurableTable";
 import { ScopeChip } from "@/components/ScopeChip";
+import { CreateLeadWizard } from "@/components/CreateLeadWizard";
 import type { ColumnDef } from "@/types/table";
 import type { Lead } from "@/types/lms";
 
@@ -42,14 +40,6 @@ const LeadsPage = () => {
   const [followUpFilter, setFollowUpFilter] = useState("all");
   const [showCreateLead, setShowCreateLead] = useState(searchParams.get("create") === "true");
 
-  const [newLeadName, setNewLeadName] = useState("");
-  const [newLeadMobile, setNewLeadMobile] = useState("");
-  const [newLeadProduct, setNewLeadProduct] = useState("");
-  const [newLeadSource, setNewLeadSource] = useState("");
-  const [newLeadCity, setNewLeadCity] = useState("");
-  const [newLeadIncome, setNewLeadIncome] = useState("");
-  const [newLeadLoanAmt, setNewLeadLoanAmt] = useState("");
-  const [newLeadNotes, setNewLeadNotes] = useState("");
 
   // Scope per Section 4.3:
   // - Agent: leads they own
@@ -87,21 +77,6 @@ const LeadsPage = () => {
     });
   }, [allLeads, search, stageFilter, productFilter, sourceFilter, followUpFilter]);
 
-  const handleCreateLead = () => {
-    if (!newLeadName || !newLeadMobile || !newLeadSource) {
-      toast.error("Name, Mobile, and Lead Source are required");
-      return;
-    }
-    const existing = allLeads.find(l => l.mobile.endsWith(newLeadMobile.slice(-4)));
-    if (existing) {
-      toast.warning(`Possible duplicate: ${existing.name} has similar mobile number`);
-    }
-    setShowCreateLead(false);
-    toast.success("Lead created and assigned to you");
-    
-    setNewLeadName(""); setNewLeadMobile(""); setNewLeadProduct(""); setNewLeadSource("");
-    setNewLeadCity(""); setNewLeadIncome(""); setNewLeadLoanAmt(""); setNewLeadNotes("");
-  };
 
   const sources = [...new Set(allLeads.map(l => l.leadSource))];
 
@@ -271,51 +246,14 @@ const LeadsPage = () => {
         </CardContent>
       </Card>
 
-      <Dialog open={showCreateLead} onOpenChange={setShowCreateLead}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Create New Lead</DialogTitle></DialogHeader>
-          <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label>Full Name *</Label><Input placeholder="Customer name" value={newLeadName} onChange={e => setNewLeadName(e.target.value)} /></div>
-              <div><Label>Mobile Number *</Label><Input placeholder="10-digit mobile" value={newLeadMobile} onChange={e => setNewLeadMobile(e.target.value)} /></div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Lead Source *</Label>
-                <Select value={newLeadSource} onValueChange={setNewLeadSource}>
-                  <SelectTrigger><SelectValue placeholder="Select source" /></SelectTrigger>
-                  <SelectContent>
-                    {["Website","Google Ads","Facebook","Referral","Partner","Walk-in","IVR","WhatsApp"].map(s => (
-                      <SelectItem key={s} value={s}>{s}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Product Type</Label>
-                <Select value={newLeadProduct} onValueChange={setNewLeadProduct}>
-                  <SelectTrigger><SelectValue placeholder="Select product" /></SelectTrigger>
-                  <SelectContent>
-                    {["personal_loan","home_loan","business_loan","credit_card","loan_against_property"].map(p => (
-                      <SelectItem key={p} value={p}>{getProductLabel(p as any)}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div><Label>City</Label><Input placeholder="City" value={newLeadCity} onChange={e => setNewLeadCity(e.target.value)} /></div>
-              <div><Label>Monthly Income (₹)</Label><Input type="number" placeholder="50000" value={newLeadIncome} onChange={e => setNewLeadIncome(e.target.value)} /></div>
-              <div><Label>Loan Amount (₹)</Label><Input type="number" placeholder="500000" value={newLeadLoanAmt} onChange={e => setNewLeadLoanAmt(e.target.value)} /></div>
-            </div>
-            <div><Label>Notes</Label><Textarea placeholder="Any initial notes..." value={newLeadNotes} onChange={e => setNewLeadNotes(e.target.value)} /></div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateLead(false)}>Cancel</Button>
-            <Button onClick={handleCreateLead}>Create Lead</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CreateLeadWizard
+        open={showCreateLead}
+        onOpenChange={setShowCreateLead}
+        existingMobiles={allLeads.map(l => l.mobile)}
+        onSubmit={(data) => {
+          toast.success(`Lead "${data.name}" created`);
+        }}
+      />
     </div>
   );
 };
