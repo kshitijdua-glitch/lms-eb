@@ -443,7 +443,7 @@ const LeadDetailPage = () => {
           <ArrowLeft className="h-4 w-4 mr-1.5" /> Back to Leads
         </Button>
         <div className="flex-1" />
-        <Button size="sm" onClick={() => setShowCallLog(true)} className="h-9"><Phone className="h-4 w-4 mr-1.5" /> Log Call</Button>
+        <Button size="sm" onClick={() => setShowCallLog(true)} className="h-9"><Phone className="h-4 w-4 mr-1.5" /> Log Manual Call</Button>
         <Tooltip>
           <TooltipTrigger asChild>
             <span tabIndex={0}>
