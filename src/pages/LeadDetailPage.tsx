@@ -839,8 +839,16 @@ const LeadDetailPage = () => {
           </Card>
         </div>
 
-        {/* STB + Notes + Retry */}
+        {/* Manual Call + STB + Notes + Retry */}
         <div className="space-y-6">
+          <ManualCallPanel
+            customerName={lead.name}
+            primaryPhone={lead.mobile}
+            consentReceived={consentReceived}
+            consentLabel={consentStatus.replace(/_/g, " ")}
+            lastCallSummary={lead.callLogs[0] ? `${lead.callLogs[0].outcome === "connected" ? "Connected" : "Not connected"} · ${new Date(lead.callLogs[0].timestamp).toLocaleDateString()}` : undefined}
+            onLogCall={(secs) => { setPendingDuration(secs); setShowCallLog(true); }}
+          />
           <Card className="shadow-none">
             <CardHeader className="pb-3 border-b">
               <CardTitle className="text-sm flex items-center gap-2.5">
