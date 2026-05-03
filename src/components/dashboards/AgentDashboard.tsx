@@ -3,12 +3,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { StatTile } from "@/components/StatTile";
+import { ScopeChip } from "@/components/ScopeChip";
 import { leads, getLeadsForAgent, getDispositionLabel, getStageLabel } from "@/data/mockData";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { AlertTriangle, Calendar, CheckCircle, Clock, Phone, Plus, Send, Target, TrendingUp, Users } from "lucide-react";
 
 export function AgentDashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const firstName = user?.name.split(" ")[0] || "Agent";
   const myLeads = getLeadsForAgent("agent-1");
   const today = new Date().toISOString().split("T")[0];
 
