@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { ConfigurableTable } from "@/components/ConfigurableTable";
+import { ScopeChip } from "@/components/ScopeChip";
 import type { ColumnDef } from "@/types/table";
 import type { Lead } from "@/types/lms";
 
