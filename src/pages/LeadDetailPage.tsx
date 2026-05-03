@@ -308,26 +308,14 @@ const LeadDetailPage = () => {
 
   const handleSendToBank = () => {
     if (isProfileLocked) {
-      toast.error("STB already submitted — cannot resubmit", {
-        description: lockState.reason,
-      });
+      toast.error("STB already submitted — cannot resubmit", { description: lockState.reason });
       return;
     }
-    if (!consentReceived) {
-      toast.error("Customer consent required", { description: "Trigger SMS consent and mark as received before STB." });
-      return;
-    }
-    // Pre-STB checklist
-    const checks = [];
-    if (selectedPairs.length === 0) checks.push("No banks selected");
+    setShowSTBWizard(true);
+  };
 
-    if (checks.length > 0) {
-      toast.error("Pre-STB checklist failed", { description: checks.join(", ") });
-      return;
-    }
-
-    // Create STB submissions for each selected pair
-    const newSubmissions = selectedPairs.map((pair, i) => ({
+  const handleSTBWizardSubmit = (data: STBWizardSubmission) => {
+    const newSubmissions = data.pairs.map((pair, i) => ({
       id: `stb-new-${Date.now()}-${i}`,
       partnerId: pair.partnerId,
       partnerName: pair.partnerName,
@@ -337,10 +325,9 @@ const LeadDetailPage = () => {
       sanctionAmount: null,
       disbursedAmount: null,
       disbursementDate: null,
-      remarks: `${getProductLabel(pair.productType as any)} application`,
+      remarks: data.remarks || `${getProductLabel(pair.productType as any)} application`,
       integrationType: "portal" as const,
     }));
-
     setLocalStbSubmissions([...localStbSubmissions, ...newSubmissions]);
     setStbSubmitted(true);
     newSubmissions.forEach(s => {
@@ -350,13 +337,14 @@ const LeadDetailPage = () => {
         entityType: "stb",
         entityId: s.id,
         entityLabel: `${lead.name} → ${s.partnerName}`,
-        after: { partner: s.partnerName, status: s.status },
+        after: { partner: s.partnerName, status: s.status, checklist: data.checklist, remarks: data.remarks },
       });
     });
-    toast.success(`STB initiated for ${selectedPairs.length} bank(s)`, {
-      description: selectedPairs.map(p => `${p.partnerName} (${getProductLabel(p.productType as any)})`).join(", "),
+    toast.success(`STB submitted to ${data.pairs.length} bank(s)`, {
+      description: data.pairs.map(p => `${p.partnerName} (${getProductLabel(p.productType as any)})`).join(", "),
     });
   };
+
 
   // Build unified timeline (call logs + follow-ups + STB + notes + audit entries)
   const auditEntries = forLead(lead.id);
