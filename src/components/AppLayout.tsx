@@ -6,27 +6,29 @@ import { NotificationsDrawer } from "@/components/NotificationsDrawer";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { DemoModeBanner } from "@/components/DemoModeBanner";
 import { ScopeChip } from "@/components/ScopeChip";
+import { SkipLink } from "@/components/SkipLink";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { role } = useRole();
 
   return (
     <SidebarProvider>
+      <SkipLink />
       <div className="min-h-screen flex w-full">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
           <DemoModeBanner />
           <header className="h-14 flex items-center border-b bg-card px-4 gap-3 shrink-0">
-            <SidebarTrigger />
+            <SidebarTrigger aria-label="Toggle sidebar" />
             <div className="flex-1" />
             <ScopeChip />
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="text-xs" aria-label={`Current role ${roleLabels[role]}`}>
               {roleLabels[role]}
             </Badge>
             <NotificationsDrawer />
             <ProfileMenu />
           </header>
-          <main className="flex-1 overflow-auto p-6">
+          <main id="main-content" tabIndex={-1} className="flex-1 overflow-auto p-6 focus:outline-none">
             {children}
           </main>
         </div>

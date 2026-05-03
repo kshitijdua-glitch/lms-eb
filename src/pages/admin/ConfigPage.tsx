@@ -15,6 +15,8 @@ import { usePartners } from "@/contexts/PartnersContext";
 import { useRole } from "@/contexts/RoleContext";
 import { useAudit, buildActor } from "@/contexts/AuditContext";
 import { can } from "@/lib/permissions";
+import { loadConfig, saveConfig, type AppConfig } from "@/lib/configStore";
+import { useEffect } from "react";
 
 const ConfigPage = () => {
   const { products, partners, addProduct, updateProduct, toggleProductStatus, removeProduct, getProductLabel } = usePartners();
@@ -68,10 +70,13 @@ const ConfigPage = () => {
       </div>
 
       <Tabs defaultValue="dispositions">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="dispositions">Dispositions</TabsTrigger>
           <TabsTrigger value="bre">BRE Rules</TabsTrigger>
           <TabsTrigger value="products">Products</TabsTrigger>
+          <TabsTrigger value="call-rules">Call Rules</TabsTrigger>
+          <TabsTrigger value="follow-up-sla">Follow-Up SLA</TabsTrigger>
+          <TabsTrigger value="notifications">Notifications</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dispositions" className="mt-4">
@@ -208,6 +213,16 @@ const ConfigPage = () => {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="call-rules" className="mt-4">
+          <CallRulesTab canEdit={canEdit} />
+        </TabsContent>
+        <TabsContent value="follow-up-sla" className="mt-4">
+          <FollowUpSLATab canEdit={canEdit} />
+        </TabsContent>
+        <TabsContent value="notifications" className="mt-4">
+          <NotificationsTab canEdit={canEdit} />
+        </TabsContent>
       </Tabs>
 
       <Dialog open={productDialogOpen} onOpenChange={setProductDialogOpen}>
@@ -239,3 +254,110 @@ const ConfigPage = () => {
 };
 
 export default ConfigPage;
+
+// ───────── Phase 4: Configuration Center tabs ─────────
+
+function useAppConfig() {
+  const [cfg, setCfg] = useState<AppConfig>(() => loadConfig());
+  useEffect(() => { saveConfig(cfg); }, [cfg]);
+  return [cfg, setCfg] as const;
+}
+
+function NumberField({ label, value, onChange, suffix, disabled }: { label: string; value: number; onChange: (v: number) => void; suffix?: string; disabled?: boolean }) {
+  return (
+    <div>
+      <Label className="text-xs">{label}</Label>
+      <div className="flex items-center gap-2">
+        <Input type="number" value={value} onChange={e => onChange(Number(e.target.value))} disabled={disabled} className="h-9" />
+        {suffix && <span className="text-xs text-muted-foreground">{suffix}</span>}
+      </div>
+    </div>
+  );
+}
+
+function CallRulesTab({ canEdit }: { canEdit: boolean }) {
+  const [cfg, setCfg] = useAppConfig();
+  const r = cfg.callRules;
+  const update = (patch: Partial<typeof r>) => setCfg(c => ({ ...c, callRules: { ...c.callRules, ...patch } }));
+  return (
+    <Card>
+      <CardHeader><CardTitle className="text-base">Call Rules</CardTitle></CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <NumberField label="Min call duration (counted as connected)" value={r.minCallDurationSec} onChange={v => update({ minCallDurationSec: v })} suffix="sec" disabled={!canEdit} />
+          <NumberField label="Max retries per lead" value={r.maxRetriesPerLead} onChange={v => update({ maxRetriesPerLead: v })} disabled={!canEdit} />
+          <NumberField label="Duplicate-call warning window" value={r.duplicateWindowMinutes} onChange={v => update({ duplicateWindowMinutes: v })} suffix="min" disabled={!canEdit} />
+          <NumberField label="Agent backdate limit" value={r.agentBackdateHours} onChange={v => update({ agentBackdateHours: v })} suffix="hours" disabled={!canEdit} />
+        </div>
+        <div className="flex items-center justify-between rounded-md border p-3">
+          <div>
+            <Label className="text-sm">Enforce consent before STB</Label>
+            <p className="text-[11px] text-muted-foreground">Block Send-to-Bank until customer consent is recorded.</p>
+          </div>
+          <Switch checked={r.enforceConsentBeforeSTB} disabled={!canEdit} onCheckedChange={v => update({ enforceConsentBeforeSTB: v })} />
+        </div>
+        <Button size="sm" disabled={!canEdit} onClick={() => toast.success("Call rules saved")}>Save</Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+function FollowUpSLATab({ canEdit }: { canEdit: boolean }) {
+  const [cfg, setCfg] = useAppConfig();
+  const r = cfg.followUpSLA;
+  const update = (patch: Partial<typeof r>) => setCfg(c => ({ ...c, followUpSLA: { ...c.followUpSLA, ...patch } }));
+  return (
+    <Card>
+      <CardHeader><CardTitle className="text-base">Follow-Up SLA</CardTitle></CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <NumberField label="Hot lead first follow-up" value={r.hotLeadHours} onChange={v => update({ hotLeadHours: v })} suffix="hours" disabled={!canEdit} />
+          <NumberField label="Warm lead first follow-up" value={r.warmLeadHours} onChange={v => update({ warmLeadHours: v })} suffix="hours" disabled={!canEdit} />
+          <NumberField label="Cold lead first follow-up" value={r.coldLeadHours} onChange={v => update({ coldLeadHours: v })} suffix="hours" disabled={!canEdit} />
+          <NumberField label="Overdue grace period" value={r.overdueGraceMinutes} onChange={v => update({ overdueGraceMinutes: v })} suffix="min" disabled={!canEdit} />
+        </div>
+        <div className="flex items-center justify-between rounded-md border p-3">
+          <div>
+            <Label className="text-sm">Notify manager on missed SLA</Label>
+            <p className="text-[11px] text-muted-foreground">Auto-escalates breached follow-ups to the agent's TL/Manager.</p>
+          </div>
+          <Switch checked={r.notifyManagerOnMissed} disabled={!canEdit} onCheckedChange={v => update({ notifyManagerOnMissed: v })} />
+        </div>
+        <Button size="sm" disabled={!canEdit} onClick={() => toast.success("SLA settings saved")}>Save</Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+function NotificationsTab({ canEdit }: { canEdit: boolean }) {
+  const [cfg, setCfg] = useAppConfig();
+  const r = cfg.notifications;
+  const update = (patch: Partial<typeof r>) => setCfg(c => ({ ...c, notifications: { ...c.notifications, ...patch } }));
+  const updateChannel = (k: keyof typeof r.channels, v: boolean) => update({ channels: { ...r.channels, [k]: v } });
+  return (
+    <Card>
+      <CardHeader><CardTitle className="text-base">Notification Preferences</CardTitle></CardHeader>
+      <CardContent className="space-y-4">
+        <NumberField label="Send follow-up reminder before due time" value={r.followUpDueLeadMinutes} onChange={v => update({ followUpDueLeadMinutes: v })} suffix="min" disabled={!canEdit} />
+        <div className="flex items-center justify-between rounded-md border p-3">
+          <div>
+            <Label className="text-sm">Daily digest email</Label>
+            <p className="text-[11px] text-muted-foreground">Morning summary of overdue and today's follow-ups.</p>
+          </div>
+          <Switch checked={r.digestEnabled} disabled={!canEdit} onCheckedChange={v => update({ digestEnabled: v })} />
+        </div>
+        <div className="rounded-md border p-3 space-y-2">
+          <Label className="text-sm">Channels</Label>
+          {(["inApp", "email", "sms"] as const).map(ch => (
+            <div key={ch} className="flex items-center justify-between">
+              <span className="text-sm capitalize">{ch === "inApp" ? "In-app" : ch}</span>
+              <Switch checked={r.channels[ch]} disabled={!canEdit} onCheckedChange={v => updateChannel(ch, v)} />
+            </div>
+          ))}
+        </div>
+        <Button size="sm" disabled={!canEdit} onClick={() => toast.success("Notification settings saved")}>Save</Button>
+      </CardContent>
+    </Card>
+  );
+}
+

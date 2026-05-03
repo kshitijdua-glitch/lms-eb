@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Bell, Clock, AlertTriangle, Users, Send, CheckCircle, X, Inbox } from "lucide-react";
+import { Bell, Clock, AlertTriangle, Users, Send, CheckCircle, X, Inbox, BellOff } from "lucide-react";
 import { getNotificationsForRole } from "@/data/mockData";
 import { useNavigate } from "react-router-dom";
 import { useRole } from "@/contexts/RoleContext";
+import { toast } from "sonner";
 import type { Notification } from "@/types/lms";
 
 const iconMap: Record<string, any> = {
@@ -105,13 +106,23 @@ export function NotificationsDrawer() {
                   <p className="text-xs text-muted-foreground mt-0.5">{n.message}</p>
                   <span className="text-[10px] text-muted-foreground">{new Date(n.timestamp).toLocaleString()}</span>
                 </div>
-                <button
-                  className="h-6 w-6 rounded hover:bg-muted opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center shrink-0"
-                  onClick={(e) => { e.stopPropagation(); dismiss(n.id); }}
-                  aria-label="Dismiss"
-                >
-                  <X className="h-3.5 w-3.5 text-muted-foreground" />
-                </button>
+                <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                  <button
+                    className="h-6 w-6 rounded hover:bg-muted flex items-center justify-center"
+                    onClick={(e) => { e.stopPropagation(); toast.success("Snoozed for 1h"); markRead(n.id); }}
+                    aria-label="Snooze for 1 hour"
+                    title="Snooze 1h"
+                  >
+                    <BellOff className="h-3.5 w-3.5 text-muted-foreground" />
+                  </button>
+                  <button
+                    className="h-6 w-6 rounded hover:bg-muted flex items-center justify-center"
+                    onClick={(e) => { e.stopPropagation(); dismiss(n.id); }}
+                    aria-label="Dismiss"
+                  >
+                    <X className="h-3.5 w-3.5 text-muted-foreground" />
+                  </button>
+                </div>
               </div>
             );
           })}

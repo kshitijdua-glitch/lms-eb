@@ -34,6 +34,7 @@ import { usePartners } from "@/contexts/PartnersContext";
 import { CheckCircle2, XCircle, Info, ShieldAlert } from "lucide-react";
 import { ManualCallPanel } from "@/components/ManualCallPanel";
 import { ManualCallLogDialog, type ManualCallSubmission } from "@/components/ManualCallLogDialog";
+import { STBWizardDialog, type STBWizardSubmission } from "@/components/STBWizardDialog";
 
 // Soft pill color map — clean tinted backgrounds for status chips
 const SOFT_PILL: Record<string, string> = {
@@ -77,6 +78,7 @@ const LeadDetailPage = () => {
   const [showEMI, setShowEMI] = useState(false);
   const [showReassign, setShowReassign] = useState(false);
   const [showOverride, setShowOverride] = useState(false);
+  const [showSTBWizard, setShowSTBWizard] = useState(false);
   const [overrideReason, setOverrideReason] = useState("");
   const [reassignAgent, setReassignAgent] = useState("");
   const [reassignTL, setReassignTL] = useState("");
@@ -306,26 +308,14 @@ const LeadDetailPage = () => {
 
   const handleSendToBank = () => {
     if (isProfileLocked) {
-      toast.error("STB already submitted — cannot resubmit", {
-        description: lockState.reason,
-      });
+      toast.error("STB already submitted — cannot resubmit", { description: lockState.reason });
       return;
     }
-    if (!consentReceived) {
-      toast.error("Customer consent required", { description: "Trigger SMS consent and mark as received before STB." });
-      return;
-    }
-    // Pre-STB checklist
-    const checks = [];
-    if (selectedPairs.length === 0) checks.push("No banks selected");
+    setShowSTBWizard(true);
+  };
 
-    if (checks.length > 0) {
-      toast.error("Pre-STB checklist failed", { description: checks.join(", ") });
-      return;
-    }
-
-    // Create STB submissions for each selected pair
-    const newSubmissions = selectedPairs.map((pair, i) => ({
+  const handleSTBWizardSubmit = (data: STBWizardSubmission) => {
+    const newSubmissions = data.pairs.map((pair, i) => ({
       id: `stb-new-${Date.now()}-${i}`,
       partnerId: pair.partnerId,
       partnerName: pair.partnerName,
@@ -335,10 +325,9 @@ const LeadDetailPage = () => {
       sanctionAmount: null,
       disbursedAmount: null,
       disbursementDate: null,
-      remarks: `${getProductLabel(pair.productType as any)} application`,
+      remarks: data.remarks || `${getProductLabel(pair.productType as any)} application`,
       integrationType: "portal" as const,
     }));
-
     setLocalStbSubmissions([...localStbSubmissions, ...newSubmissions]);
     setStbSubmitted(true);
     newSubmissions.forEach(s => {
@@ -348,13 +337,14 @@ const LeadDetailPage = () => {
         entityType: "stb",
         entityId: s.id,
         entityLabel: `${lead.name} → ${s.partnerName}`,
-        after: { partner: s.partnerName, status: s.status },
+        after: { partner: s.partnerName, status: s.status, checklist: data.checklist, remarks: data.remarks },
       });
     });
-    toast.success(`STB initiated for ${selectedPairs.length} bank(s)`, {
-      description: selectedPairs.map(p => `${p.partnerName} (${getProductLabel(p.productType as any)})`).join(", "),
+    toast.success(`STB submitted to ${data.pairs.length} bank(s)`, {
+      description: data.pairs.map(p => `${p.partnerName} (${getProductLabel(p.productType as any)})`).join(", "),
     });
   };
+
 
   // Build unified timeline (call logs + follow-ups + STB + notes + audit entries)
   const auditEntries = forLead(lead.id);
@@ -1232,7 +1222,18 @@ const LeadDetailPage = () => {
         onSubmit={handleManualCallSubmit}
       />
 
-      {/* EMI Calculator */}
+      {/* STB Wizard (Section 6) */}
+      <STBWizardDialog
+        open={showSTBWizard}
+        onOpenChange={setShowSTBWizard}
+        customerName={lead.name}
+        selectedPairs={selectedPairs}
+        consentReceived={consentReceived}
+        creditScore={lead.creditScore ?? null}
+        onSubmit={handleSTBWizardSubmit}
+      />
+
+
       <Dialog open={showEMI} onOpenChange={setShowEMI}>
         <DialogContent className="max-w-2xl p-0 overflow-hidden">
           <DialogHeader className="px-6 pt-5 pb-4 border-b border-border">
