@@ -68,10 +68,13 @@ const ConfigPage = () => {
       </div>
 
       <Tabs defaultValue="dispositions">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="dispositions">Dispositions</TabsTrigger>
           <TabsTrigger value="bre">BRE Rules</TabsTrigger>
           <TabsTrigger value="products">Products</TabsTrigger>
+          <TabsTrigger value="call-rules">Call Rules</TabsTrigger>
+          <TabsTrigger value="follow-up-sla">Follow-Up SLA</TabsTrigger>
+          <TabsTrigger value="notifications">Notifications</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dispositions" className="mt-4">
