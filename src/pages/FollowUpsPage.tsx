@@ -228,6 +228,35 @@ const FollowUpsPage = () => {
           </TabsContent>
         ))}
       </Tabs>
+
+      <Dialog open={!!rescheduleFor} onOpenChange={(o) => !o && setRescheduleFor(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle className="text-base">Reschedule — {rescheduleFor?.leadName}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs">New date & time</Label>
+              <Input type="datetime-local" value={rescheduleDateTime} onChange={(e) => setRescheduleDateTime(e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-xs">Reason</Label>
+              <Select value={rescheduleReason} onValueChange={setRescheduleReason}>
+                <SelectTrigger><SelectValue placeholder="Pick a reason" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="customer_busy">Customer busy</SelectItem>
+                  <SelectItem value="not_reachable">Not reachable</SelectItem>
+                  <SelectItem value="documents_pending">Documents pending</SelectItem>
+                  <SelectItem value="agent_request">Agent request</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRescheduleFor(null)}>Cancel</Button>
+            <Button onClick={submitReschedule}>Reschedule</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
