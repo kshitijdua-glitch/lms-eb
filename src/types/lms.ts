@@ -61,7 +61,15 @@ export type DispositionType =
   | "stb_initiated"
   | "stb_approved"
   | "stb_declined"
-  | "disbursed";
+  | "disbursed"
+  // Section 5.6 — Manual Call requirements
+  | "needs_more_information"
+  | "ringing"
+  | "not_reachable"
+  | "duplicate_lead"
+  | "do_not_contact"
+  | "consent_missing"
+  | "customer_complaint";
 
 export type DispositionCategory =
   | "follow_up"
