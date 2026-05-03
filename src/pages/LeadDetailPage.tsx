@@ -1213,7 +1213,16 @@ const LeadDetailPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Revamped Call Log Dialog */}
+      {/* Manual Call Log Dialog (Section 5.5–5.7) */}
+      <ManualCallLogDialog
+        open={showCallLog}
+        onOpenChange={(o) => { setShowCallLog(o); if (!o) setPendingDuration(0); }}
+        customerName={lead.name}
+        initialDuration={pendingDuration}
+        lastCallAt={lead.callLogs[0]?.timestamp}
+        canBackdateBeyond24h={can.backdateBeyond24h(role)}
+        onSubmit={handleManualCallSubmit}
+      />
       <Dialog open={showCallLog} onOpenChange={setShowCallLog}>
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle className="text-base">Log Call — {lead.name}</DialogTitle></DialogHeader>
