@@ -32,6 +32,8 @@ import { getLeadLockState, can } from "@/lib/permissions";
 import { evaluateAllPartners, DISPOSITION_BY_OUTCOME } from "@/lib/partnerEligibility";
 import { usePartners } from "@/contexts/PartnersContext";
 import { CheckCircle2, XCircle, Info, ShieldAlert } from "lucide-react";
+import { ManualCallPanel } from "@/components/ManualCallPanel";
+import { ManualCallLogDialog, type ManualCallSubmission } from "@/components/ManualCallLogDialog";
 
 // Soft pill color map — clean tinted backgrounds for status chips
 const SOFT_PILL: Record<string, string> = {
