@@ -6,6 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { CalendarClock, UserRound, Flame, Snowflake, Sun, Clock, AlertTriangle } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
@@ -68,10 +71,23 @@ const FollowUpsPage = () => {
     return out;
   }, [allFollowUps]);
 
+  const [rescheduleFor, setRescheduleFor] = useState<FUItem | null>(null);
+  const [rescheduleReason, setRescheduleReason] = useState("");
+  const [rescheduleDateTime, setRescheduleDateTime] = useState("");
+
   const handleReschedule = (f: FUItem) => {
-    logAudit({ ...actor, action: "reschedule_follow_up", entityType: "follow_up", entityId: f.id, entityLabel: f.leadName, before: { scheduledAt: f.scheduledAt } });
-    toast.info(`Rescheduling for ${f.leadName} — open lead detail to set new time.`);
-    navigate(`/leads/${f.leadId}`);
+    setRescheduleFor(f);
+    setRescheduleReason("");
+    setRescheduleDateTime("");
+  };
+
+  const submitReschedule = () => {
+    if (!rescheduleFor) return;
+    if (!rescheduleReason) { toast.error("Pick a reason"); return; }
+    if (!rescheduleDateTime) { toast.error("Pick a new date/time"); return; }
+    logAudit({ ...actor, action: "reschedule_follow_up", entityType: "follow_up", entityId: rescheduleFor.id, entityLabel: rescheduleFor.leadName, before: { scheduledAt: rescheduleFor.scheduledAt }, after: { scheduledAt: rescheduleDateTime }, reason: rescheduleReason });
+    toast.success(`Rescheduled ${rescheduleFor.leadName}`);
+    setRescheduleFor(null);
   };
 
   const handleContact = (f: FUItem) => {
