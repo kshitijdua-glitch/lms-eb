@@ -32,6 +32,8 @@ import { getLeadLockState, can } from "@/lib/permissions";
 import { evaluateAllPartners, DISPOSITION_BY_OUTCOME } from "@/lib/partnerEligibility";
 import { usePartners } from "@/contexts/PartnersContext";
 import { CheckCircle2, XCircle, Info, ShieldAlert } from "lucide-react";
+import { ManualCallPanel } from "@/components/ManualCallPanel";
+import { ManualCallLogDialog, type ManualCallSubmission } from "@/components/ManualCallLogDialog";
 
 // Soft pill color map — clean tinted backgrounds for status chips
 const SOFT_PILL: Record<string, string> = {
@@ -71,6 +73,7 @@ const LeadDetailPage = () => {
   const { partners } = usePartners();
   const lead = leads.find(l => l.id === id);
   const [showCallLog, setShowCallLog] = useState(false);
+  const [pendingDuration, setPendingDuration] = useState(0);
   const [showEMI, setShowEMI] = useState(false);
   const [showReassign, setShowReassign] = useState(false);
   const [showOverride, setShowOverride] = useState(false);
@@ -152,23 +155,7 @@ const LeadDetailPage = () => {
   })();
   const emi = emiCalc.emi;
 
-  const handleLogCall = () => {
-    if (!callOutcome || !callDisposition) {
-      toast.error("Outcome and Disposition are required");
-      return;
-    }
-    // Validate backdating per role
-    if (callDate) {
-      const diff = Date.now() - callDate.getTime();
-      if (diff > 24 * 3600000 && !can.backdateBeyond24h(role)) {
-        toast.error("Cannot backdate call more than 24 hours");
-        return;
-      }
-    }
-    if (callNextAction === "follow_up" && !followUpDate) {
-      toast.error("Follow-up date is required");
-      return;
-    }
+  const handleManualCallSubmit = (data: ManualCallSubmission) => {
     logAudit({
       ...actor,
       action: "log_call",
@@ -176,17 +163,23 @@ const LeadDetailPage = () => {
       entityId: lead.id,
       entityLabel: lead.name,
       after: {
-        outcome: callOutcome,
-        disposition: callDisposition,
-        duration: callDuration,
-        nextAction: callNextAction,
-        followUpAt: followUpDate ? followUpDate.toISOString() : null,
+        outcome: data.outcome,
+        disposition: data.disposition,
+        durationSec: data.durationSeconds,
+        nextAction: data.nextAction,
+        followUpAt: data.followUpAt ? data.followUpAt.toISOString() : null,
+        customerInterest: data.customerInterest || undefined,
+        escalated: data.escalate || undefined,
       },
-      notes: callNotes || undefined,
+      reason: data.backdatedReason || undefined,
+      notes: data.notes || undefined,
     });
+    if (data.escalate) {
+      toast.info("Escalation flagged — manager will be notified.");
+    }
     setShowCallLog(false);
-    toast.success("Call logged successfully");
-    setCallOutcome(""); setCallDisposition(""); setCallNotes(""); setCallNextAction(""); setCallDuration("120"); setFollowUpDate(undefined); setFollowUpTime("");
+    setPendingDuration(0);
+    toast.success("Manual call logged");
   };
 
   const handleAddNote = () => {
@@ -450,7 +443,7 @@ const LeadDetailPage = () => {
           <ArrowLeft className="h-4 w-4 mr-1.5" /> Back to Leads
         </Button>
         <div className="flex-1" />
-        <Button size="sm" onClick={() => setShowCallLog(true)} className="h-9"><Phone className="h-4 w-4 mr-1.5" /> Log Call</Button>
+        <Button size="sm" onClick={() => setShowCallLog(true)} className="h-9"><Phone className="h-4 w-4 mr-1.5" /> Log Manual Call</Button>
         <Tooltip>
           <TooltipTrigger asChild>
             <span tabIndex={0}>
@@ -846,8 +839,16 @@ const LeadDetailPage = () => {
           </Card>
         </div>
 
-        {/* STB + Notes + Retry */}
+        {/* Manual Call + STB + Notes + Retry */}
         <div className="space-y-6">
+          <ManualCallPanel
+            customerName={lead.name}
+            primaryPhone={lead.mobile}
+            consentReceived={consentReceived}
+            consentLabel={consentStatus.replace(/_/g, " ")}
+            lastCallSummary={lead.callLogs[0] ? `${lead.callLogs[0].outcome === "connected" ? "Connected" : "Not connected"} · ${new Date(lead.callLogs[0].timestamp).toLocaleDateString()}` : undefined}
+            onLogCall={(secs) => { setPendingDuration(secs); setShowCallLog(true); }}
+          />
           <Card className="shadow-none">
             <CardHeader className="pb-3 border-b">
               <CardTitle className="text-sm flex items-center gap-2.5">
@@ -1220,129 +1221,16 @@ const LeadDetailPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Revamped Call Log Dialog */}
-      <Dialog open={showCallLog} onOpenChange={setShowCallLog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle className="text-base">Log Call — {lead.name}</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs">Date (max 24hr back)</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-8 text-xs", !callDate && "text-muted-foreground")}>
-                      <CalendarIcon className="mr-1 h-3 w-3" />
-                      {callDate ? format(callDate, "PPP") : "Pick date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={callDate}
-                      onSelect={setCallDate}
-                      disabled={(d) => d > new Date() || d < new Date(Date.now() - 86400000)}
-                      className={cn("p-3 pointer-events-auto")}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div>
-                <Label className="text-xs">Time</Label>
-                <Input type="time" value={callTime} onChange={e => setCallTime(e.target.value)} className="h-8 text-xs" />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs">Outcome *</Label>
-                <Select value={callOutcome} onValueChange={(v) => {
-                  setCallOutcome(v);
-                  setCallDisposition("");
-                  if (v === "not_connected") setCallDuration("0");
-                }}>
-                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="connected">Connected</SelectItem>
-                    <SelectItem value="not_connected">Not Connected</SelectItem>
-                    <SelectItem value="invalid">Invalid / Compliance</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-xs">Duration (sec)</Label>
-                <Input type="number" value={callDuration} onChange={e => setCallDuration(e.target.value)} disabled={callOutcome === "not_connected"} className="h-8 text-xs" />
-              </div>
-            </div>
-            <div>
-              <Label className="text-xs">Disposition *</Label>
-              <Select value={callDisposition} onValueChange={setCallDisposition} disabled={!callOutcome}>
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder={callOutcome ? "Select disposition" : "Select outcome first"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredGroups.map(g => (
-                    <SelectGroup key={g.group}>
-                      <SelectLabel className="text-[10px] font-bold">{g.group}</SelectLabel>
-                      {g.items.map(d => (
-                        <SelectItem key={d.type} value={d.type} className="text-xs">{d.label}</SelectItem>
-                      ))}
-                    </SelectGroup>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div><Label className="text-xs">Notes</Label><Textarea placeholder="Call notes..." value={callNotes} onChange={e => setCallNotes(e.target.value)} className="text-xs min-h-[60px]" /></div>
-            <div>
-              <Label className="text-xs">Next Action</Label>
-              <Select value={callNextAction} onValueChange={setCallNextAction}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="follow_up">Schedule Follow-Up</SelectItem>
-                  <SelectItem value="stb">Initiate STB</SelectItem>
-                  <SelectItem value="close">Close Lead</SelectItem>
-                  <SelectItem value="none">No Action</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {callNextAction === "follow_up" && (
-              <>
-                <div>
-                  <Label className="text-xs">Follow-Up Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-8 text-xs", !followUpDate && "text-muted-foreground")}>
-                        <CalendarIcon className="mr-1 h-3 w-3" />
-                        {followUpDate ? format(followUpDate, "PPP") : "Pick follow-up date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={followUpDate}
-                        onSelect={setFollowUpDate}
-                        disabled={(d) => d < new Date()}
-                        className={cn("p-3 pointer-events-auto")}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div>
-                  <Label className="text-xs">Follow-Up Time (optional)</Label>
-                  <Input
-                    type="time"
-                    value={followUpTime}
-                    onChange={e => setFollowUpTime(e.target.value)}
-                    className="h-8 text-xs"
-                  />
-                </div>
-              </>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setShowCallLog(false)}>Cancel</Button>
-            <Button size="sm" onClick={handleLogCall}>Save Call Log</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Manual Call Log Dialog (Section 5.5–5.7) */}
+      <ManualCallLogDialog
+        open={showCallLog}
+        onOpenChange={(o) => { setShowCallLog(o); if (!o) setPendingDuration(0); }}
+        customerName={lead.name}
+        initialDuration={pendingDuration}
+        lastCallAt={lead.callLogs[0]?.timestamp}
+        canBackdateBeyond24h={can.backdateBeyond24h(role)}
+        onSubmit={handleManualCallSubmit}
+      />
 
       {/* EMI Calculator */}
       <Dialog open={showEMI} onOpenChange={setShowEMI}>

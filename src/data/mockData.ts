@@ -91,6 +91,14 @@ export const dispositionConfigs: DispositionConfig[] = [
   { type: "stb_approved", label: "STB Approved", category: "outcome", group: "STB", requiresFollowUp: true },
   { type: "stb_declined", label: "STB Declined", category: "outcome", group: "STB", requiresFollowUp: false },
   { type: "disbursed", label: "Disbursed", category: "outcome", group: "Outcome", requiresFollowUp: false },
+  // Section 5.6 — Manual Call canonical dispositions
+  { type: "needs_more_information", label: "Needs More Information", category: "connected", group: "Connected", requiresFollowUp: true },
+  { type: "ringing", label: "Ringing", category: "not_connected", group: "Not Connected", requiresFollowUp: true },
+  { type: "not_reachable", label: "Not Reachable", category: "not_connected", group: "Not Connected", requiresFollowUp: true },
+  { type: "duplicate_lead", label: "Duplicate Lead", category: "outcome", group: "Outcome", requiresFollowUp: false },
+  { type: "do_not_contact", label: "Do Not Contact", category: "compliance", group: "Compliance", requiresFollowUp: false },
+  { type: "consent_missing", label: "Consent Missing", category: "compliance", group: "Compliance", requiresFollowUp: false },
+  { type: "customer_complaint", label: "Customer Complaint", category: "compliance", group: "Compliance", requiresFollowUp: false },
 ];
 
 export const dispositionGroups = (): { group: string; items: DispositionConfig[] }[] => {
