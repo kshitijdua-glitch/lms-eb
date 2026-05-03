@@ -75,8 +75,8 @@ const STBPage = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Send to Bank (STB)</h1>
-        <p className="text-muted-foreground text-sm">{allSubs.length} total submissions</p>
+        <h1 className="text-2xl font-bold">Submit to Lending Partner (STB)</h1>
+        <p className="text-muted-foreground text-sm">{allSubs.length} total submissions to lending partners</p>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
