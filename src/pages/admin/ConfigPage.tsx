@@ -289,13 +289,6 @@ function CallRulesTab({ canEdit }: { canEdit: boolean }) {
           <NumberField label="Duplicate-call warning window" value={r.duplicateWindowMinutes} onChange={v => update({ duplicateWindowMinutes: v })} suffix="min" disabled={!canEdit} />
           <NumberField label="Agent backdate limit" value={r.agentBackdateHours} onChange={v => update({ agentBackdateHours: v })} suffix="hours" disabled={!canEdit} />
         </div>
-        <div className="flex items-center justify-between rounded-md border p-3">
-          <div>
-            <Label className="text-sm">Enforce consent before STB</Label>
-            <p className="text-[11px] text-muted-foreground">Block Send-to-Bank until customer consent is recorded.</p>
-          </div>
-          <Switch checked={r.enforceConsentBeforeSTB} disabled={!canEdit} onCheckedChange={v => update({ enforceConsentBeforeSTB: v })} />
-        </div>
         <Button size="sm" disabled={!canEdit} onClick={() => toast.success("Call rules saved")}>Save</Button>
       </CardContent>
     </Card>

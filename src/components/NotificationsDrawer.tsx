@@ -12,7 +12,7 @@ const iconMap: Record<string, any> = {
   follow_up_due: Clock,
   follow_up_missed: AlertTriangle,
   lead_expiry: AlertTriangle,
-  consent_received: CheckCircle,
+  
   lead_reassigned: Users,
   new_allocation: Users,
   stb_status_update: Send,
@@ -86,7 +86,7 @@ export function NotificationsDrawer() {
             const Icon = iconMap[n.type] || Bell;
             const tone = n.type.includes("missed") || n.type.includes("expiry") || n.type.includes("nc_")
               ? "bg-destructive/10 text-destructive"
-              : n.type.includes("consent") || n.type.includes("approved") || n.type.includes("export_completed")
+              : n.type.includes("approved") || n.type.includes("export_completed")
                 ? "bg-success/10 text-success"
                 : "bg-primary/10 text-primary";
             return (

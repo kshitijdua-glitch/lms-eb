@@ -11,7 +11,6 @@ export interface CallRulesConfig {
   maxRetriesPerLead: number;
   duplicateWindowMinutes: number;
   agentBackdateHours: number;
-  enforceConsentBeforeSTB: boolean;
 }
 
 export interface FollowUpSLAConfig {
@@ -41,7 +40,6 @@ export const defaultConfig: AppConfig = {
     maxRetriesPerLead: 5,
     duplicateWindowMinutes: 30,
     agentBackdateHours: 24,
-    enforceConsentBeforeSTB: true,
   },
   followUpSLA: {
     hotLeadHours: 4,

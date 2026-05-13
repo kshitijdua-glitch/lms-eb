@@ -5,16 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Check, ChevronRight, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 /**
- * Progressive Lead Creation — Section 6.2 of Frontend Change Requirements.
- * 7-step form. Step 1 is enough to save a "lite" lead; subsequent steps
- * surface what's still missing before the lead can move to STB.
+ * Progressive Lead Creation — 6-step form. Step 1 saves a "lite" lead;
+ * subsequent steps surface what's still missing before STB.
  */
 
 interface Props {
@@ -29,9 +27,8 @@ const STEPS = [
   { id: 2, label: "Location" },
   { id: 3, label: "Financial" },
   { id: 4, label: "KYC" },
-  { id: 5, label: "Consent" },
-  { id: 6, label: "Assignment" },
-  { id: 7, label: "Review" },
+  { id: 5, label: "Assignment" },
+  { id: 6, label: "Review" },
 ];
 
 const SOURCES = ["Website", "Google Ads", "Facebook", "Referral", "Partner", "Walk-in", "IVR", "WhatsApp"];
@@ -43,6 +40,8 @@ const PRODUCTS = [
   { v: "loan_against_property", l: "Loan Against Property" },
 ];
 
+const TOTAL = STEPS.length;
+
 export function CreateLeadWizard({ open, onOpenChange, existingMobiles = [], onSubmit }: Props) {
   const [step, setStep] = useState(1);
   const [d, setD] = useState<any>({
@@ -50,7 +49,6 @@ export function CreateLeadWizard({ open, onOpenChange, existingMobiles = [], onS
     city: "", state: "", pin: "", language: "",
     income: "", loanAmount: "", employment: "", company: "",
     pan: "", dob: "",
-    contactConsent: false, dataConsent: false,
     owner: "", priority: "warm", notes: "",
   });
 
@@ -67,7 +65,6 @@ export function CreateLeadWizard({ open, onOpenChange, existingMobiles = [], onS
     if (!d.loanAmount) out.push("Loan amount");
     if (!d.employment) out.push("Employment type");
     if (!d.pan) out.push("PAN");
-    if (!d.dataConsent) out.push("Data consent");
     return out;
   }, [d]);
 
@@ -86,10 +83,10 @@ export function CreateLeadWizard({ open, onOpenChange, existingMobiles = [], onS
   const next = () => {
     const err = validateStep();
     if (err) { toast.error(err); return; }
-    setStep(s => Math.min(7, s + 1));
+    setStep(s => Math.min(TOTAL, s + 1));
   };
 
-  const reset = () => { setStep(1); setD({ name: "", mobile: "", altMobile: "", source: "", product: "", city: "", state: "", pin: "", language: "", income: "", loanAmount: "", employment: "", company: "", pan: "", dob: "", contactConsent: false, dataConsent: false, owner: "", priority: "warm", notes: "" }); };
+  const reset = () => { setStep(1); setD({ name: "", mobile: "", altMobile: "", source: "", product: "", city: "", state: "", pin: "", language: "", income: "", loanAmount: "", employment: "", company: "", pan: "", dob: "", owner: "", priority: "warm", notes: "" }); };
 
   const handleSubmit = () => {
     onSubmit(d);
@@ -101,7 +98,7 @@ export function CreateLeadWizard({ open, onOpenChange, existingMobiles = [], onS
     <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-base">Create Lead — Step {step} of 7</DialogTitle>
+          <DialogTitle className="text-base">Create Lead — Step {step} of {TOTAL}</DialogTitle>
         </DialogHeader>
 
         {/* Stepper */}
@@ -174,19 +171,6 @@ export function CreateLeadWizard({ open, onOpenChange, existingMobiles = [], onS
             </div>
           )}
           {step === 5 && (
-            <div className="space-y-3">
-              <p className="text-xs text-muted-foreground">Consent is required before sharing data with lending partners.</p>
-              <label className="flex items-center gap-2 rounded-md border p-3 cursor-pointer hover:bg-muted/30">
-                <Checkbox checked={d.contactConsent} onCheckedChange={(v) => set("contactConsent", !!v)} />
-                <span className="text-sm">Customer agrees to be contacted by phone, SMS, or WhatsApp.</span>
-              </label>
-              <label className="flex items-center gap-2 rounded-md border p-3 cursor-pointer hover:bg-muted/30">
-                <Checkbox checked={d.dataConsent} onCheckedChange={(v) => set("dataConsent", !!v)} />
-                <span className="text-sm">Customer authorizes sharing data with lending partners (required for STB).</span>
-              </label>
-            </div>
-          )}
-          {step === 6 && (
             <div className="grid grid-cols-2 gap-3">
               <Field label="Owner (agent)">
                 <PickSelect value={d.owner} onChange={(v) => set("owner", v)} options={[
@@ -202,7 +186,7 @@ export function CreateLeadWizard({ open, onOpenChange, existingMobiles = [], onS
               </div>
             </div>
           )}
-          {step === 7 && (
+          {step === 6 && (
             <div className="space-y-3">
               <div className="rounded-md border p-3 space-y-1.5 text-sm">
                 <Row label="Name" value={d.name} />
@@ -211,7 +195,6 @@ export function CreateLeadWizard({ open, onOpenChange, existingMobiles = [], onS
                 <Row label="Product" value={PRODUCTS.find(p => p.v === d.product)?.l || d.product} />
                 <Row label="City / State" value={[d.city, d.state].filter(Boolean).join(", ") || "—"} />
                 <Row label="Income / Loan" value={d.income || d.loanAmount ? `₹${d.income || "—"} / ₹${d.loanAmount || "—"}` : "—"} />
-                <Row label="Consent" value={`Contact: ${d.contactConsent ? "Yes" : "No"} · Data: ${d.dataConsent ? "Yes" : "No"}`} />
                 <Row label="Owner" value={d.owner || "Unassigned"} />
               </div>
               {missingForSTB.length > 0 && (
@@ -229,8 +212,8 @@ export function CreateLeadWizard({ open, onOpenChange, existingMobiles = [], onS
 
         <DialogFooter className="gap-2">
           {step > 1 && <Button variant="outline" onClick={() => setStep(s => s - 1)}>Back</Button>}
-          {step < 7 && <Button onClick={next}>Continue</Button>}
-          {step === 7 && <Button onClick={handleSubmit}>Save Lead</Button>}
+          {step < TOTAL && <Button onClick={next}>Continue</Button>}
+          {step === TOTAL && <Button onClick={handleSubmit}>Save Lead</Button>}
         </DialogFooter>
       </DialogContent>
     </Dialog>

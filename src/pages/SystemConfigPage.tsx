@@ -142,7 +142,7 @@ const SystemConfigPage = () => {
   const [expiryDays, setExpiryDays] = useState("90");
   const [agingAlertDays, setAgingAlertDays] = useState("7");
   const [bureauWindow, setBureauWindow] = useState("30");
-  const [consentExpiry, setConsentExpiry] = useState("7");
+  
 
   const addSource = () => {
     if (!newSource.trim()) return;
@@ -274,7 +274,7 @@ const SystemConfigPage = () => {
                   <TableRow><TableHead>Notification Type</TableHead><TableHead>Real-time</TableHead><TableHead>Summary</TableHead></TableRow>
                 </TableHeader>
                 <TableBody>
-                  {["Follow-Up Due", "Follow-Up Missed", "Lead Expiry", "NC Escalation", "STB Status Update", "New Allocation", "Agent Not Logged In", "Consent Required"].map(n => (
+                  {["Follow-Up Due", "Follow-Up Missed", "Lead Expiry", "NC Escalation", "STB Status Update", "New Allocation", "Agent Not Logged In"].map(n => (
                     <TableRow key={n}>
                       <TableCell className="font-medium text-sm">{n}</TableCell>
                       <TableCell><Switch defaultChecked /></TableCell>
