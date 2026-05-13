@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { StatTile } from "@/components/StatTile";
-import { ScopeChip } from "@/components/ScopeChip";
+
 import { leads, getLeadsForAgent, getDispositionLabel, getStageLabel } from "@/data/mockData";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
