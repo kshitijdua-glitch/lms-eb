@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { StatTile } from "@/components/StatTile";
-import { ScopeChip } from "@/components/ScopeChip";
+
 import { leads, getLeadsForAgent, getDispositionLabel, getStageLabel } from "@/data/mockData";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -59,10 +59,7 @@ export function AgentDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1>Welcome back, {firstName}!</h1>
-          <div className="flex items-center gap-2 mt-1.5">
-            <p className="text-sm text-muted-foreground">Here's your daily overview</p>
-            <ScopeChip />
-          </div>
+          <p className="text-sm text-muted-foreground mt-1.5">Here's your daily overview</p>
         </div>
         <div className="text-sm text-muted-foreground">
           Never Contacted: <span className="font-semibold text-[hsl(var(--warning))]">{neverContacted.length}</span>

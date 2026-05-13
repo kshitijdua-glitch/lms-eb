@@ -12,7 +12,7 @@ import { useState } from "react";
 import type { ColumnDef } from "@/types/table";
 import { ExportConfirmationDialog } from "@/components/ExportConfirmationDialog";
 import { LastUpdated } from "@/components/LastUpdated";
-import { ScopeChip } from "@/components/ScopeChip";
+
 
 type AuditRow = { id: string; timestamp: string; agentName: string; leadName: string; disposition: string };
 
@@ -69,7 +69,7 @@ const ReportsPage = () => {
         <div>
           <h1 className="text-2xl font-bold">MIS & Reports</h1>
           <p className="text-muted-foreground text-sm">Analytics, data exports & team performance</p>
-          <div className="flex items-center gap-3 mt-1.5"><ScopeChip /><LastUpdated /></div>
+          <div className="flex items-center gap-3 mt-1.5"><LastUpdated /></div>
           <p className="text-[11px] text-muted-foreground italic mt-1">Manual call activity is self-reported by users.</p>
         </div>
         <Button onClick={handleExport}><Download className="h-4 w-4 mr-1" /> Export Report</Button>

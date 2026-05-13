@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { NotificationsDrawer } from "@/components/NotificationsDrawer";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { DemoModeBanner } from "@/components/DemoModeBanner";
-import { ScopeChip } from "@/components/ScopeChip";
+
 import { SkipLink } from "@/components/SkipLink";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
@@ -21,7 +21,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <header className="h-14 flex items-center border-b bg-card px-4 gap-3 shrink-0">
             <SidebarTrigger aria-label="Toggle sidebar" />
             <div className="flex-1" />
-            <ScopeChip />
+            
             <Badge variant="outline" className="text-xs" aria-label={`Current role ${roleLabels[role]}`}>
               {roleLabels[role]}
             </Badge>

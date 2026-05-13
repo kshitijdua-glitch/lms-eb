@@ -11,7 +11,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Plus, Download, Users, CheckCircle2, Clock4, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { ConfigurableTable } from "@/components/ConfigurableTable";
-import { ScopeChip } from "@/components/ScopeChip";
+
 import { CreateLeadWizard } from "@/components/CreateLeadWizard";
 import type { ColumnDef } from "@/types/table";
 import type { Lead } from "@/types/lms";
@@ -128,10 +128,7 @@ const LeadsPage = () => {
       {/* Page header */}
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1.5">
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-semibold tracking-tight">{pageTitle}</h1>
-            <ScopeChip />
-          </div>
+          <h1 className="text-2xl font-semibold tracking-tight">{pageTitle}</h1>
           {pageSubtitle && <p className="text-xs text-muted-foreground">{pageSubtitle}</p>}
           <p className="text-sm text-muted-foreground">
             Showing <span className="font-medium text-foreground">{filtered.length}</span> of {allLeads.length} leads
