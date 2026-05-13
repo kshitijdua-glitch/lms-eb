@@ -80,7 +80,7 @@ export function evaluateAllPartners(
  * - Connected:  Interested, Not Interested, Callback Requested, Documents Pending, Needs More Information
  * - Not Connected: Switched Off, Number Busy, No Response, Ringing, Not Reachable
  * - Invalid: Wrong Number, Invalid Number, Duplicate Lead
- * - Compliance: Do Not Contact, Consent Missing, Customer Complaint
+ * - Compliance: Do Not Contact, Customer Complaint
  */
 export type CallOutcome = "connected" | "not_connected" | "invalid" | "compliance";
 
@@ -113,7 +113,6 @@ export const DISPOSITION_BY_OUTCOME: Record<CallOutcome, { type: string; label: 
   ],
   compliance: [
     { type: "do_not_contact", label: "Do Not Contact" },
-    { type: "consent_missing", label: "Consent Missing" },
     { type: "customer_complaint", label: "Customer Complaint" },
   ],
 };
@@ -143,7 +142,6 @@ export const DISPOSITION_NOTES_REQUIRED = new Set<string>([
   "wrong_number",
   "duplicate_lead",
   "do_not_contact",
-  "consent_missing",
   "customer_complaint",
 ]);
 
