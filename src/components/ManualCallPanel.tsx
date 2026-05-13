@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Phone, Copy, ShieldAlert, Clock, BookOpen, CheckCircle2, AlertCircle } from "lucide-react";
+import { Phone, Copy, Clock, BookOpen, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,8 +10,6 @@ interface ManualCallPanelProps {
   customerName: string;
   primaryPhone: string;
   alternatePhone?: string;
-  consentReceived: boolean;
-  consentLabel?: string;
   lastCallSummary?: string;
   onLogCall: (durationSeconds: number) => void;
   /** Disabled (e.g. compliance block / DNC). */
@@ -28,8 +26,6 @@ export function ManualCallPanel({
   customerName,
   primaryPhone,
   alternatePhone,
-  consentReceived,
-  consentLabel,
   lastCallSummary,
   onLogCall,
   disabled,
@@ -123,32 +119,14 @@ export function ManualCallPanel({
           </div>
         </div>
 
-        {/* Consent + last call */}
-        <div className="flex items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-1.5">
-            {consentReceived ? (
-              <>
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                <span className="text-emerald-700 font-medium">Consent received</span>
-              </>
-            ) : (
-              <>
-                <ShieldAlert className="h-3.5 w-3.5 text-amber-600" />
-                <span className="text-amber-700">{consentLabel || "Consent not received"}</span>
-              </>
-            )}
-          </div>
-          {lastCallSummary && (
+        {/* Last call */}
+        {lastCallSummary && (
+          <div className="flex items-center justify-end text-xs">
             <Badge variant="outline" className="text-[10px] font-normal">
               Last: {lastCallSummary}
             </Badge>
-          )}
-        </div>
-
-        {/* Compliance reminder */}
-        <div className="rounded-md bg-muted/40 px-3 py-2 text-[11px] text-muted-foreground">
-          Check consent and contact preference before calling.
-        </div>
+          </div>
+        )}
 
         {/* Timer + log button */}
         <div className="rounded-md border border-border p-3 space-y-2.5">
