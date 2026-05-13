@@ -715,8 +715,6 @@ const LeadDetailPage = () => {
           <ManualCallPanel
             customerName={lead.name}
             primaryPhone={lead.mobile}
-            consentReceived={consentReceived}
-            consentLabel={consentStatus.replace(/_/g, " ")}
             lastCallSummary={lead.callLogs[0] ? `${lead.callLogs[0].outcome === "connected" ? "Connected" : "Not connected"} · ${new Date(lead.callLogs[0].timestamp).toLocaleDateString()}` : undefined}
             onLogCall={(secs) => { setPendingDuration(secs); setShowCallLog(true); }}
           />
@@ -1109,7 +1107,7 @@ const LeadDetailPage = () => {
         onOpenChange={setShowSTBWizard}
         customerName={lead.name}
         selectedPairs={selectedPairs}
-        consentReceived={consentReceived}
+        
         creditScore={lead.creditScore ?? null}
         onSubmit={handleSTBWizardSubmit}
       />
