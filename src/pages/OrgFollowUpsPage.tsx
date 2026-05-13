@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useMemo } from "react";
 import { ConfigurableTable } from "@/components/ConfigurableTable";
+import { PriorityBadge } from "@/components/PriorityBadge";
 import type { ColumnDef } from "@/types/table";
 
 const managers = [
@@ -75,7 +76,7 @@ const OrgFollowUpsPage = () => {
     { id: "type", label: "Type", render: (f) => <span className="text-sm capitalize">{f.type.replace(/_/g, " ")}</span> },
     { id: "scheduled", label: "Scheduled", render: (f) => <span className="text-sm text-muted-foreground">{new Date(f.scheduledAt).toLocaleString()}</span> },
     { id: "status", label: "Status", render: (f) => { const s = getFollowUpStatus(f.scheduledAt, f.status); return <Badge variant={s.variant} className="text-xs">{s.label}</Badge>; }},
-    { id: "priority", label: "Priority", render: (f) => <Badge variant={f.priority === "hot" ? "destructive" : f.priority === "warm" ? "default" : "secondary"} className="text-xs">{f.priority}</Badge> },
+    { id: "priority", label: "Priority", render: (f) => { const lead = leads.find(l => l.id === f.leadId); return lead ? <PriorityBadge lead={lead} /> : null; } },
     { id: "days", label: "Days", render: (f) => <span className="text-sm">{Math.floor((Date.now() - new Date(f.allocatedAt).getTime()) / 86400000)}d</span> },
     { id: "retry", label: "Retry", render: (f) => (
       <span className="text-xs">{f.retryCount > 0 ? <span>{f.retryCount}/5 {f.retryCount >= 5 && <Badge variant="destructive" className="text-[9px] ml-1">Escalate</Badge>}</span> : "—"}</span>
