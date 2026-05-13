@@ -11,6 +11,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Plus, Download, Users, CheckCircle2, Clock4, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { ConfigurableTable } from "@/components/ConfigurableTable";
+import { PriorityBadge } from "@/components/PriorityBadge";
 
 import { CreateLeadWizard } from "@/components/CreateLeadWizard";
 import type { ColumnDef } from "@/types/table";
@@ -120,7 +121,7 @@ const LeadsPage = () => {
     { id: "income", label: "Income", defaultVisible: false, render: (lead) => <span className="text-xs">₹{lead.monthlyIncome.toLocaleString()}</span> },
     { id: "loanAmount", label: "Loan Amt", defaultVisible: false, render: (lead) => <span className="text-xs">₹{lead.loanAmount.toLocaleString()}</span> },
     { id: "creditScore", label: "Credit Score", defaultVisible: false, render: (lead) => <span className="text-xs">{lead.creditScore || "—"}</span> },
-    { id: "priority", label: "Priority", defaultVisible: false, render: (lead) => <Badge variant={lead.priority === "hot" ? "destructive" : lead.priority === "warm" ? "default" : "secondary"} className="text-xs">{lead.priority}</Badge> },
+    { id: "priority", label: "Priority", defaultVisible: true, render: (lead) => <PriorityBadge lead={lead} /> },
   ];
 
   return (
