@@ -25,7 +25,6 @@ interface Props {
   onOpenChange: (o: boolean) => void;
   customerName: string;
   selectedPairs: STBPair[];
-  consentReceived: boolean;
   creditScore: number | null;
   onSubmit: (data: STBWizardSubmission) => void;
 }
@@ -33,7 +32,7 @@ interface Props {
 const CHECKLIST_ITEMS: { id: string; label: string; required: boolean }[] = [
   { id: "kyc_verified", label: "KYC documents verified", required: true },
   { id: "income_verified", label: "Income proof verified", required: true },
-  { id: "consent_captured", label: "Customer consent captured (SMS/recorded)", required: true },
+  
   { id: "duplicate_checked", label: "Checked for duplicate STB in last 30 days", required: true },
   { id: "bank_eligibility", label: "Confirmed BRE eligibility per partner", required: false },
   { id: "remarks_added", label: "Added remarks for partner reviewer", required: false },
@@ -46,7 +45,7 @@ const STEPS = [
   { id: 4, label: "Review & Submit", icon: Send },
 ];
 
-export function STBWizardDialog({ open, onOpenChange, customerName, selectedPairs, consentReceived, creditScore, onSubmit }: Props) {
+export function STBWizardDialog({ open, onOpenChange, customerName, selectedPairs, creditScore, onSubmit }: Props) {
   const [step, setStep] = useState(1);
   const [checklist, setChecklist] = useState<Record<string, boolean>>({});
   const [remarks, setRemarks] = useState("");
@@ -56,11 +55,10 @@ export function STBWizardDialog({ open, onOpenChange, customerName, selectedPair
 
   const eligibilityIssues = useMemo(() => {
     const issues: string[] = [];
-    if (!consentReceived) issues.push("Customer consent has not been recorded yet.");
     if (selectedPairs.length === 0) issues.push("No bank-product pairs selected. Add at least one before submitting.");
     if (creditScore !== null && creditScore < 600) issues.push("Credit score below 600 — partners may auto-decline.");
     return issues;
-  }, [consentReceived, selectedPairs.length, creditScore]);
+  }, [selectedPairs.length, creditScore]);
 
   const requiredUnchecked = CHECKLIST_ITEMS.filter(i => i.required && !checklist[i.id]);
   const activePairs = selectedPairs.filter(p => confirmedPairs[`${p.partnerId}-${p.productType}`]);
@@ -125,11 +123,7 @@ export function STBWizardDialog({ open, onOpenChange, customerName, selectedPair
                   </ul>
                 </div>
               )}
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="rounded-md border border-border p-2">
-                  <div className="text-muted-foreground">Consent</div>
-                  <div className="font-medium">{consentReceived ? "Received" : "Not received"}</div>
-                </div>
+              <div className="grid grid-cols-1 gap-2 text-xs">
                 <div className="rounded-md border border-border p-2">
                   <div className="text-muted-foreground">Credit Score</div>
                   <div className="font-medium">{creditScore ?? "—"}</div>

@@ -19,7 +19,7 @@ const features = [
   {
     icon: ShieldCheck,
     title: "Compliance Built-In",
-    description: "PII masking, consent capture, and an immutable audit trail for every interaction.",
+    description: "PII masking and an immutable audit trail for every interaction.",
   },
 ];
 

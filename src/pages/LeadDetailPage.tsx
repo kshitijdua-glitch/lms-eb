@@ -114,8 +114,6 @@ const LeadDetailPage = () => {
   const [leadSidebarOpen, setLeadSidebarOpen] = useState(true);
   const [leadListSearch, setLeadListSearch] = useState("");
   const [priorityOverride, setPriorityOverride] = useState<string | null>(null);
-  const [consentStatus, setConsentStatus] = useState<"not_sent" | "sent" | "received" | "expired">(lead?.consentStatus || "not_sent");
-  const [consentSentAt, setConsentSentAt] = useState<Date | null>(null);
 
   if (!lead) return <div className="p-8 text-center text-muted-foreground">Lead not found</div>;
 
@@ -261,50 +259,6 @@ const LeadDetailPage = () => {
   };
 
 
-  const consentReceived = consentStatus === "received";
-
-  const handleTriggerConsent = () => {
-    setConsentStatus("sent");
-    setConsentSentAt(new Date());
-    logAudit({
-      ...actor,
-      action: "trigger_sms_consent",
-      entityType: "lead",
-      entityId: lead.id,
-      entityLabel: lead.name,
-      after: { channel: "sms", status: "sent" },
-    });
-    toast.success("Consent SMS triggered", { description: `Sent to ${lead.mobile}` });
-  };
-
-  const handleMarkConsentReceived = () => {
-    setConsentStatus("received");
-    logAudit({
-      ...actor,
-      action: "mark_consent_received",
-      entityType: "lead",
-      entityId: lead.id,
-      entityLabel: lead.name,
-      before: { consentStatus },
-      after: { consentStatus: "received" },
-    });
-    toast.success("Consent marked as received");
-  };
-
-  const handleClearConsent = () => {
-    setConsentStatus("not_sent");
-    setConsentSentAt(null);
-    logAudit({
-      ...actor,
-      action: "clear_consent_flag",
-      entityType: "lead",
-      entityId: lead.id,
-      entityLabel: lead.name,
-      before: { consentStatus },
-      after: { consentStatus: "not_sent" },
-    });
-    toast.success("Consent flag cleared");
-  };
 
   const handleSendToBank = () => {
     if (isProfileLocked) {
@@ -434,25 +388,16 @@ const LeadDetailPage = () => {
         </Button>
         <div className="flex-1" />
         <Button size="sm" onClick={() => setShowCallLog(true)} className="h-9"><Phone className="h-4 w-4 mr-1.5" /> Log Manual Call</Button>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span tabIndex={0}>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleSendToBank}
-                disabled={isProfileLocked || !consentReceived}
-                className="h-9"
-                aria-label="Submit to Lending Partner"
-              >
-                <Send className="h-4 w-4 mr-1.5" /> Submit to Lending Partner
-              </Button>
-            </span>
-          </TooltipTrigger>
-          {!consentReceived && !isProfileLocked && (
-            <TooltipContent>Customer consent required before STB</TooltipContent>
-          )}
-        </Tooltip>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={handleSendToBank}
+          disabled={isProfileLocked}
+          className="h-9"
+          aria-label="Submit to Lending Partner"
+        >
+          <Send className="h-4 w-4 mr-1.5" /> Submit to Lending Partner
+        </Button>
         <Button size="sm" variant="outline" onClick={() => setShowEMI(true)} className="h-9"><Calculator className="h-4 w-4 mr-1.5" /> EMI Calculator</Button>
         {(role === "manager" || role === "cluster_head") && (
           <Button size="sm" variant="outline" onClick={() => setShowReassign(true)} className="h-9">
@@ -466,71 +411,7 @@ const LeadDetailPage = () => {
         )}
       </div>
 
-      {/* Compliance Banner */}
-      {!consentReceived ? (
-        <div className="rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3 flex items-start gap-3">
-          <div className="h-8 w-8 rounded-md bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
-            <ShieldAlert className="h-4 w-4" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-semibold text-amber-900">Consent required</span>
-              <SoftPill tone={consentStatus === "sent" ? "pending" : consentStatus === "expired" ? "missed" : "warm"}>
-                {consentStatus.replace(/_/g, " ")}
-              </SoftPill>
-            </div>
-            <p className="text-xs text-amber-900/80 mt-0.5">
-              {consentStatus === "sent" && consentSentAt
-                ? <>SMS consent sent to <strong>{lead.mobile}</strong> at {consentSentAt.toLocaleTimeString()}. Awaiting customer response.</>
-                : <>Customer consent must be captured before sharing data with partner banks. STB is disabled until consent is received.</>}
-            </p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleTriggerConsent}
-              className="h-8 bg-white border-amber-300 text-amber-900 hover:bg-amber-100"
-              aria-label="Trigger SMS consent"
-            >
-              <Send className="h-3.5 w-3.5 mr-1.5" />
-              {consentStatus === "sent" ? "Resend SMS" : "Trigger SMS Consent"}
-            </Button>
-            {consentStatus === "sent" && (
-              <Button
-                size="sm"
-                onClick={handleMarkConsentReceived}
-                className="h-8 bg-amber-700 hover:bg-amber-800 text-white"
-                aria-label="Mark consent received"
-              >
-                <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
-                Mark Received
-              </Button>
-            )}
-          </div>
-        </div>
-      ) : (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 px-4 py-3 flex items-center gap-3">
-          <div className="h-8 w-8 rounded-md bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-            <CheckCircle2 className="h-4 w-4" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-semibold text-emerald-900">Consent received</div>
-            <p className="text-xs text-emerald-900/80 mt-0.5">Customer has authorized data sharing with partner banks. STB is unlocked.</p>
-          </div>
-          {(role === "manager" || role === "cluster_head" || role === "data_admin") && (
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={handleClearConsent}
-              className="h-8 text-emerald-900 hover:bg-emerald-100"
-              aria-label="Clear consent flag"
-            >
-              Clear flag
-            </Button>
-          )}
-        </div>
-      )}
+      {/* Compliance Banner removed — consent flow disabled */}
 
       {/* STB Lock Banner */}
       {isProfileLocked && lockState.submission && (
@@ -834,8 +715,6 @@ const LeadDetailPage = () => {
           <ManualCallPanel
             customerName={lead.name}
             primaryPhone={lead.mobile}
-            consentReceived={consentReceived}
-            consentLabel={consentStatus.replace(/_/g, " ")}
             lastCallSummary={lead.callLogs[0] ? `${lead.callLogs[0].outcome === "connected" ? "Connected" : "Not connected"} · ${new Date(lead.callLogs[0].timestamp).toLocaleDateString()}` : undefined}
             onLogCall={(secs) => { setPendingDuration(secs); setShowCallLog(true); }}
           />
@@ -1228,7 +1107,7 @@ const LeadDetailPage = () => {
         onOpenChange={setShowSTBWizard}
         customerName={lead.name}
         selectedPairs={selectedPairs}
-        consentReceived={consentReceived}
+        
         creditScore={lead.creditScore ?? null}
         onSubmit={handleSTBWizardSubmit}
       />

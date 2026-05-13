@@ -68,7 +68,6 @@ export type DispositionType =
   | "not_reachable"
   | "duplicate_lead"
   | "do_not_contact"
-  | "consent_missing"
   | "customer_complaint";
 
 export type DispositionCategory =
@@ -132,7 +131,6 @@ export interface Lead {
   createdAt: string;
   lastActivityAt: string;
   allocatedAt: string;
-  consentStatus: "not_sent" | "sent" | "received" | "expired";
   retryCount: number;
   expiresAt: string;
 }
@@ -243,7 +241,7 @@ export type NotificationScope = "agent" | "team" | "org" | "admin";
 
 export interface Notification {
   id: string;
-  type: "follow_up_due" | "follow_up_missed" | "lead_expiry" | "consent_received" | "lead_reassigned" | "new_allocation" | "stb_status_update" | "agent_missed_fu" | "nc_escalation" | "agent_not_logged_in" | "stb_initiated_by_agent" | "batch_uploaded" | "allocation_done" | "export_completed" | "config_changed";
+  type: "follow_up_due" | "follow_up_missed" | "lead_expiry" | "lead_reassigned" | "new_allocation" | "stb_status_update" | "agent_missed_fu" | "nc_escalation" | "agent_not_logged_in" | "stb_initiated_by_agent" | "batch_uploaded" | "allocation_done" | "export_completed" | "config_changed";
   title: string;
   message: string;
   timestamp: string;

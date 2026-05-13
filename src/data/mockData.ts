@@ -97,7 +97,7 @@ export const dispositionConfigs: DispositionConfig[] = [
   { type: "not_reachable", label: "Not Reachable", category: "not_connected", group: "Not Connected", requiresFollowUp: true },
   { type: "duplicate_lead", label: "Duplicate Lead", category: "outcome", group: "Outcome", requiresFollowUp: false },
   { type: "do_not_contact", label: "Do Not Contact", category: "compliance", group: "Compliance", requiresFollowUp: false },
-  { type: "consent_missing", label: "Consent Missing", category: "compliance", group: "Compliance", requiresFollowUp: false },
+  
   { type: "customer_complaint", label: "Customer Complaint", category: "compliance", group: "Compliance", requiresFollowUp: false },
 ];
 
@@ -272,7 +272,7 @@ function generateLeads(): Lead[] {
       createdAt: daysAgo(allocDays + randomInt(0, 10)),
       lastActivityAt: daysAgo(lastActivityDays),
       allocatedAt: daysAgo(allocDays),
-      consentStatus: ["stb_submitted", "approved", "disbursed"].includes(stage) ? "received" : "not_sent",
+      
       retryCount: ["number_busy", "no_response", "switched_off"].includes(disp) ? randomInt(1, 6) : 0,
       expiresAt: daysAgo(-(90 - allocDays)),
     };
@@ -306,7 +306,7 @@ export const mockNotifications: Notification[] = [
   { id: "n-1", type: "follow_up_due", title: "Follow-Up Due", message: "Follow-up with Rajesh Khanna is due in 30 minutes", timestamp: daysAgo(0), read: false, leadId: "lead-1", scope: "agent", agentId: "agent-1" },
   { id: "n-2", type: "follow_up_missed", title: "Missed Follow-Up", message: "You missed a follow-up with Sunita Devi", timestamp: daysAgo(0), read: false, leadId: "lead-2", scope: "agent", agentId: "agent-1" },
   { id: "n-3", type: "lead_expiry", title: "Lead Expiring Soon", message: "Lead Mohd Irfan expires in 2 days", timestamp: daysAgo(0), read: false, leadId: "lead-3", scope: "agent", agentId: "agent-1" },
-  { id: "n-4", type: "consent_received", title: "Consent Received", message: "Consent SMS confirmed for Lakshmi Narayan", timestamp: daysAgo(0), read: true, leadId: "lead-4", scope: "agent", agentId: "agent-1" },
+  
   { id: "n-5", type: "new_allocation", title: "New Lead Allocated", message: "3 new leads have been assigned to you", timestamp: daysAgo(0), read: true, scope: "agent", agentId: "agent-1", clickTarget: "/leads" },
   { id: "n-6", type: "stb_status_update", title: "STB Update", message: "HDFC Bank approved loan for Vikram Chauhan", timestamp: daysAgo(1), read: true, leadId: "lead-5", scope: "agent", agentId: "agent-1" },
   { id: "n-7", type: "lead_reassigned", title: "Lead Reassigned", message: "Lead Nisha Agarwal reassigned to you from Sneha Gupta", timestamp: daysAgo(1), read: true, leadId: "lead-6", scope: "agent", agentId: "agent-1" },
@@ -324,7 +324,7 @@ export const mockNotifications: Notification[] = [
   { id: "n-17", type: "stb_status_update", title: "Group STB Update", message: "Bajaj Finserv declined loan for Manoj Tiwari — Manager: Vikram Mehta, Agent: Meera Patel", timestamp: daysAgo(0), read: false, leadId: "lead-15", scope: "org" },
   { id: "n-18", type: "lead_reassigned", title: "Override Confirmation", message: "You overrode a Closed/Lost disposition on lead Arjun Rao — lead moved to Contacted", timestamp: daysAgo(1), read: true, leadId: "lead-9", scope: "org" },
   { id: "n-19", type: "agent_not_logged_in", title: "Manager Not Logged In", message: "Manager Anjali Kapoor has not logged in today", timestamp: daysAgo(0), read: false, scope: "org", clickTarget: "/staff-management" },
-  { id: "n-20", type: "nc_escalation", title: "Consent Risk Alert", message: "3 leads contacted without consent in South Zone", timestamp: daysAgo(0), read: false, scope: "org", clickTarget: "/audit-trail" },
+  
   // Admin / data-admin-scoped
   { id: "n-21", type: "new_allocation", title: "Unallocated Pool Alert", message: "22 leads from Partner source remain unallocated for 48 hours", timestamp: daysAgo(0), read: false, scope: "admin", clickTarget: "/admin/allocation" },
   { id: "n-22", type: "stb_status_update", title: "Stale STB Pool", message: "5 STB submissions pending >7 days across organisation", timestamp: daysAgo(0), read: false, scope: "admin", clickTarget: "/admin/pools" },
