@@ -50,7 +50,7 @@ const GroupFollowUpsPage = () => {
   }, [priorityFilter, agentFilter]);
 
   const buckets = useMemo(() => {
-    const out: Record<Tab, GFUItem[]> = { overdue: [], today: [], upcoming: [], completed: [], escalated: [] };
+    const out: Record<Tab, GFUItem[]> = { overdue: [], today: [], upcoming: [], completed: [], escalated: [], cancelled: [] };
     for (const f of allFollowUps) {
       const b = getFollowUpBucket(f.scheduledAt, f.status);
       if (b === "completed") continue;
