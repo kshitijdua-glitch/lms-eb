@@ -75,7 +75,7 @@ export function AgentDashboard() {
       </div>
 
       {/* KPI Cards — first 4 are highlighted gradient tiles */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
         {kpis.map((kpi) => (
           <StatTile
             key={kpi.label}
