@@ -65,7 +65,7 @@ const LeadPoolsPage = () => {
           <CardHeader><CardTitle className="text-base">Pipeline Breakdown</CardTitle></CardHeader>
           <CardContent>
             <div className="grid grid-cols-3 md:grid-cols-5 gap-3 text-center text-sm">
-              {[{ stage: "New", count: Math.round(pool.valid * 0.3) }, { stage: "Contacted", count: Math.round(pool.valid * 0.25) }, { stage: "Interested", count: Math.round(pool.valid * 0.2) }, { stage: "STB", count: Math.round(pool.valid * 0.15) }, { stage: "Disbursed", count: Math.round(pool.valid * 0.1) }].map(s => (
+              {[{ stage: "New", count: Math.round(pool.valid * 0.3) }, { stage: "Contacted", count: Math.round(pool.valid * 0.25) }, { stage: "Interested", count: Math.round(pool.valid * 0.2) }, { stage: "SLP", count: Math.round(pool.valid * 0.15) }, { stage: "Disbursed", count: Math.round(pool.valid * 0.1) }].map(s => (
                 <div key={s.stage} className="border rounded p-2"><div className="font-bold">{s.count}</div><div className="text-xs text-muted-foreground">{s.stage}</div></div>
               ))}
             </div>

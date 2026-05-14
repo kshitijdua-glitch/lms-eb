@@ -19,7 +19,7 @@ const AgentManagementPage = () => {
   const columns: ColumnDef<Agent>[] = [
     { id: "name", label: "Name", render: (a) => <span className="font-medium">{a.name}</span> },
     { id: "email", label: "Email", render: (a) => <span className="text-sm text-muted-foreground">{a.email}</span> },
-    { id: "team", label: "Team", render: (a) => <Badge variant="outline" className="text-xs">{a.teamName}</Badge> },
+    { id: "team", label: "Team", hidden: true, render: (a) => <Badge variant="outline" className="text-xs">{a.teamName}</Badge> },
     { id: "manager", label: "Manager", render: (a) => <span className="text-sm">{a.managerName || "—"}</span> },
     { id: "status", label: "Status", render: (a) => <Badge variant={a.status === "active" ? "default" : "secondary"} className="text-xs">{a.status}</Badge> },
     { id: "leads", label: "Leads", headerClassName: "text-right", render: (a) => <span className="text-right block">{a.leadsAssigned}</span> },
