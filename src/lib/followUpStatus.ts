@@ -1,13 +1,8 @@
 /**
- * Centralized follow-up status logic.
- * Rules (relative to "now"):
- * - completed status → "Completed"
- * - missed status → "Overdue"
- * - scheduled date is BEFORE start of today → "Overdue"
- * - scheduled date is within today (start..end) → "Today" (alias "Due Now")
- * - scheduled date is AFTER end of today → "Upcoming"
+ * Centralized follow-up status logic — extended for PRD §9.5.
+ * Buckets: Upcoming | Today | Overdue | Completed | Escalated | Cancelled
  */
-export type FollowUpBucket = "overdue" | "today" | "upcoming" | "completed";
+export type FollowUpBucket = "overdue" | "today" | "upcoming" | "completed" | "escalated" | "cancelled";
 
 export interface FollowUpStatusResult {
   bucket: FollowUpBucket;
@@ -17,6 +12,8 @@ export interface FollowUpStatusResult {
 
 export function getFollowUpBucket(scheduledAt: string, status: string, now: Date = new Date()): FollowUpBucket {
   if (status === "completed") return "completed";
+  if (status === "cancelled") return "cancelled";
+  if (status === "escalated") return "escalated";
   const sched = new Date(scheduledAt).getTime();
   const startOfToday = new Date(now); startOfToday.setHours(0, 0, 0, 0);
   const endOfToday = new Date(now); endOfToday.setHours(23, 59, 59, 999);
@@ -34,5 +31,7 @@ export function getFollowUpStatus(scheduledAt: string, status: string, now: Date
     case "overdue": return { bucket, label: "Overdue", variant: "destructive" };
     case "today": return { bucket, label: "Today", variant: "default" };
     case "upcoming": return { bucket, label: "Upcoming", variant: "secondary" };
+    case "escalated": return { bucket, label: "Escalated", variant: "destructive" };
+    case "cancelled": return { bucket, label: "Cancelled", variant: "secondary" };
   }
 }

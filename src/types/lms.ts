@@ -254,11 +254,21 @@ export interface DispositionConfig {
   requiresFollowUp: boolean;
 }
 
-export type NotificationScope = "agent" | "team" | "org" | "admin";
+// "team" kept for legacy compat; new code uses "group" (manager-scoped).
+export type NotificationScope = "agent" | "team" | "group" | "org" | "admin";
+
+export type NotificationType =
+  | "follow_up_due" | "follow_up_missed" | "lead_expiry" | "lead_reassigned"
+  | "new_allocation" | "stb_status_update" | "agent_missed_fu" | "nc_escalation"
+  | "agent_not_logged_in" | "stb_initiated_by_agent" | "batch_uploaded"
+  | "allocation_done" | "export_completed" | "config_changed"
+  // SLP-specific (PRD §24.2)
+  | "slp_initiated" | "slp_pending_update" | "slp_approved" | "slp_declined" | "slp_disbursed"
+  | "retry_exceeded" | "staff_deactivated" | "partner_changed" | "lead_closed";
 
 export interface Notification {
   id: string;
-  type: "follow_up_due" | "follow_up_missed" | "lead_expiry" | "lead_reassigned" | "new_allocation" | "stb_status_update" | "agent_missed_fu" | "nc_escalation" | "agent_not_logged_in" | "stb_initiated_by_agent" | "batch_uploaded" | "allocation_done" | "export_completed" | "config_changed";
+  type: NotificationType;
   title: string;
   message: string;
   timestamp: string;
@@ -267,6 +277,7 @@ export interface Notification {
   scope: NotificationScope;
   agentId?: string;
   teamId?: string;
+  managerId?: string;
   /** Optional override for click-through navigation. Defaults: leadId → /leads/:id */
   clickTarget?: string;
 }
