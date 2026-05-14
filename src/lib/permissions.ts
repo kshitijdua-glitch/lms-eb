@@ -14,6 +14,7 @@ const RULES: RouteRule[] = [
   { path: "/follow-ups", roles: ["agent", "manager", "cluster_head", "data_admin"] },
   { path: "/stb", roles: ["agent", "manager", "cluster_head", "data_admin"] },
   { path: "/performance", roles: ["agent", "manager", "cluster_head", "data_admin"] },
+  { path: "/notifications", roles: ["agent", "manager", "cluster_head", "data_admin"] },
 
   // Reports — managers and above
   { path: "/reports", roles: ["manager", "cluster_head", "data_admin"] },
