@@ -113,6 +113,7 @@ const LeadDetailPage = () => {
   const [localLoans, setLocalLoans] = useState(lead?.existingLoans || []);
   const [showAddLoan, setShowAddLoan] = useState(false);
   const [newLoan, setNewLoan] = useState({ bankName: "", loanType: "", outstandingAmount: "", emi: "", tenure: "" });
+  const [slpUpdateTarget, setSlpUpdateTarget] = useState<STBSubmission | null>(null);
 
   const [leadSidebarOpen, setLeadSidebarOpen] = useState(true);
   const [leadListSearch, setLeadListSearch] = useState("");
