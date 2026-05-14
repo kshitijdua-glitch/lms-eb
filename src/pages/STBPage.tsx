@@ -28,9 +28,11 @@ const STBPage = () => {
   const disbursed = allSubs.filter(s => s.status === "disbursed").length;
   const declined = allSubs.filter(s => s.status === "declined").length;
 
-  const handleStatusUpdate = (subId: string, newStatus: string) => {
-    toast.success(`Status updated to ${newStatus}`);
-  };
+  const [updateTarget, setUpdateTarget] = useState<STBItem | null>(null);
+  const [localSubs, setLocalSubs] = useState<STBItem[]>(allSubs);
+
+  const canUpdate = can.updateSlpStatus(role);
+  const TERMINAL = ["disbursed", "declined", "cancelled", "expired"];
 
   const columns: ColumnDef<STBItem>[] = [
     { id: "lead", label: "Lead", render: (s) => <span className="font-medium text-sm">{s.leadName}</span> },
@@ -40,29 +42,27 @@ const STBPage = () => {
     { id: "days", label: "Days", render: (s) => <span className="text-sm">{Math.floor((Date.now() - new Date(s.submittedAt).getTime()) / 86400000)}d</span> },
     { id: "status", label: "Status", render: (s) => (
       <Badge variant={s.status === "disbursed" ? "default" : s.status === "approved" ? "default" : s.status === "declined" ? "destructive" : "secondary"} className="text-xs">
-        {s.status}
+        {SLP_STATUS_LABELS[s.status] ?? s.status}
       </Badge>
     )},
     { id: "sanction", label: "Sanction Amt", render: (s) => <span className="text-sm">{s.sanctionAmount ? `₹${s.sanctionAmount.toLocaleString()}` : "—"}</span> },
     { id: "disbursedAmt", label: "Disbursed Amt", render: (s) => <span className="text-sm">{s.disbursedAmount ? `₹${s.disbursedAmount.toLocaleString()}` : "—"}</span> },
     { id: "disbDate", label: "Disb. Date", render: (s) => <span className="text-sm text-muted-foreground">{s.disbursementDate ? new Date(s.disbursementDate).toLocaleDateString() : "—"}</span> },
     { id: "integration", label: "Integration", defaultVisible: false, render: (s) => <Badge variant="outline" className="text-[10px]">{s.integrationType}</Badge> },
-    ...(role === "agent" ? [{
+    ...(canUpdate ? [{
       id: "update", label: "Update", locked: "end" as const,
       render: (s: STBItem) => {
-        const isNonApi = s.integrationType !== "api";
+        const terminal = TERMINAL.includes(s.status);
         return (
           <div onClick={e => e.stopPropagation()}>
-            {isNonApi && s.status !== "disbursed" ? (
-              <Select onValueChange={(v) => handleStatusUpdate(s.id, v)}>
-                <SelectTrigger className="h-7 w-28 text-xs"><SelectValue placeholder="Update" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="declined">Declined</SelectItem>
-                  <SelectItem value="disbursed">Disbursed</SelectItem>
-                </SelectContent>
-              </Select>
-            ) : <span className="text-xs text-muted-foreground">{s.integrationType === "api" ? "Auto" : "—"}</span>}
+            {terminal ? (
+              <span className="text-xs text-muted-foreground">—</span>
+            ) : (
+              <Button size="sm" variant="outline" className="h-7 text-xs"
+                onClick={() => setUpdateTarget(s)}>
+                Update
+              </Button>
+            )}
           </div>
         );
       }
