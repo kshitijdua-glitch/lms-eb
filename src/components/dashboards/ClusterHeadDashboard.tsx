@@ -15,8 +15,9 @@ export function ClusterHeadDashboard() {
 
   // Pipeline funnel
   const allocated = leads.length;
-  const contacted = leads.filter(l => !["new"].includes(l.stage)).length;
-  const stbSubmitted = leads.filter(l => ["stb_submitted", "approved", "disbursed"].includes(l.stage)).length;
+  // Contacted (PRD §20): lead has ≥1 connected call
+  const contacted = leads.filter(l => l.callLogs.some(c => c.outcome === "connected")).length;
+  const slpSubmitted = leads.filter(l => l.stbSubmissions.length > 0).length;
   const approved = leads.filter(l => ["approved", "disbursed"].includes(l.stage)).length;
   const disbursed = leads.filter(l => l.stage === "disbursed").length;
   const totalDisbursedAmt = leads.flatMap(l => l.stbSubmissions).filter(s => s.status === "disbursed").reduce((s, d) => s + (d.disbursedAmount || 0), 0);
@@ -24,7 +25,7 @@ export function ClusterHeadDashboard() {
   const funnelSteps = [
     { label: "Allocated", value: allocated, rate: 100 },
     { label: "Contacted", value: contacted, rate: Math.round((contacted / allocated) * 100) },
-    { label: "STB", value: stbSubmitted, rate: Math.round((stbSubmitted / allocated) * 100) },
+    { label: "SLP", value: slpSubmitted, rate: Math.round((slpSubmitted / allocated) * 100) },
     { label: "Approved", value: approved, rate: Math.round((approved / allocated) * 100) },
     { label: "Disbursed", value: disbursed, rate: Math.round((disbursed / allocated) * 100) },
   ];
@@ -39,15 +40,15 @@ export function ClusterHeadDashboard() {
     const mgrTeams = teams.filter(t => mgr.teams.includes(t.id));
     const mgrAgents = agents.filter(a => mgr.teams.includes(a.teamId));
     const mgrLeads = leads.filter(l => mgr.teams.includes(l.assignedTeamId));
-    const mgrContacted = mgrLeads.filter(l => !["new"].includes(l.stage)).length;
-    const mgrSTB = mgrLeads.filter(l => ["stb_submitted", "approved", "disbursed"].includes(l.stage)).length;
+    const mgrContacted = mgrLeads.filter(l => l.callLogs.some(c => c.outcome === "connected")).length;
+    const mgrSLP = mgrLeads.filter(l => l.stbSubmissions.length > 0).length;
     const mgrDisbursed = mgrLeads.filter(l => l.stage === "disbursed").length;
     return {
       name: mgr.name,
       groupSize: mgrAgents.length,
       leads: mgrLeads.length,
       contactRate: mgrLeads.length > 0 ? Math.round((mgrContacted / mgrLeads.length) * 100) : 0,
-      stb: mgrSTB,
+      slp: mgrSLP,
       disbursed: mgrDisbursed,
     };
   });
@@ -70,7 +71,7 @@ export function ClusterHeadDashboard() {
     { label: "Inactive Agents", value: inactiveAgents, severity: inactiveAgents > 0 ? "warning" : "ok" },
     
     { label: "Missed Follow-Ups", value: missedFUs, severity: missedFUs > 5 ? "error" : missedFUs > 0 ? "warning" : "ok" },
-    { label: "Stale STBs (>7d)", value: staleSTBs, severity: staleSTBs > 0 ? "warning" : "ok" },
+    { label: "Stale SLPs (>7d)", value: staleSTBs, severity: staleSTBs > 0 ? "warning" : "ok" },
     { label: "Expiring Leads (7d)", value: expiringLeads, severity: expiringLeads > 3 ? "error" : expiringLeads > 0 ? "warning" : "ok" },
   ];
 
@@ -133,7 +134,7 @@ export function ClusterHeadDashboard() {
                 <TableHead className="text-right">Group Size</TableHead>
                 <TableHead className="text-right">Leads</TableHead>
                 <TableHead className="text-right">Contact Rate</TableHead>
-                <TableHead className="text-right">STB</TableHead>
+                <TableHead className="text-right">SLP</TableHead>
                 <TableHead className="text-right">Disbursed</TableHead>
               </TableRow>
             </TableHeader>
@@ -146,7 +147,7 @@ export function ClusterHeadDashboard() {
                   <TableCell className="text-right">
                     <Badge variant={m.contactRate > 70 ? "success" : "warning"}>{m.contactRate}%</Badge>
                   </TableCell>
-                  <TableCell className="text-right">{m.stb}</TableCell>
+                  <TableCell className="text-right">{m.slp}</TableCell>
                   <TableCell className="text-right">{m.disbursed}</TableCell>
                 </TableRow>
               ))}
