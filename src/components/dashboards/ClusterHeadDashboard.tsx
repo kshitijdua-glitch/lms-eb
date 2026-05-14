@@ -77,7 +77,7 @@ export function ClusterHeadDashboard() {
   const quickNav = [
     { label: "Org Leads", icon: Users, path: "/org-leads" },
     { label: "Org Follow-Ups", icon: Clock, path: "/org-follow-ups" },
-    { label: "Org STB", icon: Send, path: "/org-stb" },
+    { label: "Org SLP", icon: Send, path: "/org-stb" },
     { label: "Staff Mgmt", icon: UserCog, path: "/staff-management" },
     { label: "System Config", icon: Settings, path: "/system-config" },
     { label: "Lead Allocation", icon: Upload, path: "/lead-allocation" },

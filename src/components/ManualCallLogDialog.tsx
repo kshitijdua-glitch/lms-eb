@@ -51,7 +51,7 @@ interface Props {
 
 const NEXT_ACTIONS = [
   { value: "follow_up", label: "Schedule Follow-Up" },
-  { value: "stb", label: "Initiate STB" },
+  { value: "stb", label: "Initiate Send to Lending Partner" },
   { value: "close", label: "Close Lead" },
   { value: "none", label: "No Action" },
 ] as const;

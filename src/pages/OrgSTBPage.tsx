@@ -85,7 +85,7 @@ const OrgSTBPage = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Organisation STB Pipeline</h1>
+          <h1 className="text-2xl font-bold">Organisation Send to Lending Partner</h1>
           <p className="text-muted-foreground text-sm">{allSubs.length} total submissions</p>
         </div>
         <Select value={managerFilter} onValueChange={setManagerFilter}>
