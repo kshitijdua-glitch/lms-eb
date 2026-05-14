@@ -855,7 +855,7 @@ const LeadDetailPage = () => {
                     : ev.type === "audit" ? "bg-violet-50 text-violet-600"
                     : "bg-amber-50 text-amber-600";
                   const Icon = ev.type === "call" ? Phone : ev.type === "stb" ? Send : ev.type === "note" ? StickyNote : ev.type === "audit" ? Shield : Clock;
-                  const typeLabel = ev.type === "call" ? "Call" : ev.type === "stb" ? "STB" : ev.type === "note" ? "Note" : "Follow-up";
+                  const typeLabel = ev.type === "call" ? "Call" : ev.type === "stb" ? "SLP" : ev.type === "note" ? "Note" : "Follow-up";
                   const typeTone = ev.type === "call" ? "tone=\"new\"" : ev.type === "stb" ? "tone=\"submitted\"" : ev.type === "note" ? "tone=\"closed_lost\"" : "tone=\"pending\"";
                   return (
                     <div key={idx} className="flex items-start gap-4 px-5 py-4">
