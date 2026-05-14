@@ -106,7 +106,7 @@ const GroupManagementPage = () => {
         )}
       </div>
     )},
-    { id: "team", label: "Team", hidden: true, render: (a) => <span className="text-xs text-muted-foreground">{a.teamName}</span> },
+    { id: "team", label: "Team", defaultVisible: false, render: (a) => <span className="text-xs text-muted-foreground">{a.teamName}</span> },
     { id: "status", label: "Status", render: (a) => <Badge variant={a.loggedIn ? "default" : "secondary"} className="text-[10px]">{a.loggedIn ? "Active" : "Inactive"}</Badge> },
     { id: "leads", label: "Leads", render: (a) => <span>{a.leadsCount}</span> },
     { id: "workedToday", label: "Worked Today", render: (a) => <span>{a.workedToday}</span> },
