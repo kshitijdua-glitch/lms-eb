@@ -16,7 +16,7 @@ const managers = [
 
 type OSTBItem = {
   id: string; partnerId: string; partnerName: string; submittedAt: string;
-  status: "submitted" | "approved" | "declined" | "disbursed";
+  status: "submitted" | "documents_pending" | "under_review" | "approved" | "declined" | "disbursed" | "cancelled" | "expired";
   sanctionAmount: number | null; disbursedAmount: number | null;
   disbursementDate: string | null; integrationType: "api" | "portal" | "email";
   leadName: string; leadId: string; product: string;

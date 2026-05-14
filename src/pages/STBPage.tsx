@@ -11,7 +11,7 @@ import type { ColumnDef } from "@/types/table";
 
 type STBItem = {
   id: string; partnerId: string; partnerName: string; submittedAt: string;
-  status: "submitted" | "approved" | "declined" | "disbursed";
+  status: "submitted" | "documents_pending" | "under_review" | "approved" | "declined" | "disbursed" | "cancelled" | "expired";
   approvedAmount: number | null; sanctionAmount: number | null;
   disbursedAmount: number | null; disbursementDate: string | null;
   remarks: string; integrationType: "api" | "portal" | "email";
