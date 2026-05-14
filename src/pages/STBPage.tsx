@@ -1,15 +1,19 @@
+import { useState } from "react";
 import { leads, getLeadsForAgent, lendingPartners, getProductLabel } from "@/data/mockData";
 import { useRole } from "@/contexts/RoleContext";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { Send, CheckCircle, XCircle } from "lucide-react";
-import { toast } from "sonner";
 import { ConfigurableTable } from "@/components/ConfigurableTable";
+import { SLPStatusUpdateDialog } from "@/components/SLPStatusUpdateDialog";
+import { SLP_STATUS_LABELS } from "@/lib/slp";
+import { can } from "@/lib/permissions";
 import type { ColumnDef } from "@/types/table";
+import type { STBSubmission } from "@/types/lms";
 
-type STBItem = {
+type STBItem = STBSubmission & { leadName: string; leadId: string; product: string };
   id: string; partnerId: string; partnerName: string; submittedAt: string;
   status: "submitted" | "documents_pending" | "under_review" | "approved" | "declined" | "disbursed" | "cancelled" | "expired";
   approvedAmount: number | null; sanctionAmount: number | null;
