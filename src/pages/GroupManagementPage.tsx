@@ -44,7 +44,7 @@ const GroupManagementPage = () => {
   const [newFlag, setNewFlag] = useState("");
   const [targetCalls, setTargetCalls] = useState("50");
   const [targetFUs, setTargetFUs] = useState("30");
-  const [targetSTBs, setTargetSTBs] = useState("10");
+  const [targetSLPs, setTargetSLPs] = useState("10");
   const [targetLeads, setTargetLeads] = useState("80");
 
   const agentData: AgentRow[] = useMemo(() => {
@@ -106,13 +106,13 @@ const GroupManagementPage = () => {
         )}
       </div>
     )},
-    { id: "team", label: "Team", render: (a) => <span className="text-xs text-muted-foreground">{a.teamName}</span> },
+    { id: "team", label: "Team", defaultVisible: false, render: (a) => <span className="text-xs text-muted-foreground">{a.teamName}</span> },
     { id: "status", label: "Status", render: (a) => <Badge variant={a.loggedIn ? "default" : "secondary"} className="text-[10px]">{a.loggedIn ? "Active" : "Inactive"}</Badge> },
     { id: "leads", label: "Leads", render: (a) => <span>{a.leadsCount}</span> },
     { id: "workedToday", label: "Worked Today", render: (a) => <span>{a.workedToday}</span> },
     { id: "callsToday", label: "Calls Today", render: (a) => <span>{a.callsToday}</span> },
     { id: "missedFU", label: "Missed F/U", render: (a) => a.missedFUs > 0 ? <Badge variant="destructive" className="text-[10px]">{a.missedFUs}</Badge> : <span>0</span> },
-    { id: "stb", label: "STB", render: (a) => <span>{a.stb}</span> },
+    { id: "stb", label: "SLP", render: (a) => <span>{a.stb}</span> },
     { id: "disbursed", label: "Disbursed", render: (a) => <span>{a.disbursed}</span> },
     { id: "lastActivity", label: "Last Activity", render: (a) => <span className="text-xs text-muted-foreground">{a.lastActivity}</span> },
     { id: "actions", label: "Actions", locked: "end", render: (a) => (
@@ -144,7 +144,7 @@ const GroupManagementPage = () => {
           <div className="grid grid-cols-2 gap-4">
             <div><Label>Calls</Label><Input type="number" value={targetCalls} onChange={e => setTargetCalls(e.target.value)} /></div>
             <div><Label>Follow-Ups</Label><Input type="number" value={targetFUs} onChange={e => setTargetFUs(e.target.value)} /></div>
-            <div><Label>STBs</Label><Input type="number" value={targetSTBs} onChange={e => setTargetSTBs(e.target.value)} /></div>
+            <div><Label>SLPs</Label><Input type="number" value={targetSLPs} onChange={e => setTargetSLPs(e.target.value)} /></div>
             <div><Label>Leads to Work</Label><Input type="number" value={targetLeads} onChange={e => setTargetLeads(e.target.value)} /></div>
           </div>
           <DialogFooter>
@@ -198,7 +198,7 @@ const GroupManagementPage = () => {
                 <div className="grid grid-cols-3 gap-2 text-xs">
                   {[
                     { label: "Leads", value: currentAgent.leadsCount },
-                    { label: "STB", value: currentAgent.stb },
+                    { label: "SLP", value: currentAgent.stb },
                     { label: "Disbursed", value: currentAgent.disbursed },
                     { label: "Calls Today", value: currentAgent.callsToday },
                     { label: "Worked Today", value: currentAgent.workedToday },

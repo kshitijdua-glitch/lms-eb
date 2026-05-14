@@ -42,7 +42,7 @@ const AdminStaffPage = () => {
   const agentCols: ColumnDef<Agent>[] = [
     { id: "name", label: "Name", render: (a) => <span className="font-medium">{a.name}</span> },
     { id: "email", label: "Email", render: (a) => <span className="text-sm text-muted-foreground">{a.email}</span> },
-    { id: "team", label: "Team", render: (a) => <Badge variant="outline" className="text-xs">{a.teamName}</Badge> },
+    { id: "team", label: "Team", defaultVisible: false, render: (a) => <Badge variant="outline" className="text-xs">{a.teamName}</Badge> },
     { id: "manager", label: "Manager", render: (a) => <span className="text-sm">{a.managerName || "—"}</span> },
     { id: "status", label: "Status", render: (a) => <Badge variant={a.status === "active" ? "default" : "secondary"} className="text-xs">{a.status}</Badge> },
     { id: "leads", label: "Leads", headerClassName: "text-right", render: (a) => <span className="text-right block">{a.leadsAssigned}</span> },
@@ -140,7 +140,7 @@ const AdminStaffPage = () => {
             <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
               <li>Active leads: <span className="font-medium text-foreground">12</span></li>
               <li>Open follow-ups: <span className="font-medium text-foreground">3</span></li>
-              <li>Pending STBs: <span className="font-medium text-foreground">1</span></li>
+              <li>Pending SLPs: <span className="font-medium text-foreground">1</span></li>
             </ul>
           </div>
           <DialogFooter>
