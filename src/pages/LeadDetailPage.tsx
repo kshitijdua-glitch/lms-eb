@@ -35,7 +35,9 @@ import { CheckCircle2, XCircle, Info, ShieldAlert } from "lucide-react";
 import { ManualCallPanel } from "@/components/ManualCallPanel";
 import { ManualCallLogDialog, type ManualCallSubmission } from "@/components/ManualCallLogDialog";
 import { STBWizardDialog, type STBWizardSubmission } from "@/components/STBWizardDialog";
-import { isFieldLockedAfterSLP, getSLPReadiness } from "@/lib/slp";
+import { isFieldLockedAfterSLP, getSLPReadiness, SLP_STATUS_LABELS } from "@/lib/slp";
+import { SLPStatusUpdateDialog } from "@/components/SLPStatusUpdateDialog";
+import type { STBSubmission } from "@/types/lms";
 
 // Soft pill color map — clean tinted backgrounds for status chips
 const SOFT_PILL: Record<string, string> = {
