@@ -52,12 +52,11 @@ const statusVariant: Record<BatchRow["status"], "default" | "secondary" | "outli
   allocated: "default",
 };
 
-type AllocMode = "round_robin" | "to_group" | "to_team" | "to_agent";
+type AllocMode = "round_robin" | "to_group" | "to_agent";
 
 const MODE_LABELS: Record<AllocMode, string> = {
   round_robin: "Round Robin (auto-balance across active agents)",
   to_group: "Assign to a Manager group",
-  to_team: "Assign to a Team",
   to_agent: "Assign to a single Agent",
 };
 
@@ -102,12 +101,6 @@ const LeadAllocationPage = () => {
       const a = agents.find(x => x.id === targetAgent);
       return a ? [{ id: a.id, name: a.name, sub: a.teamName, current: a.leadsAssigned, incoming: count }] : [];
     }
-    if (allocMode === "to_team" && targetTeam) {
-      const ags = agentsForTeam(targetTeam);
-      const per = Math.floor(count / Math.max(ags.length, 1));
-      const rem = count - per * ags.length;
-      return ags.map((a, i) => ({ id: a.id, name: a.name, sub: a.teamName, current: a.leadsAssigned, incoming: per + (i < rem ? 1 : 0) }));
-    }
     if (allocMode === "to_group" && targetManager) {
       const tIds = managers.find(m => m.id === targetManager)?.teams ?? [];
       const ags = agents.filter(a => tIds.includes(a.teamId) && a.status === "active");
@@ -128,7 +121,6 @@ const LeadAllocationPage = () => {
     if (step === 0) return !!selectedBatch;
     if (step === 1) {
       if (allocMode === "to_agent") return !!targetAgent;
-      if (allocMode === "to_team") return !!targetTeam;
       if (allocMode === "to_group") return !!targetManager;
       return true;
     }
@@ -141,7 +133,6 @@ const LeadAllocationPage = () => {
     const target =
       allocMode === "round_robin" ? `Round Robin · ${capacityPreview.length} agents`
       : allocMode === "to_agent" ? `Agent ${agents.find(a => a.id === targetAgent)?.name}`
-      : allocMode === "to_team" ? `Team ${teams.find(t => t.id === targetTeam)?.name}`
       : `Manager ${managers.find(m => m.id === targetManager)?.name}`;
 
     logAudit({
