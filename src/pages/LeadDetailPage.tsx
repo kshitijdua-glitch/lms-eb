@@ -35,7 +35,9 @@ import { CheckCircle2, XCircle, Info, ShieldAlert } from "lucide-react";
 import { ManualCallPanel } from "@/components/ManualCallPanel";
 import { ManualCallLogDialog, type ManualCallSubmission } from "@/components/ManualCallLogDialog";
 import { STBWizardDialog, type STBWizardSubmission } from "@/components/STBWizardDialog";
-import { isFieldLockedAfterSLP, getSLPReadiness } from "@/lib/slp";
+import { isFieldLockedAfterSLP, getSLPReadiness, SLP_STATUS_LABELS } from "@/lib/slp";
+import { SLPStatusUpdateDialog } from "@/components/SLPStatusUpdateDialog";
+import type { STBSubmission } from "@/types/lms";
 
 // Soft pill color map — clean tinted backgrounds for status chips
 const SOFT_PILL: Record<string, string> = {
@@ -111,6 +113,7 @@ const LeadDetailPage = () => {
   const [localLoans, setLocalLoans] = useState(lead?.existingLoans || []);
   const [showAddLoan, setShowAddLoan] = useState(false);
   const [newLoan, setNewLoan] = useState({ bankName: "", loanType: "", outstandingAmount: "", emi: "", tenure: "" });
+  const [slpUpdateTarget, setSlpUpdateTarget] = useState<STBSubmission | null>(null);
 
   const [leadSidebarOpen, setLeadSidebarOpen] = useState(true);
   const [leadListSearch, setLeadListSearch] = useState("");
@@ -989,25 +992,41 @@ const LeadDetailPage = () => {
             </TabsContent>
             <TabsContent value="stb" className="mt-0">
               <div className="divide-y divide-border/60">
-                {lead.stbSubmissions.map(s => (
-                  <div key={s.id} className="flex items-start gap-4 px-5 py-4">
-                    <div className="h-9 w-9 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-                      <Send className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <SoftPill tone="submitted">STB</SoftPill>
-                        <span className="text-sm font-semibold">{s.partnerName}</span>
+                {localStbSubmissions.map(s => {
+                  const terminal = ["disbursed", "declined", "cancelled", "expired"].includes(s.status);
+                  const canUpdate = can.updateSlpStatus(role) && !terminal;
+                  return (
+                    <div key={s.id} className="flex items-start gap-4 px-5 py-4">
+                      <div className="h-9 w-9 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                        <Send className="h-4 w-4" />
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1">Submitted {new Date(s.submittedAt).toLocaleDateString()}</p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <SoftPill tone="submitted">SLP</SoftPill>
+                          <span className="text-sm font-semibold">{s.partnerName}</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Submitted {new Date(s.submittedAt).toLocaleDateString()}
+                          {s.sanctionAmount ? ` · Sanction ₹${s.sanctionAmount.toLocaleString()}` : ""}
+                          {s.disbursedAmount ? ` · Disbursed ₹${s.disbursedAmount.toLocaleString()}` : ""}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <SoftPill tone={s.status === "approved" || s.status === "disbursed" ? "completed" : s.status === "declined" ? "missed" : "submitted"}>
+                          {SLP_STATUS_LABELS[s.status] ?? s.status}
+                        </SoftPill>
+                        {canUpdate && (
+                          <Button size="sm" variant="outline" className="h-7 text-xs"
+                            onClick={() => setSlpUpdateTarget(s)}>
+                            Update
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                    <SoftPill tone={s.status === "approved" || s.status === "disbursed" ? "completed" : s.status === "declined" ? "missed" : "submitted"}>
-                      {s.status.charAt(0).toUpperCase() + s.status.slice(1)}
-                    </SoftPill>
-                  </div>
-                ))}
-                {lead.stbSubmissions.length === 0 && (
-                  <div className="px-5 py-12 text-center text-sm text-muted-foreground">No STB submissions</div>
+                  );
+                })}
+                {localStbSubmissions.length === 0 && (
+                  <div className="px-5 py-12 text-center text-sm text-muted-foreground">No SLP submissions</div>
                 )}
               </div>
             </TabsContent>
@@ -1123,6 +1142,19 @@ const LeadDetailPage = () => {
         readiness={getSLPReadiness({ ...lead, stbSubmissions: localStbSubmissions }, selectedPairs.length > 0)}
         onSubmit={handleSTBWizardSubmit}
       />
+
+      {slpUpdateTarget && (
+        <SLPStatusUpdateDialog
+          open={!!slpUpdateTarget}
+          onOpenChange={(o) => !o && setSlpUpdateTarget(null)}
+          lead={lead}
+          submission={slpUpdateTarget}
+          onUpdated={(next) => {
+            setLocalStbSubmissions(prev => prev.map(s => s.id === next.id ? next : s));
+            setSlpUpdateTarget(null);
+          }}
+        />
+      )}
 
 
       <Dialog open={showEMI} onOpenChange={setShowEMI}>
