@@ -222,8 +222,10 @@ function generateLeads(): Lead[] {
       status: (stage === "approved" ? "approved" : stage === "disbursed" ? "disbursed" : "submitted") as "submitted" | "approved" | "disbursed",
       approvedAmount: stage === "approved" || stage === "disbursed" ? randomInt(100000, 1500000) : null,
       sanctionAmount: stage === "approved" || stage === "disbursed" ? randomInt(100000, 1500000) : null,
+      approvalDate: stage === "approved" || stage === "disbursed" ? daysAgo(randomInt(1, 7)) : null,
       disbursedAmount: stage === "disbursed" ? randomInt(100000, 1500000) : null,
       disbursementDate: stage === "disbursed" ? daysAgo(randomInt(1, 5)) : null,
+      referenceId: stage === "disbursed" ? `HDFC-${100000 + i}` : null,
       remarks: "Application processed",
       integrationType: "api" as const,
     }] : [];
