@@ -283,7 +283,7 @@ const PartnersPage = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Remove this partner?</AlertDialogTitle>
             <AlertDialogDescription>
-              They will no longer appear in bank selection or STB workflows. Existing leads keep their history.
+              They will no longer appear in bank selection or SLP workflows. Existing leads keep their history.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -329,7 +329,7 @@ export const mockNotifications: Notification[] = [
   
   // Admin / data-admin-scoped
   { id: "n-21", type: "new_allocation", title: "Unallocated Pool Alert", message: "22 leads from Partner source remain unallocated for 48 hours", timestamp: daysAgo(0), read: false, scope: "admin", clickTarget: "/admin/allocation" },
-  { id: "n-22", type: "stb_status_update", title: "Stale STB Pool", message: "5 STB submissions pending >7 days across organisation", timestamp: daysAgo(0), read: false, scope: "admin", clickTarget: "/admin/pools" },
+  { id: "n-22", type: "stb_status_update", title: "Stale SLP Pool", message: "5 SLP submissions pending >7 days across organisation", timestamp: daysAgo(0), read: false, scope: "admin", clickTarget: "/admin/pools" },
   { id: "n-23", type: "config_changed", title: "Config Change Logged", message: "Allocation mode changed from Manual to Round Robin by CH Admin", timestamp: daysAgo(0), read: true, scope: "admin", clickTarget: "/audit-trail" },
   { id: "n-24", type: "lead_reassigned", title: "Staff Deactivated", message: "Agent Karan Singh deactivated. 12 leads need reassignment.", timestamp: daysAgo(1), read: true, scope: "admin", clickTarget: "/admin/staff" },
   { id: "n-25", type: "batch_uploaded", title: "Batch Uploaded", message: "Google_Ads_Apr14.csv uploaded — 238 valid rows awaiting allocation", timestamp: daysAgo(0), read: false, scope: "admin", clickTarget: "/admin/upload" },

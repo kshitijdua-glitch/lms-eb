@@ -221,7 +221,7 @@ const LeadDetailPage = () => {
 
   const handleAddPair = () => {
     if (isProfileLocked) {
-      toast.error("STB locked — cannot modify bank selection");
+      toast.error("SLP locked — cannot modify bank selection");
       return;
     }
     if (!selectedProduct || !selectedBank) {
@@ -251,7 +251,7 @@ const LeadDetailPage = () => {
 
   const handleRemovePair = (index: number) => {
     if (isProfileLocked) {
-      toast.error("STB locked — cannot remove bank");
+      toast.error("SLP locked — cannot remove bank");
       return;
     }
     const removed = selectedPairs[index];
@@ -271,7 +271,7 @@ const LeadDetailPage = () => {
 
   const handleSendToBank = () => {
     if (isProfileLocked) {
-      toast.error("STB already submitted — cannot resubmit", { description: lockState.reason });
+      toast.error("SLP already submitted — cannot resubmit", { description: lockState.reason });
       return;
     }
     setShowSTBWizard(true);
@@ -305,7 +305,7 @@ const LeadDetailPage = () => {
         after: { partner: s.partnerName, status: s.status, checklist: data.checklist, remarks: data.remarks },
       });
     });
-    toast.success(`STB submitted to ${data.pairs.length} bank(s)`, {
+    toast.success(`SLP submitted to ${data.pairs.length} bank(s)`, {
       description: data.pairs.map(p => `${p.partnerName} (${getProductLabel(p.productType as any)})`).join(", "),
     });
   };
@@ -432,7 +432,7 @@ const LeadDetailPage = () => {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-semibold text-indigo-900">STB Locked</span>
+              <span className="text-sm font-semibold text-indigo-900">SLP Locked</span>
               <SoftPill tone={lockState.submission.status === "approved" || lockState.submission.status === "disbursed" ? "completed" : lockState.submission.status === "declined" ? "missed" : "submitted"}>
                 {lockState.submission.status.charAt(0).toUpperCase() + lockState.submission.status.slice(1)}
               </SoftPill>
@@ -741,7 +741,7 @@ const LeadDetailPage = () => {
                 <span className="h-7 w-7 rounded-md bg-primary/10 text-primary flex items-center justify-center">
                   <Send className="h-4 w-4" />
                 </span>
-                STB Status
+                SLP Status
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-5">
@@ -765,7 +765,7 @@ const LeadDetailPage = () => {
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground">No STB submissions yet</p>
+                <p className="text-xs text-muted-foreground">No SLP submissions yet</p>
               )}
             </CardContent>
           </Card>
@@ -887,7 +887,7 @@ const LeadDetailPage = () => {
                           const s = ev.data as typeof lead.stbSubmissions[0];
                           return <>
                             <div className="flex items-center gap-2 flex-wrap">
-                              <SoftPill tone="submitted">STB</SoftPill>
+                              <SoftPill tone="submitted">SLP</SoftPill>
                               <span className="text-sm font-semibold text-foreground">{s.partnerName}</span>
                             </div>
                             <p className="text-sm text-muted-foreground mt-1">{s.remarks || "Submission update"}</p>
@@ -1272,7 +1272,7 @@ const LeadDetailPage = () => {
           <div className="space-y-4">
             {lead.stbSubmissions.length > 0 && (
               <div className="p-2 rounded border border-destructive/30 text-xs text-destructive">
-                ⚠ This lead has active STB submissions. Reassignment is blocked.
+                ⚠ This lead has active SLP submissions. Reassignment is blocked.
               </div>
             )}
             {(role === "manager" || role === "cluster_head") && (

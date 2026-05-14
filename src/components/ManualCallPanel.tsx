@@ -192,7 +192,7 @@ export function ManualCallPanel({
               <p><strong className="text-foreground">Verify:</strong> Confirm name and that this is a good time to talk.</p>
               <p><strong className="text-foreground">Discover:</strong> Required loan amount, purpose, employment, monthly income.</p>
               <p><strong className="text-foreground">Pitch:</strong> Lending partner options based on profile.</p>
-              <p><strong className="text-foreground">Close:</strong> Document collection, follow-up time, or STB submission.</p>
+              <p><strong className="text-foreground">Close:</strong> Document collection, follow-up time, or SLP submission.</p>
             </div>
           </CollapsibleContent>
         </Collapsible>

@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * Progressive Lead Creation — 6-step form. Step 1 saves a "lite" lead;
- * subsequent steps surface what's still missing before STB.
+ * subsequent steps surface what's still missing before SLP.
  */
 
 interface Props {
@@ -202,7 +202,7 @@ export function CreateLeadWizard({ open, onOpenChange, existingMobiles = [], onS
                   <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
                   <div>
                     <div className="font-medium">Lead can be saved as a lite lead.</div>
-                    <div>Still needed before STB: {missingForSTB.map(m => <Badge key={m} variant="outline" className="text-[10px] mr-1 mt-0.5">{m}</Badge>)}</div>
+                    <div>Still needed before SLP: {missingForSTB.map(m => <Badge key={m} variant="outline" className="text-[10px] mr-1 mt-0.5">{m}</Badge>)}</div>
                   </div>
                 </div>
               )}
