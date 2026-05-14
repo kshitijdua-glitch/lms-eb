@@ -20,7 +20,7 @@ const ROUTE_LABELS: Record<string, string> = {
   "/group-management": "Group Management",
   "/org-leads": "Organisation Leads",
   "/org-follow-ups": "Organisation Follow-Ups",
-  "/org-stb": "Organisation STB",
+  "/org-stb": "Organisation SLP",
   "/org-reports": "Organisation Reports",
 };
 

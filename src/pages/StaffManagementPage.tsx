@@ -126,7 +126,7 @@ const StaffManagementPage = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Deactivate Staff Member?</AlertDialogTitle>
-            <AlertDialogDescription>This agent may have unworked leads, open follow-ups, or active STB submissions. Deactivating will require reassigning their leads.</AlertDialogDescription>
+            <AlertDialogDescription>This agent may have unworked leads, open follow-ups, or active SLP submissions. Deactivating will require reassigning their leads.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>

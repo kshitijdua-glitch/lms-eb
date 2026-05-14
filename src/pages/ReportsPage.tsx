@@ -18,10 +18,10 @@ type AuditRow = { id: string; timestamp: string; agentName: string; leadName: st
 
 const metrics = [
   { key: "contactRate", label: "Contact Rate %", color: "hsl(var(--primary))" },
-  { key: "stbRate", label: "STB Rate %", color: "hsl(var(--info))" },
+  { key: "stbRate", label: "SLP Rate %", color: "hsl(var(--info))" },
   { key: "followUpCompliance", label: "Follow-Up Compliance %", color: "hsl(var(--success))" },
   { key: "allocated", label: "Allocated", color: "hsl(var(--warning))" },
-  { key: "stbCount", label: "STB Count", color: "hsl(var(--primary))" },
+  { key: "stbCount", label: "SLP Count", color: "hsl(var(--primary))" },
   { key: "disbursedCount", label: "Disbursed Count", color: "hsl(var(--success))" },
 ];
 
@@ -58,7 +58,7 @@ const ReportsPage = () => {
     { label: "Allocated", value: current.allocated, icon: Users },
     { label: "Contacted", value: current.contacted, icon: Phone },
     { label: "Contact Rate", value: `${current.contactRate}%`, icon: Target },
-    { label: "STB Count", value: current.stbCount, icon: Send },
+    { label: "SLP Count", value: current.stbCount, icon: Send },
     { label: "Approved", value: current.approved, icon: CheckCircle },
     { label: "Disbursed Amt", value: `₹${(current.disbursedAmount / 100000).toFixed(1)}L`, icon: TrendingUp },
   ];
@@ -164,8 +164,8 @@ const ReportsPage = () => {
                       <th className="text-right p-2 font-medium">Allocated</th>
                       <th className="text-right p-2 font-medium">Contacted</th>
                       <th className="text-right p-2 font-medium">Contact %</th>
-                      <th className="text-right p-2 font-medium">STB</th>
-                      <th className="text-right p-2 font-medium">STB %</th>
+                      <th className="text-right p-2 font-medium">SLP</th>
+                      <th className="text-right p-2 font-medium">SLP %</th>
                       <th className="text-right p-2 font-medium">Approved</th>
                       <th className="text-right p-2 font-medium">Disbursed</th>
                       <th className="text-right p-2 font-medium">Amount</th>

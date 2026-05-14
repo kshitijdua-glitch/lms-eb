@@ -177,10 +177,19 @@ export interface STBSubmission {
   status: "submitted" | "documents_pending" | "under_review" | "approved" | "declined" | "disbursed" | "cancelled" | "expired";
   approvedAmount: number | null;
   sanctionAmount: number | null;
+  approvalDate: string | null;
   disbursedAmount: number | null;
   disbursementDate: string | null;
+  /** Partner's loan reference / application number — required for Disbursed (PRD §15.5). */
+  referenceId: string | null;
   remarks: string;
   integrationType: "api" | "portal" | "email";
+  /** Last status update note (PRD §15.2). */
+  lastUpdateNote?: string | null;
+  /** Reason captured for Declined / Cancelled / Expired / Documents Pending. */
+  statusReason?: string | null;
+  /** Next follow-up scheduled when moving to Documents Pending. */
+  nextFollowUpAt?: string | null;
 }
 
 export interface CallLog {

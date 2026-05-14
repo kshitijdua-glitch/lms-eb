@@ -89,7 +89,7 @@ const GroupLeadsPage = () => {
     if (!reassignAgent) { toast.error("Select target agent"); return; }
     const stbLocked = [...selectedIds].filter(id => allLeads.find(l => l.id === id)?.stbSubmissions.length);
     if (stbLocked.length > 0) {
-      toast.error(`${stbLocked.length} leads have active STB and cannot be reassigned`);
+      toast.error(`${stbLocked.length} leads have active SLP and cannot be reassigned`);
       return;
     }
     const target = agents.find(a => a.id === reassignAgent)?.name;
