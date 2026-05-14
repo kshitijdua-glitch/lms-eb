@@ -286,8 +286,10 @@ const LeadDetailPage = () => {
       status: "submitted" as const,
       approvedAmount: null,
       sanctionAmount: null,
+      approvalDate: null,
       disbursedAmount: null,
       disbursementDate: null,
+      referenceId: null,
       remarks: data.remarks || `${getProductLabel(pair.productType as any)} application`,
       integrationType: "portal" as const,
     }));
