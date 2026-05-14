@@ -196,14 +196,40 @@ export interface CallLog {
   followUpDate: string | null;
 }
 
+export type FollowUpType =
+  | "call"
+  | "document_collection"
+  | "document" // alias for document_collection
+  | "stb_follow_up" // legacy alias for slp_follow_up
+  | "slp_follow_up"
+  | "profile_correction"
+  | "manager_escalation";
+
+export type FollowUpStatus =
+  | "pending"
+  | "completed"
+  | "missed"
+  | "escalated"
+  | "cancelled";
+
 export interface FollowUp {
   id: string;
   scheduledAt: string;
-  type: "call" | "document_collection" | "stb_follow_up";
-  status: "pending" | "completed" | "missed";
+  type: FollowUpType;
+  status: FollowUpStatus;
   notes: string;
   subType?: string;
 }
+
+export const FOLLOW_UP_TYPE_LABELS: Record<FollowUpType, string> = {
+  call: "Call",
+  document_collection: "Document",
+  document: "Document",
+  stb_follow_up: "SLP",
+  slp_follow_up: "SLP",
+  profile_correction: "Profile Correction",
+  manager_escalation: "Manager Escalation",
+};
 
 export interface Agent {
   id: string;
