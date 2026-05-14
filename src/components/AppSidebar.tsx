@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Users, Phone, Send, Clock, BarChart3, Upload, Settings, UserCog, FileText, TrendingUp, Shield,
+  LayoutDashboard, Users, Send, Clock, BarChart3, Upload, Settings, UserCog, FileText, TrendingUp, Shield, Bell, Inbox,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useRole, roleLabels } from "@/contexts/RoleContext";
@@ -11,51 +11,58 @@ import { UserRole } from "@/types/lms";
 import { useAuth } from "@/contexts/AuthContext";
 import logoUrl from "@/assets/logo.png";
 
+// Sidebar lists per Master/Agent/Manager/Cluster Head/Data Admin PRDs.
+// Labels follow Phase-1 PRD: STB → "Send to Lending Partner". No "Team" wording.
+
 const agentNav = [
   { title: "Dashboard", url: "/app", icon: LayoutDashboard },
   { title: "My Leads", url: "/leads", icon: Users },
-  { title: "Follow-Ups", url: "/follow-ups", icon: Clock },
-  { title: "My STB", url: "/stb", icon: Send },
+  { title: "My Follow-Ups", url: "/follow-ups", icon: Clock },
+  { title: "My Send to Lending Partner", url: "/stb", icon: Send },
   { title: "Performance", url: "/performance", icon: TrendingUp },
+  { title: "Notifications", url: "/notifications", icon: Bell },
 ];
 
 const managerNav = [
   { title: "Dashboard", url: "/app", icon: LayoutDashboard },
   { title: "My Leads", url: "/leads", icon: Users },
   { title: "My Follow-Ups", url: "/follow-ups", icon: Clock },
-  { title: "My STB", url: "/stb", icon: Send },
+  { title: "My Send to Lending Partner", url: "/stb", icon: Send },
   { title: "Group Leads", url: "/group-leads", icon: Users },
   { title: "Group Follow-Ups", url: "/group-follow-ups", icon: Clock },
-  { title: "Group STB", url: "/group-stb", icon: Send },
-  { title: "Group Mgmt", url: "/group-management", icon: UserCog },
+  { title: "Group Send to Lending Partner", url: "/group-stb", icon: Send },
+  { title: "Group Management", url: "/group-management", icon: UserCog },
   { title: "Lead Report", url: "/group-reports", icon: FileText },
   { title: "Performance", url: "/performance", icon: TrendingUp },
-  { title: "MIS Reports", url: "/reports", icon: BarChart3 },
+  { title: "MIS & Reports", url: "/reports", icon: BarChart3 },
+  { title: "Notifications", url: "/notifications", icon: Bell },
 ];
 
 const clusterHeadNav = [
   { title: "Dashboard", url: "/app", icon: LayoutDashboard },
   { title: "Org Leads", url: "/org-leads", icon: Users },
   { title: "Org Follow-Ups", url: "/org-follow-ups", icon: Clock },
-  { title: "Org STB", url: "/org-stb", icon: Send },
-  { title: "Staff Mgmt", url: "/staff-management", icon: UserCog },
+  { title: "Org Send to Lending Partner", url: "/org-stb", icon: Send },
+  { title: "Staff Management", url: "/staff-management", icon: UserCog },
   { title: "System Config", url: "/system-config", icon: Settings },
-  { title: "Lead Allocation", url: "/admin/allocation", icon: Upload },
+  { title: "Lead Allocation", url: "/lead-allocation", icon: Upload },
   { title: "Lead Report", url: "/org-reports", icon: FileText },
-  { title: "Audit Trail", url: "/audit-trail", icon: BarChart3 },
+  { title: "Audit Trail", url: "/audit-trail", icon: Shield },
   { title: "MIS & Reports", url: "/reports", icon: BarChart3 },
+  { title: "Notifications", url: "/notifications", icon: Bell },
 ];
 
 const adminNav = [
   { title: "Dashboard", url: "/app", icon: LayoutDashboard },
   { title: "Lead Upload", url: "/admin/upload", icon: Upload },
   { title: "Lead Allocation", url: "/admin/allocation", icon: Users },
-  { title: "Lead Pools", url: "/admin/pools", icon: FileText },
+  { title: "Lead Pools", url: "/admin/pools", icon: Inbox },
   { title: "Lending Partners", url: "/admin/partners", icon: Send },
   { title: "MIS Export", url: "/admin/mis", icon: BarChart3 },
   { title: "System Config", url: "/system-config", icon: Settings },
-  { title: "Staff Mgmt", url: "/admin/staff", icon: UserCog },
+  { title: "Staff Management", url: "/admin/staff", icon: UserCog },
   { title: "Audit Trail", url: "/audit-trail", icon: Shield },
+  { title: "Notifications", url: "/notifications", icon: Bell },
 ];
 
 function getNav(role: UserRole) {

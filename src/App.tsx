@@ -41,6 +41,7 @@ import SystemConfigPage from "./pages/SystemConfigPage";
 import LeadAllocationPage from "./pages/LeadAllocationPage";
 import AuditTrailPage from "./pages/AuditTrailPage";
 import LandingPage from "./pages/LandingPage";
+import NotificationsPage from "./pages/NotificationsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -94,6 +95,7 @@ const App = () => (
                         <Route path="/system-config" element={guard(<SystemConfigPage />)} />
                         <Route path="/lead-allocation" element={guard(<LeadAllocationPage />)} />
                         <Route path="/audit-trail" element={guard(<AuditTrailPage />)} />
+                        <Route path="/notifications" element={guard(<NotificationsPage />)} />
                         <Route path="*" element={<NotFound />} />
                       </Routes>
                     </AppLayout>
