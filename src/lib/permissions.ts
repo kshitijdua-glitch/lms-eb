@@ -113,7 +113,7 @@ export function getLeadLockState(lead: Pick<Lead, "stbSubmissions">): LeadLockSt
   return {
     locked: true,
     submission: blocking,
-    reason: `STB ${blocking.status} with ${blocking.partnerName}`,
+    reason: `SLP ${blocking.status} with ${blocking.partnerName}`,
     allowedNextAction,
   };
 }
