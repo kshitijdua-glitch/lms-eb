@@ -280,23 +280,23 @@ const LeadAllocationPage = () => {
                         <SelectContent>{managers.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
-                    {(allocMode === "to_team" || allocMode === "to_agent") && (
-                      <div>
-                        <Label className="text-xs">Team</Label>
-                        <Select value={targetTeam} onValueChange={(v) => { setTargetTeam(v); setTargetAgent(""); }} disabled={!targetManager}>
-                          <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
-                          <SelectContent>{teamsForManager(targetManager).map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
-                        </Select>
-                      </div>
-                    )}
                     {allocMode === "to_agent" && (
-                      <div>
-                        <Label className="text-xs">Agent</Label>
-                        <Select value={targetAgent} onValueChange={setTargetAgent} disabled={!targetTeam}>
-                          <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
-                          <SelectContent>{agentsForTeam(targetTeam).map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent>
-                        </Select>
-                      </div>
+                      <>
+                        <div>
+                          <Label className="text-xs">Team</Label>
+                          <Select value={targetTeam} onValueChange={(v) => { setTargetTeam(v); setTargetAgent(""); }} disabled={!targetManager}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+                            <SelectContent>{teamsForManager(targetManager).map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs">Agent</Label>
+                          <Select value={targetAgent} onValueChange={setTargetAgent} disabled={!targetTeam}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+                            <SelectContent>{agentsForTeam(targetTeam).map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </div>
+                      </>
                     )}
                   </div>
                 )}
