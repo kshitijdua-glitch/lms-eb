@@ -199,7 +199,7 @@ export function ManualCallLogDialog({
         {/* Constraint reminder */}
         <div className="rounded-md border border-amber-200 bg-amber-50/60 px-3 py-2 text-[11px] text-amber-900 flex items-start gap-2">
           <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-          <span>Manual call activity is self-reported. Make sure the outcome reflects what actually happened on the call.</span>
+          <span>Manual call activity is self-reported. Outcome must reflect what actually happened. Only <strong>Not Connected</strong> outcomes increment the retry counter.</span>
         </div>
 
         {/* Duplicate warning */}
