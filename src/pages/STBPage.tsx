@@ -94,16 +94,29 @@ const STBPage = () => {
       </div>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">STB Submissions</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">SLP Submissions</CardTitle></CardHeader>
         <CardContent className="p-0">
           <ConfigurableTable
             tableId="stb"
             columns={columns}
-            data={allSubs}
+            data={localSubs}
             onRowClick={(s) => navigate(`/leads/${s.leadId}`)}
           />
         </CardContent>
       </Card>
+
+      {updateTarget && (
+        <SLPStatusUpdateDialog
+          open={!!updateTarget}
+          onOpenChange={(o) => !o && setUpdateTarget(null)}
+          lead={{ id: updateTarget.leadId, name: updateTarget.leadName }}
+          submission={updateTarget}
+          onUpdated={(next) => {
+            setLocalSubs(prev => prev.map(s => s.id === next.id ? { ...s, ...next } : s));
+            setUpdateTarget(null);
+          }}
+        />
+      )}
     </div>
   );
 };
