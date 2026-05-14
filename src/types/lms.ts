@@ -1,6 +1,23 @@
 export type UserRole = "agent" | "manager" | "cluster_head" | "data_admin";
 
-export type LeadStage = "new" | "contacted" | "interested" | "bank_selected" | "stb_submitted" | "approved" | "declined" | "disbursed" | "closed_lost";
+export type LeadStage =
+  | "new"
+  | "assigned"
+  | "contacted"
+  | "interested"
+  | "bank_selected"
+  | "ready_for_slp"
+  | "sent_to_lp"
+  | "stb_submitted" // legacy alias for sent_to_lp
+  | "approved"
+  | "declined"
+  | "disbursed"
+  | "closed_lost"
+  | "rejected"
+  | "invalid"
+  | "profile_correction"
+  | "compliance_hold"
+  | "expired";
 
 export type DispositionType =
   // Follow-Up
@@ -157,7 +174,7 @@ export interface STBSubmission {
   partnerId: string;
   partnerName: string;
   submittedAt: string;
-  status: "submitted" | "approved" | "declined" | "disbursed";
+  status: "submitted" | "documents_pending" | "under_review" | "approved" | "declined" | "disbursed" | "cancelled" | "expired";
   approvedAmount: number | null;
   sanctionAmount: number | null;
   disbursedAmount: number | null;
@@ -237,11 +254,21 @@ export interface DispositionConfig {
   requiresFollowUp: boolean;
 }
 
-export type NotificationScope = "agent" | "team" | "org" | "admin";
+// "team" kept for legacy compat; new code uses "group" (manager-scoped).
+export type NotificationScope = "agent" | "team" | "group" | "org" | "admin";
+
+export type NotificationType =
+  | "follow_up_due" | "follow_up_missed" | "lead_expiry" | "lead_reassigned"
+  | "new_allocation" | "stb_status_update" | "agent_missed_fu" | "nc_escalation"
+  | "agent_not_logged_in" | "stb_initiated_by_agent" | "batch_uploaded"
+  | "allocation_done" | "export_completed" | "config_changed"
+  // SLP-specific (PRD §24.2)
+  | "slp_initiated" | "slp_pending_update" | "slp_approved" | "slp_declined" | "slp_disbursed"
+  | "retry_exceeded" | "staff_deactivated" | "partner_changed" | "lead_closed";
 
 export interface Notification {
   id: string;
-  type: "follow_up_due" | "follow_up_missed" | "lead_expiry" | "lead_reassigned" | "new_allocation" | "stb_status_update" | "agent_missed_fu" | "nc_escalation" | "agent_not_logged_in" | "stb_initiated_by_agent" | "batch_uploaded" | "allocation_done" | "export_completed" | "config_changed";
+  type: NotificationType;
   title: string;
   message: string;
   timestamp: string;
@@ -250,6 +277,7 @@ export interface Notification {
   scope: NotificationScope;
   agentId?: string;
   teamId?: string;
+  managerId?: string;
   /** Optional override for click-through navigation. Defaults: leadId → /leads/:id */
   clickTarget?: string;
 }

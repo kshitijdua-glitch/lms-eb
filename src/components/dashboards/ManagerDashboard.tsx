@@ -177,7 +177,7 @@ export function ManagerDashboard() {
         {[
           { label: "Group Leads", path: "/group-leads", icon: FileText },
           { label: "Group Follow-Ups", path: "/group-follow-ups", icon: Calendar },
-          { label: "Group STB", path: "/group-stb", icon: Send },
+          { label: "Group SLP", path: "/group-stb", icon: Send },
           { label: "Group Management", path: "/group-management", icon: UserCog },
         ].map(nav => (
           <Button key={nav.path} variant="outline" className="h-16 flex flex-col gap-1" onClick={() => navigate(nav.path)}>

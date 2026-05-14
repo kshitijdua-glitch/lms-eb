@@ -104,7 +104,7 @@ export function AgentDashboard() {
           <Calendar className="mr-2 h-4 w-4" /> Follow-Ups ({todayFollowUps.length})
         </Button>
         <Button variant="outline" className="h-16 text-sm" onClick={() => navigate("/stb")}>
-          <Send className="mr-2 h-4 w-4" /> My STB ({stbCount.length})
+          <Send className="mr-2 h-4 w-4" /> My SLP ({stbCount.length})
         </Button>
         <Button variant="outline" className="h-16 text-sm border-dashed" onClick={() => navigate("/leads?create=true")}>
           <Plus className="mr-2 h-4 w-4" /> Create New Lead

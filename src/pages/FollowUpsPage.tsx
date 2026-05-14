@@ -59,7 +59,7 @@ const FollowUpsPage = () => {
   }, [allLeads, priorityFilter, productFilter]);
 
   const buckets = useMemo(() => {
-    const out: Record<Bucket, FUItem[]> = { overdue: [], today: [], upcoming: [], completed: [] };
+    const out: Record<Bucket, FUItem[]> = { overdue: [], today: [], upcoming: [], completed: [], escalated: [], cancelled: [] };
     for (const f of allFollowUps) {
       const isCompleted = f.status === "completed";
       const b = isCompleted ? "completed" : bucketOf(f.scheduledAt, f.status);

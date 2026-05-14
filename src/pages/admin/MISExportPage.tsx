@@ -17,7 +17,7 @@ import { can } from "@/lib/permissions";
 const exportTypes = [
   { id: "full_lead", label: "Full Lead Export", icon: Database, description: "All lead data including PII fields", pii: true },
   { id: "disposition", label: "Disposition Summary", icon: BarChart3, description: "Disposition counts by category, agent, and date", pii: false },
-  { id: "stb_pipeline", label: "STB Pipeline", icon: Send, description: "All STB submissions with bank status and timelines", pii: false },
+  { id: "stb_pipeline", label: "SLP Pipeline", icon: Send, description: "All SLP submissions with bank status and timelines", pii: false },
   { id: "source_attribution", label: "Source Attribution", icon: FileText, description: "Lead source performance and conversion metrics", pii: false },
   { id: "agent_activity", label: "Agent Activity", icon: Users, description: "Agent-wise call logs, dispositions, and follow-up compliance", pii: false },
   { id: "staff_profile", label: "Staff Profile", icon: UserCog, description: "All staff profiles with hierarchy and status", pii: true },

@@ -292,7 +292,7 @@ export const getAgentsForTeam = (teamId: string) => agents.filter(a => a.teamId 
 export const getDispositionLabel = (d: DispositionType) => dispositionConfigs.find(c => c.type === d)?.label ?? d.replace(/_/g, " ");
 export const getStageLabel = (s: LeadStage) => ({
   new: "New", contacted: "Contacted", interested: "Interested", bank_selected: "Bank Selected",
-  stb_submitted: "STB Submitted", approved: "Approved", declined: "Declined",
+  stb_submitted: "Sent to Lending Partner", approved: "Approved", declined: "Declined",
   disbursed: "Disbursed", closed_lost: "Closed Lost",
 }[s]);
 export const getProductLabel = (p: ProductType) => ({
@@ -321,7 +321,7 @@ export const mockNotifications: Notification[] = [
   // Org / cluster-head-scoped
   { id: "n-15", type: "agent_not_logged_in", title: "Agent Not Logged In", message: "Agent Ravi Kumar (Beta Force) has not logged in today", timestamp: daysAgo(0), read: false, scope: "org", clickTarget: "/staff-management" },
   { id: "n-16", type: "nc_escalation", title: "Team Missed F/U Threshold", message: "Alpha Squad has exceeded 10 missed follow-ups this week", timestamp: daysAgo(0), read: false, scope: "org", clickTarget: "/org-follow-ups" },
-  { id: "n-17", type: "stb_status_update", title: "Group STB Update", message: "Bajaj Finserv declined loan for Manoj Tiwari — Manager: Vikram Mehta, Agent: Meera Patel", timestamp: daysAgo(0), read: false, leadId: "lead-15", scope: "org" },
+  { id: "n-17", type: "stb_status_update", title: "Group SLP Update", message: "Bajaj Finserv declined loan for Manoj Tiwari — Manager: Vikram Mehta, Agent: Meera Patel", timestamp: daysAgo(0), read: false, leadId: "lead-15", scope: "org" },
   { id: "n-18", type: "lead_reassigned", title: "Override Confirmation", message: "You overrode a Closed/Lost disposition on lead Arjun Rao — lead moved to Contacted", timestamp: daysAgo(1), read: true, leadId: "lead-9", scope: "org" },
   { id: "n-19", type: "agent_not_logged_in", title: "Manager Not Logged In", message: "Manager Anjali Kapoor has not logged in today", timestamp: daysAgo(0), read: false, scope: "org", clickTarget: "/staff-management" },
   
