@@ -20,12 +20,15 @@ export interface STBWizardSubmission {
   remarks: string;
 }
 
+export interface ReadinessItem { key: string; label: string; passed: boolean; hint?: string }
+
 interface Props {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   customerName: string;
   selectedPairs: STBPair[];
   creditScore: number | null;
+  readiness?: ReadinessItem[];
   onSubmit: (data: STBWizardSubmission) => void;
 }
 
@@ -33,19 +36,19 @@ const CHECKLIST_ITEMS: { id: string; label: string; required: boolean }[] = [
   { id: "kyc_verified", label: "KYC documents verified", required: true },
   { id: "income_verified", label: "Income proof verified", required: true },
   
-  { id: "duplicate_checked", label: "Checked for duplicate STB in last 30 days", required: true },
+  { id: "duplicate_checked", label: "Checked for duplicate SLP in last 30 days", required: true },
   { id: "bank_eligibility", label: "Confirmed BRE eligibility per partner", required: false },
   { id: "remarks_added", label: "Added remarks for partner reviewer", required: false },
 ];
 
 const STEPS = [
-  { id: 1, label: "Eligibility", icon: ShieldCheck },
+  { id: 1, label: "Readiness", icon: ShieldCheck },
   { id: 2, label: "Confirm Banks", icon: ListChecks },
   { id: 3, label: "Checklist", icon: ClipboardCheck },
   { id: 4, label: "Review & Submit", icon: Send },
 ];
 
-export function STBWizardDialog({ open, onOpenChange, customerName, selectedPairs, creditScore, onSubmit }: Props) {
+export function STBWizardDialog({ open, onOpenChange, customerName, selectedPairs, creditScore, readiness, onSubmit }: Props) {
   const [step, setStep] = useState(1);
   const [checklist, setChecklist] = useState<Record<string, boolean>>({});
   const [remarks, setRemarks] = useState("");
@@ -53,6 +56,7 @@ export function STBWizardDialog({ open, onOpenChange, customerName, selectedPair
     Object.fromEntries(selectedPairs.map(p => [`${p.partnerId}-${p.productType}`, true]))
   );
 
+  const failingReadiness = (readiness || []).filter(r => !r.passed);
   const eligibilityIssues = useMemo(() => {
     const issues: string[] = [];
     if (selectedPairs.length === 0) issues.push("No bank-product pairs selected. Add at least one before submitting.");
@@ -64,7 +68,7 @@ export function STBWizardDialog({ open, onOpenChange, customerName, selectedPair
   const activePairs = selectedPairs.filter(p => confirmedPairs[`${p.partnerId}-${p.productType}`]);
 
   const canProceed =
-    step === 1 ? eligibilityIssues.length === 0 :
+    step === 1 ? eligibilityIssues.length === 0 && failingReadiness.length === 0 :
     step === 2 ? activePairs.length > 0 :
     step === 3 ? requiredUnchecked.length === 0 :
     true;
@@ -110,8 +114,24 @@ export function STBWizardDialog({ open, onOpenChange, customerName, selectedPair
         <div className="mt-4 space-y-3 min-h-[220px]">
           {step === 1 && (
             <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">Verifying lead is ready for partner submission.</p>
-              {eligibilityIssues.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Verifying lead is ready for partner submission (PRD §10).</p>
+              {readiness && readiness.length > 0 && (
+                <div className="rounded-md border border-border p-3 space-y-1.5">
+                  <div className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">Readiness checklist</div>
+                  {readiness.map(r => (
+                    <div key={r.key} className="flex items-start gap-2 text-xs">
+                      {r.passed
+                        ? <Check className="h-3.5 w-3.5 mt-0.5 text-emerald-600 shrink-0" />
+                        : <AlertTriangle className="h-3.5 w-3.5 mt-0.5 text-destructive shrink-0" />}
+                      <div className="flex-1">
+                        <div className={cn("font-medium", !r.passed && "text-destructive")}>{r.label}</div>
+                        {!r.passed && r.hint && <div className="text-muted-foreground">{r.hint}</div>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {eligibilityIssues.length === 0 && failingReadiness.length === 0 ? (
                 <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900 flex items-start gap-2">
                   <ShieldCheck className="h-4 w-4 mt-0.5" /> Lead passes initial eligibility checks.
                 </div>
@@ -119,7 +139,8 @@ export function STBWizardDialog({ open, onOpenChange, customerName, selectedPair
                 <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive space-y-1">
                   <div className="flex items-center gap-2 font-medium"><AlertTriangle className="h-4 w-4" /> Resolve before continuing</div>
                   <ul className="list-disc pl-5 text-xs">
-                    {eligibilityIssues.map((i, idx) => <li key={idx}>{i}</li>)}
+                    {eligibilityIssues.map((i, idx) => <li key={`e-${idx}`}>{i}</li>)}
+                    {failingReadiness.map((r, idx) => <li key={`r-${idx}`}>{r.label}{r.hint ? ` — ${r.hint}` : ""}</li>)}
                   </ul>
                 </div>
               )}

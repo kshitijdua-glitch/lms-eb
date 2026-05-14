@@ -35,7 +35,7 @@ import { CheckCircle2, XCircle, Info, ShieldAlert } from "lucide-react";
 import { ManualCallPanel } from "@/components/ManualCallPanel";
 import { ManualCallLogDialog, type ManualCallSubmission } from "@/components/ManualCallLogDialog";
 import { STBWizardDialog, type STBWizardSubmission } from "@/components/STBWizardDialog";
-import { isFieldLockedAfterSLP } from "@/lib/slp";
+import { isFieldLockedAfterSLP, getSLPReadiness } from "@/lib/slp";
 
 // Soft pill color map — clean tinted backgrounds for status chips
 const SOFT_PILL: Record<string, string> = {
@@ -1119,8 +1119,8 @@ const LeadDetailPage = () => {
         onOpenChange={setShowSTBWizard}
         customerName={lead.name}
         selectedPairs={selectedPairs}
-        
         creditScore={lead.creditScore ?? null}
+        readiness={getSLPReadiness({ ...lead, stbSubmissions: localStbSubmissions }, selectedPairs.length > 0)}
         onSubmit={handleSTBWizardSubmit}
       />
 
