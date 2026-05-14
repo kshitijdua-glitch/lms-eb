@@ -1143,6 +1143,19 @@ const LeadDetailPage = () => {
         onSubmit={handleSTBWizardSubmit}
       />
 
+      {slpUpdateTarget && (
+        <SLPStatusUpdateDialog
+          open={!!slpUpdateTarget}
+          onOpenChange={(o) => !o && setSlpUpdateTarget(null)}
+          lead={lead}
+          submission={slpUpdateTarget}
+          onUpdated={(next) => {
+            setLocalStbSubmissions(prev => prev.map(s => s.id === next.id ? next : s));
+            setSlpUpdateTarget(null);
+          }}
+        />
+      )}
+
 
       <Dialog open={showEMI} onOpenChange={setShowEMI}>
         <DialogContent className="max-w-2xl p-0 overflow-hidden">
