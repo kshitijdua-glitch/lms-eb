@@ -14,13 +14,6 @@ import type { ColumnDef } from "@/types/table";
 import type { STBSubmission } from "@/types/lms";
 
 type STBItem = STBSubmission & { leadName: string; leadId: string; product: string };
-  id: string; partnerId: string; partnerName: string; submittedAt: string;
-  status: "submitted" | "documents_pending" | "under_review" | "approved" | "declined" | "disbursed" | "cancelled" | "expired";
-  approvedAmount: number | null; sanctionAmount: number | null;
-  disbursedAmount: number | null; disbursementDate: string | null;
-  remarks: string; integrationType: "api" | "portal" | "email";
-  leadName: string; leadId: string; product: string;
-};
 
 const STBPage = () => {
   const { role } = useRole();
