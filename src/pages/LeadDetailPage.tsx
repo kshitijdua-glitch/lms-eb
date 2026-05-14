@@ -35,6 +35,7 @@ import { CheckCircle2, XCircle, Info, ShieldAlert } from "lucide-react";
 import { ManualCallPanel } from "@/components/ManualCallPanel";
 import { ManualCallLogDialog, type ManualCallSubmission } from "@/components/ManualCallLogDialog";
 import { STBWizardDialog, type STBWizardSubmission } from "@/components/STBWizardDialog";
+import { isFieldLockedAfterSLP } from "@/lib/slp";
 
 // Soft pill color map — clean tinted backgrounds for status chips
 const SOFT_PILL: Record<string, string> = {
@@ -196,7 +197,12 @@ const LeadDetailPage = () => {
     setNewNote("");
   };
 
+  const creditScoreLocked = isFieldLockedAfterSLP("creditScore", { ...lead, stbSubmissions: localStbSubmissions });
   const handleSaveCreditScore = () => {
+    if (creditScoreLocked && role === "agent") {
+      toast.error("Credit score is locked after SLP submission. Manager override required.");
+      return;
+    }
     logAudit({
       ...actor,
       action: "update_credit_score",
@@ -581,10 +587,16 @@ const LeadDetailPage = () => {
                       value={editCreditScore}
                       onChange={e => setEditCreditScore(e.target.value)}
                       placeholder="—"
+                      disabled={creditScoreLocked && role === "agent"}
                     />
-                    <Button size="sm" className="h-9" onClick={handleSaveCreditScore}>Save</Button>
+                    <Button size="sm" className="h-9" onClick={handleSaveCreditScore} disabled={creditScoreLocked && role === "agent"}>
+                      {creditScoreLocked && role === "agent" ? <Lock className="h-3.5 w-3.5" /> : "Save"}
+                    </Button>
                   </div>
                 </div>
+                {creditScoreLocked && role === "agent" && (
+                  <p className="text-[11px] text-muted-foreground -mt-1">Locked after SLP submission. Manager/Cluster Head can override.</p>
+                )}
               </div>
               <div>
                 <div className="text-sm font-medium mb-2">Existing Loans</div>
