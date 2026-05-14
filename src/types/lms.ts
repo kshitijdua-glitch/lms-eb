@@ -1,6 +1,23 @@
 export type UserRole = "agent" | "manager" | "cluster_head" | "data_admin";
 
-export type LeadStage = "new" | "contacted" | "interested" | "bank_selected" | "stb_submitted" | "approved" | "declined" | "disbursed" | "closed_lost";
+export type LeadStage =
+  | "new"
+  | "assigned"
+  | "contacted"
+  | "interested"
+  | "bank_selected"
+  | "ready_for_slp"
+  | "sent_to_lp"
+  | "stb_submitted" // legacy alias for sent_to_lp
+  | "approved"
+  | "declined"
+  | "disbursed"
+  | "closed_lost"
+  | "rejected"
+  | "invalid"
+  | "profile_correction"
+  | "compliance_hold"
+  | "expired";
 
 export type DispositionType =
   // Follow-Up
@@ -157,7 +174,7 @@ export interface STBSubmission {
   partnerId: string;
   partnerName: string;
   submittedAt: string;
-  status: "submitted" | "approved" | "declined" | "disbursed";
+  status: "submitted" | "documents_pending" | "under_review" | "approved" | "declined" | "disbursed" | "cancelled" | "expired";
   approvedAmount: number | null;
   sanctionAmount: number | null;
   disbursedAmount: number | null;
