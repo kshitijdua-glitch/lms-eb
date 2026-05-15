@@ -831,7 +831,7 @@ const LeadDetailPage = () => {
                   { v: "all", label: "All", count: timelineEvents.length },
                   { v: "calls", label: "Call", count: lead.callLogs.length },
                   { v: "followups", label: "Follow-up", count: lead.followUps.length },
-                  { v: "stb", label: "STB", count: lead.stbSubmissions.length },
+                  { v: "stb", label: "SLP", count: lead.stbSubmissions.length },
                 ].map(t => (
                   <TabsTrigger
                     key={t.v}
