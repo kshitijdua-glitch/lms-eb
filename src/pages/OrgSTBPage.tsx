@@ -115,7 +115,7 @@ const OrgSTBPage = () => {
       </div>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Organisation STB Submissions</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">Organisation SLP Submissions</CardTitle></CardHeader>
         <CardContent className="p-0">
           <ConfigurableTable tableId="org-stb" columns={columns} data={allSubs} onRowClick={(s) => navigate(`/leads/${s.leadId}`)} />
         </CardContent>
