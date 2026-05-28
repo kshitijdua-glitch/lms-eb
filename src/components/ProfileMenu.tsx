@@ -29,11 +29,12 @@ export function ProfileMenu() {
   const initials = initialsOf(user.name);
   const canConfigure = can.configureSystem(role);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     toast({ title: "Signed out", description: "You have been signed out." });
     navigate("/login", { replace: true });
   };
+
 
   return (
     <>
