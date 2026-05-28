@@ -4,7 +4,7 @@ import { useRole, roleLabels } from "@/contexts/RoleContext";
 import { Badge } from "@/components/ui/badge";
 import { NotificationsDrawer } from "@/components/NotificationsDrawer";
 import { ProfileMenu } from "@/components/ProfileMenu";
-import { DemoModeBanner } from "@/components/DemoModeBanner";
+
 
 import { SkipLink } from "@/components/SkipLink";
 
@@ -17,7 +17,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="min-h-screen flex w-full">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
-          <DemoModeBanner />
+          
           <header className="h-14 flex items-center border-b bg-card px-4 gap-3 shrink-0">
             <SidebarTrigger aria-label="Toggle sidebar" />
             <div className="flex-1" />
