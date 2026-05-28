@@ -1,206 +1,96 @@
 
-# Phase-1 PRD Alignment — Gap Diff Plan
+# Phase A — Backend Foundation & Core Modules
 
-Frontend-only update to bring the prototype in line with Master + Agent + Manager + Cluster Head + Data Admin PRDs v1.
+Goal: turn the mock-data prototype into a real product backed by your Supabase project. This phase covers the schema, auth, RLS, and wiring the **core operational modules** to real data. Dashboards, reports, exports, notifications, and config polish come in Phase B.
 
-Approach: gap-diff (only changes), mock data updated to match the new logic, global label rename (STB → Send to Lending Partner / SLP), Team layer hidden everywhere, missing screens added as functional stubs.
+## 1. Supabase connection & auth
 
----
+- You'll connect your own Supabase project via the native Supabase integration.
+- Auth: **email + password**, signup disabled in Auth settings. Only `data_admin` can create users (via an admin-only edge function that calls `auth.admin.createUser`, sends a password-reset/invite email).
+- First-admin bootstrap: a one-time SQL seed promotes the first email you provide to `data_admin`.
+- Remove `DemoModeBanner`, `RoleContext` role-switcher, and all `localStorage`-based role/auth state. `useAuth` becomes the single source of truth, reading the session + the user's row in `profiles` + `user_roles`.
 
-## 1. Terminology & Labels (global rename)
+## 2. Database schema (migrations)
 
-- "STB", "Send to Bank", "Submit to Bank", "Bank Submission" → **Send to Lending Partner** (abbr **SLP**) in all UI copy, button text, badges, column headers, page titles, sidebar items, notifications.
-- Internal code may keep `stb*` symbols (`stbSubmissions`, `stb_submitted`, `STBWizardDialog`); only user-facing strings change. New code uses `slp` naming.
-- "BRE Done" / "Bank Selected" already aligned — keep "Bank Selected".
-- Remove the word "Team" from Manager and Cluster Head screens (titles, columns, filters, notifications, dashboards). Keep the underlying `teamId` field but treat it as derived from manager grouping; never display it.
+All tables in `public`, RLS enabled, explicit GRANTs, `service_role` full access. Key tables:
 
-## 2. Role hierarchy & Team layer removal
+- `profiles` (id = auth.uid, name, email, phone, manager_id, cluster_head_id, status, joined_at)
+- `app_role` enum: `agent | manager | cluster_head | data_admin`
+- `user_roles` (user_id, role) + `has_role()` security-definer function
+- `lending_partners` (name, products[], integration_type, min_credit_score, max_foir, min_income, status)
+- `products` (slug, label, status, is_custom)
+- `dispositions` (type, label, category, group, requires_follow_up) — seeded from current taxonomy
+- `lead_batches` (id, uploaded_by, source, file_name, row_count, valid_count, invalid_count, created_at)
+- `leads` — full PRD §4 schema: identity, employment, income, obligations, **FOIR computed via trigger**, product, loan_amount, stage, disposition, priority, source, assigned_agent_id, credit_score, retry_count, allocated_at, expires_at, last_activity_at, timestamps
+- `lead_existing_loans`, `lead_selected_partners`, `lead_notes`
+- `call_logs` (lead_id, agent_id, timestamp, outcome, duration, disposition, notes, next_action, follow_up_at)
+- `follow_ups` (lead_id, scheduled_at, type, status, notes, sub_type, completed_at, completed_by)
+- `slp_submissions` (lead_id, partner_id, submitted_by, submitted_at, status, sanction_amount, approval_date, disbursed_amount, disbursement_date, reference_id, status_reason, last_update_note, next_follow_up_at, remarks)
+- `audit_log` (actor_id, actor_role, action, entity_type, entity_id, before jsonb, after jsonb, reason, created_at) — append-only; UPDATE/DELETE blocked by policy
+- `notifications` (user_id, type, title, message, lead_id, read, created_at)
 
-- Confirmed roles: **Agent → Manager → Cluster Head → Data Admin** (no TL, no Team).
-- Mock data:
-  - Drop the `teams` array's user-facing usage; keep IDs only as a manager grouping helper. Stop exporting `getLeadsForTeam` / `getAgentsForTeam` from public API; replace internal callers with manager-based helpers `getAgentsForManager(managerId)` / `getLeadsForManager(managerId)`.
-  - Rewrite `agents` records: remove `teamName` from displays; agents map to a `managerId` only. Keep `teamId` field on the type but mark it deprecated in a comment.
-  - `Notification.scope = "team"` → rename to `"group"` and re-key any `teamId` fields to `managerId`.
-  - Remove "Alpha Squad / Beta Force" labels from any visible chip.
-- Remove team filter from Org/Group leads, follow-ups, SLP, reports.
+Computed columns / triggers:
+- `leads.foir` recomputed on insert/update from `existing_obligations / monthly_income`.
+- `leads.priority` recomputed via priority engine (credit/income/FOIR weights).
+- `leads.stage` auto-derived from latest `slp_submissions.status` via trigger (PRD §10.17).
+- `leads.last_activity_at` bumped on any child write.
+- `audit_log` rows inserted by triggers on `leads`, `slp_submissions`, `follow_ups`, `call_logs`, `user_roles`.
+- POST-SLP field locks (PRD §10.18) enforced in a `BEFORE UPDATE` trigger that raises on locked field changes when an active SLP exists.
 
-## 3. Sidebar / Navigation
+## 3. RLS policies (per PRD §3)
 
-Update `src/components/AppSidebar.tsx` per PRD navigation lists:
+Using `has_role()` and ownership predicates:
+- `agent`: read/write only leads where `assigned_agent_id = auth.uid()`; insert call_logs/follow_ups/notes for those leads; cannot mutate `slp_submissions` status; cannot reassign.
+- `manager`: read/write all leads where `profiles.manager_id = auth.uid()` for the assigned agent; can bulk-reassign within group; can update SLP status.
+- `cluster_head`: org-wide read; can update SLP status; can override locked fields with reason.
+- `data_admin`: org-wide read/write on batches, partners, products, dispositions, users; cannot edit leads directly.
+- `audit_log`: SELECT for managers/cluster_head/data_admin (scoped), INSERT only via triggers, no UPDATE/DELETE for anyone.
 
-- **Agent**: Dashboard, My Leads, My Follow-Ups, My Send to Lending Partner, Performance, Notifications.
-- **Manager**: Dashboard, My Leads, My Follow-Ups, My Send to Lending Partner, Group Leads, Group Follow-Ups, Group Send to Lending Partner, Group Management, Lead Report, Performance, MIS & Reports, Notifications.
-- **Cluster Head**: Dashboard, Org Leads, Org Follow-Ups, Org Send to Lending Partner, Staff Management, System Config, Lead Allocation, Lead Report, Audit Trail, MIS & Reports, Notifications.
-- **Data Admin**: Dashboard, Lead Upload, Lead Allocation, Lead Pools, Lending Partners, MIS Export, System Config, Staff Management, Audit Trail, Notifications.
+## 4. Edge functions
 
-Add a dedicated `/notifications` page (lightweight wrapper around the existing drawer content). Replace "My STB" with "My Send to Lending Partner", "Org STB" → "Org Send to Lending Partner", "Group STB" → "Group Send to Lending Partner".
+- `admin-create-user` — data_admin only; creates auth user, profile, role, sends invite.
+- `bulk-allocate-leads` — split-allocation wizard backend (round-robin / weighted / manual).
+- `compute-priority` — callable on batch upload completion.
+- `expire-leads` — cron (pg_cron) marks leads `expired` past TTL.
+- `slp-status-update` — validates transitions, required fields per status (reference_id for disbursed, sanction amount for approved, reasons for declined/cancelled), writes audit + notification.
 
-## 4. Lead Lifecycle
+All functions: zod validation, CORS headers, `verify_jwt = true` where caller is user; service-role client for privileged writes.
 
-Extend the `LeadStage` union and stage labels to the PRD set:
-`new | assigned | contacted | interested | bank_selected | ready_for_slp | sent_to_lp | approved | declined | disbursed | closed_lost | rejected | invalid | profile_correction | compliance_hold | expired`.
+## 5. Frontend rewiring (this phase)
 
-- Provide a `LEGACY_STAGE_MAP` helper to translate old `stb_submitted` → `sent_to_lp`.
-- Update lifecycle transition guards (helper `canTransition(role, from, to)`) per Master §6.4.
-- Backward-movement override: only Manager (group) and Cluster Head (org) can revert; mandatory reason captured via existing reason-prompt dialog; entry written through `useAudit().log`.
+Replace `mockData.ts` reads with Supabase queries (TanStack Query) in:
+- `LeadsPage`, `LeadDetailPage`, `GroupLeadsPage`, `OrgLeadsPage`
+- `LeadAllocationPage`, `admin/LeadUploadPage`, `admin/LeadPoolsPage`
+- `FollowUpsPage`, `GroupFollowUpsPage`, `OrgFollowUpsPage`
+- `STBPage`, `GroupSTBPage`, `OrgSTBPage`, `SLPStatusUpdateDialog`, `STBWizardDialog`
+- `ManualCallPanel`, `ManualCallLogDialog`
+- `StaffManagementPage`, `admin/AdminStaffPage`, `admin/AgentManagementPage`
+- `admin/PartnersPage`, `AuditTrailPage`
+- `LoginPage` — real `signInWithPassword`; remove role-picker UI.
+- `AppLayout` — derive role from `useAuth`/`useRole` (now DB-backed); hide DemoModeBanner.
 
-## 5. SLP (Send to Lending Partner) Logic
+Deferred to Phase B: Dashboards (`/dashboards/*`), `ReportsPage`, `GroupReportsPage`, `OrgReportsPage`, `PerformancePage`, `NotificationsPage` realtime, `SystemConfigPage`, `admin/MISExportPage`, `admin/ConfigPage`. They'll keep showing mock/empty states with a "Phase B" badge until then.
 
-In `STBWizardDialog`, `LeadDetailPage`, `partnerEligibility.ts`:
+## 6. Seed data
 
-- **Readiness checks** (block CTA until passing): mobile, PAN, income, obligation, FOIR, credit score, product, partner active+supports product, lead not in closed status, no duplicate active SLP. Show each as a tick-list with the failing reason.
-- Remove all consent checks (already done — verify).
-- **Partner eligibility formula** strictly: `active AND supportsProduct AND credit≥min AND foir≤max AND income≥min`. Drop any code that compares PIN code, employment type, loan amount, company.
-- **One active SLP per lead** rule: when initiating, block if any submission status ∈ {sent_to_lp, documents_pending, under_review, approved}; allow re-submission to a new partner only after declined/cancelled/expired.
-- **SLP statuses** expanded: `sent_to_lp | documents_pending | under_review | approved | declined | disbursed | cancelled | expired`. Update `STBSubmission["status"]` union and the SLP status-update modal (Manager/Cluster Head only, with required-fields per §10.13).
-- **SLP→Lead status mapping** (§10.17) implemented in a single helper used by every status update.
-- **Post-SLP lock** (§10.18): lock PAN, products, income, obligation, FOIR, credit score, partner, FOIR-affecting loans on the Agent edit form. Manager/Cluster Head can override with mandatory reason.
+Empty DB. Provide a SQL seed that inserts:
+- 1 default `data_admin` (you tell me the email; password reset link emailed on first login).
+- The disposition taxonomy and product list currently in `mockData.ts`.
+- 3 sample lending partners (editable later in Admin → Partners).
 
-## 6. FOIR
+No sample leads/agents — you'll create those through the real UI.
 
-- FOIR is calculated, never editable. In `CreateLeadWizard`, `LeadDetailPage`, and any SLP forms, replace any FOIR input with a derived display: `(obligation/income)*100` to 2 decimals; show "—" if income missing/zero.
-- Update `Lead.foir` to a getter or recompute on render; remove existing edit affordance.
-- Mock data: recompute FOIR for every seed lead.
+## Technical details
 
-## 7. Permissions (action-level)
+- Migrations live in `supabase/migrations/*.sql`, applied via the Supabase integration.
+- Use `@supabase/supabase-js` v2 client at `src/integrations/supabase/client.ts`.
+- All list pages use TanStack Query with `lead-list`, `lead-detail`, `follow-ups`, `slp-submissions` query keys; mutations invalidate granularly.
+- `RoleContext` keeps its API but `role` comes from `user_roles` table cached in React Query.
+- `AuditContext` becomes a thin wrapper that just reads server-side audit rows; writes happen via DB triggers.
+- Permissions in `src/lib/permissions.ts` stay as the client-side gate (UX), with RLS as the server-side enforcement.
 
-Update `src/lib/permissions.ts`:
+## What I need from you before I start building
 
-- `editLead`: Agent only on **own** leads and only allowed fields (alt mobile, city, PAN pre-SLP, company, income, obligation, employment, notes, original product). Add `canEditField(role, fieldKey, lead)` helper.
-- `sendToLendingPartner`: Agent + Manager (own/group); Cluster Head only as override; Data Admin no.
-- `updateSlpStatus`: Manager (group) + Cluster Head (org); Agent no; Data Admin no.
-- `reassign`: Manager (group), Cluster Head (org), Data Admin (admin correction); Agent no.
-- `exportPII`: Data Admin yes; Cluster Head limited/masked; Manager masked PAN; Agent no.
-- `uploadLeads`: Data Admin only.
-- `allocateLeads`: Data Admin and Cluster Head.
-- `configureSystem`: Data Admin and Cluster Head.
-- `viewAuditTrail`: Data Admin (full), Cluster Head (scope), Manager (group activity only, separate "Activity Log" view), Agent no.
-
-Wire these guards into every relevant button/menu and the route map (`RouteGuard`).
-
-## 8. Dispositions & Manual Call Log
-
-Trim `DispositionType` to PRD-aligned set (keep legacy types in a `LegacyDisposition` alias for old call logs). Update `ManualCallLogDialog`:
-
-- **Outcome** dropdown limited to: Connected, Not Connected, Invalid, Compliance.
-- Disposition disabled until outcome chosen; disposition list filtered by outcome (per §8.4–§8.6).
-- Required: date+time (no future), duration when Connected, follow-up datetime when next-action requires it, closure reason when Close Lead.
-- Auto-update lead stage from disposition mapping (table in §8.4–§8.6).
-- Increment `retryCount` only on Not-Connected save; don't increment on Call-Later-with-time, Connected, or simple reschedule.
-- Audit event `CALL_LOG_CREATED` with prev/new status.
-
-## 9. Follow-Ups
-
-- Follow-up `status` calculated dynamically: `Upcoming | Today | Overdue | Completed | Escalated | Cancelled` (replace existing `pending|completed|missed`). Provide a `computeFollowUpStatus(fu, now, maxRetries)` util used everywhere.
-- Add types `Call | Document | SLP | Profile Correction | Manager Escalation`.
-- Manager/Cluster Head actions (nudge, reschedule, escalate, reassign, close) on group/org pages.
-- Auto-escalate when `retry_count ≥ max_retries` (config).
-
-## 10. Dashboards (formula correctness)
-
-Rewrite KPI computations in:
-
-- `AgentDashboard`, `ManagerDashboard`, `ClusterHeadDashboard`, `AdminDashboard` per Master §20.
-- **Contacted** = leads with ≥1 Connected call (not "stage != new").
-- **Worked Today** = leads with ≥1 meaningful action today (per §7.2 list).
-- **Daily Call Target** = `callsToday / configured_target`; pull `configured_target` from config.
-- **Funnel rates**: `Contact / SLP / Approval / Disbursal / Overall` exactly per §20.3, fixed denominators, NaN-guarded → "0%" or "No due follow-ups" for FU compliance.
-- Manager dashboard adds: Zero Activity Agents, Missed Follow-Ups, Expiring Leads, F/U Compliance.
-- Cluster Head dashboard adds: Manager comparison (already present — keep), Inactive Agents, Stale SLPs, Org Disbursed Amount.
-
-## 11. Allocation & Reassignment
-
-Update `LeadAllocationPage` + `admin/AllocationPage`:
-
-- Remove "Assign to Team" mode. Modes: **Round Robin**, **Assign to Manager Group**, **Assign to Single Agent**.
-- Capacity logic: `effective_capacity = manager_override ?? global_default`; block when `available_capacity ≤ 0`; show partial allocation with batch status `Partially Allocated`.
-- Reassignment dialog: required reason; validations per §13.3; warning state (allow with confirmation) for SLP-active / approved / overdue leads; block when new owner inactive / same / no capacity / disbursed.
-- Staff deactivation flow in Staff Management blocks deactivation if active leads exist; force a reassign-target picker first.
-
-## 12. Duplicate Detection
-
-In `CreateLeadWizard` and Lead Upload validation:
-- Exact-match duplicate on **mobile OR PAN**.
-- On Agent create: block + show existing-lead summary card (id, masked PAN, mobile, owner, status, last activity).
-- On Upload: mark as duplicate row in validation step; require Data Admin override with reason.
-
-## 13. Lead Upload, Pools, Partners (Data Admin)
-
-Audit existing `admin/LeadUploadPage`, `admin/LeadPoolsPage`, `admin/PartnersPage`:
-
-- Required upload fields: name, mobile, product, lead source. Recommended fields list shown.
-- Validation table per §16.5; rejected reasons surfaced inline.
-- Lead Pool statuses: `Unallocated | Partially Allocated | Allocated | Validation Failed | Archived`.
-- Partner config form: name, integration type, products[], min credit, max FOIR, min income, status. Phase-1 integration types: `Manual | Portal | Email | API Planned | API Active`. Inactive partners hidden from Agent operational selection.
-
-## 14. System Config
-
-Update `SystemConfigPage` + `admin/ConfigPage`:
-
-- Settings list (per §19.1): default capacity, max retries, retry interval, stale threshold, expiry days, priority weights+thresholds, lead sources, notification toggles.
-- Capture before/after, actor, reason on every change. Mandatory reason for high-impact settings.
-- Manager Agent Capacity Override + Agent Targets editors live under Group Management (already partially present — surface and audit).
-
-## 15. Notifications
-
-Rebuild notification matrix in `mockData.ts` and `NotificationsDrawer`:
-
-- Drop `team` scope → use `group` (managerId-keyed).
-- Notification types per §24.2 matrix; add `slp_approved`, `slp_declined`, `slp_disbursed`, `retry_exceeded`, `staff_deactivated`, `partner_changed`, `config_changed` in the Notification type union.
-- Add a dedicated `/notifications` page route (one per role with sidebar entry); reuse drawer cells for the body.
-
-## 16. Audit Trail
-
-- `AuditTrailPage`: add filters for Action Type, Actor Role, Target Type, Date.
-- Ensure every state-mutating handler currently in the codebase calls `useAudit().log` with `before/after/reason/source_screen` populated. Add a small `withAudit` helper.
-- Manager-only "Activity Log" view (group-scoped, no governance/admin actions).
-
-## 17. PII
-
-- Mobile **always full** (calling).
-- PAN **masked** by default (`ABCDE****F`) for Agent/Manager/Cluster Head; Data Admin sees full. Provide `maskPan(pan, role)` util used everywhere PAN is rendered.
-- Export PII: only Data Admin; Manager exports mask PAN; Agent has no export buttons.
-
-## 18. Missing screens (add as frontend stubs)
-
-- `/notifications` (per role).
-- `/admin/mis` — already exists; verify it covers MIS Export per §25.
-- Manager `/reports` MIS — page exists; ensure "MIS & Reports" entry routes here.
-- Cluster Head Lead Allocation entry routes to `/lead-allocation` (alias of admin allocation with cluster scope filter).
-- Group Management: Agent Capacity Override & Targets sub-tabs.
-
-## 19. Mock data updates
-
-- Recompute FOIR per lead.
-- Map every existing lead's stage through `LEGACY_STAGE_MAP` (e.g. `stb_submitted` → `sent_to_lp`).
-- Drop visible Team labels; add `managerId` joins.
-- Re-seed at least 3 leads in each new stage (`profile_correction`, `compliance_hold`, `expired`, `rejected`).
-- Re-seed SLP submissions covering each new SLP status.
-- Update notifications to new types/scope.
-
-## 20. Out of scope (explicit)
-
-- No backend / Supabase changes.
-- No actual SMS, dialer, or partner-API integration.
-- No fuzzy duplicate logic.
-- No Team functionality re-introduction.
-- No DSA marketplace.
-- Historical mock data oddities outside the changed paths left as-is.
-
----
-
-## Technical sequencing (build order)
-
-1. Types + permissions + helpers (`types/lms.ts`, `lib/permissions.ts`, new `lib/leadLifecycle.ts`, `lib/slp.ts`, `lib/foir.ts`, `lib/maskPan.ts`, `lib/followUpStatus.ts` extend).
-2. Mock data rewrite (`data/mockData.ts`) — drop Team display, re-seed stages, recompute FOIR, new notifications.
-3. Sidebar + routes + new `/notifications` page.
-4. Global label sweep (STB → SLP, hide Team).
-5. Manual Call Dialog + Follow-Up logic.
-6. SLP wizard + Lead Detail (readiness, lock-after-SLP, status-update modal).
-7. Allocation + Reassignment + Staff deactivation flow.
-8. Dashboards recompute (per role).
-9. Config, Audit, Notifications drawers/pages.
-10. PII masking pass.
-11. Memory updates (`mem://features/lead-lifecycle`, `stb-workflow` → `slp-workflow`, `manager-portal-rules`, `role-based-access`, `audit-compliance`, index Core).
-
-Estimated touch count: ~35–45 files. Scope is large but mechanical; built role-by-role internally even though the deliverable is one cohesive update.
+1. Confirm the email for the bootstrap `data_admin` account.
+2. Confirm you'll click through the Supabase native integration prompt when I trigger it.
+3. Confirm Phase B scope (dashboards/reports/notifications/exports/config) can come in a follow-up plan.
