@@ -77,7 +77,7 @@ const LeadsPage = () => {
   }, [allLeads, search, stageFilter, productFilter, sourceFilter, followUpFilter]);
 
 
-  const sources = [...new Set(allLeads.map(l => l.leadSource))];
+  const sources: string[] = Array.from(new Set(allLeads.map(l => l.leadSource).filter(Boolean)));
 
   const summaryTiles = [
     { label: "Total Leads", value: allLeads.length, icon: Users, tone: "text-muted-foreground" },
