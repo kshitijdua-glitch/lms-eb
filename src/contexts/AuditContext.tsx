@@ -73,7 +73,7 @@ export function AuditProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const forLead = useCallback(
-    (leadId: string) => entries.filter(e => e.entityType === "leads" || e.entityType === "lead").filter(e => e.entityId === leadId),
+    (leadId: string) => entries.filter(e => (String(e.entityType) === "leads" || e.entityType === "lead") && e.entityId === leadId),
     [entries],
   );
 

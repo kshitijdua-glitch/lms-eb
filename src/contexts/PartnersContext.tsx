@@ -79,7 +79,11 @@ export function PartnersProvider({ children }: { children: ReactNode }) {
   }, [qc]);
 
   const updatePartner = useCallback(async (id: string, patch: Partial<LendingPartner>) => {
-    const row: Record<string, unknown> = {};
+    const row: {
+      name?: string; products?: string[]; integration_type?: string;
+      min_credit_score?: number; max_foir?: number; min_income?: number;
+      status?: "active" | "inactive";
+    } = {};
     if (patch.name !== undefined) row.name = patch.name;
     if (patch.products !== undefined) row.products = patch.products;
     if (patch.integrationType !== undefined) row.integration_type = patch.integrationType;
@@ -115,7 +119,7 @@ export function PartnersProvider({ children }: { children: ReactNode }) {
   }, [qc]);
 
   const updateProduct = useCallback(async (id: string, patch: Partial<ProductDefinition>) => {
-    const row: Record<string, unknown> = {};
+    const row: { label?: string; status?: "active" | "inactive" } = {};
     if (patch.label !== undefined) row.label = patch.label;
     if (patch.status !== undefined) row.status = patch.status;
     const { error } = await supabase.from("products").update(row).eq("slug", id);
