@@ -1,67 +1,70 @@
 import { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Shield, Search, Download } from "lucide-react";
+import { Shield, Search, Download, Loader2 } from "lucide-react";
 import { useRole } from "@/contexts/RoleContext";
+import { useAudit } from "@/contexts/AuditContext";
 import { toast } from "sonner";
 import { ConfigurableTable } from "@/components/ConfigurableTable";
 import type { ColumnDef } from "@/types/table";
+import type { AuditEntry } from "@/types/lms";
 
-type AuditEntry = {
-  id: string; timestamp: string; actor: string; actorRole: string;
-  actionType: string; target: string; before: string; after: string; reason: string;
-};
+const labelize = (s: string) => s.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 
-const mockAuditLog: AuditEntry[] = [
-  { id: "a1", timestamp: "2026-04-14T10:30:00Z", actor: "CH Admin", actorRole: "cluster_head", actionType: "disposition_override", target: "Lead: Rajesh Khanna", before: "Closed Lost", after: "Contacted", reason: "Customer called back, interested" },
-  { id: "a2", timestamp: "2026-04-14T09:15:00Z", actor: "CH Admin", actorRole: "cluster_head", actionType: "config_change", target: "Allocation Rules", before: "Manual", after: "Round Robin", reason: "Efficiency improvement" },
-  { id: "a3", timestamp: "2026-04-13T16:00:00Z", actor: "CH Admin", actorRole: "cluster_head", actionType: "staff_deactivate", target: "Agent: Karan Singh", before: "Active", after: "Inactive", reason: "Resigned" },
-  { id: "a4", timestamp: "2026-04-13T14:20:00Z", actor: "Vikram Mehta", actorRole: "manager", actionType: "disposition_override", target: "Lead: Arjun Rao", before: "Declined", after: "Interested", reason: "Wrong bank selected, retry with ICICI" },
-  { id: "a5", timestamp: "2026-04-13T11:00:00Z", actor: "Priya Sharma", actorRole: "manager", actionType: "reassignment", target: "Lead: Sunita Devi", before: "Agent: Amit Verma", after: "Agent: Sneha Gupta", reason: "Agent on leave" },
-  { id: "a6", timestamp: "2026-04-12T17:30:00Z", actor: "CH Admin", actorRole: "cluster_head", actionType: "staff_create", target: "Agent: New Agent", before: "—", after: "Active", reason: "New hire" },
-  { id: "a7", timestamp: "2026-04-12T10:00:00Z", actor: "Ravi Kumar", actorRole: "manager", actionType: "disposition", target: "Lead: Mohd Irfan", before: "New", after: "Hot Follow-Up", reason: "" },
-  { id: "a8", timestamp: "2026-04-11T15:00:00Z", actor: "CH Admin", actorRole: "cluster_head", actionType: "config_change", target: "Lead Sources", before: "—", after: "Added: TeleCall", reason: "New vendor onboarded" },
-  { id: "a9", timestamp: "2026-04-11T09:30:00Z", actor: "System", actorRole: "system", actionType: "login", target: "Vikram Mehta", before: "—", after: "Logged in", reason: "" },
-  { id: "a10", timestamp: "2026-04-10T14:00:00Z", actor: "Anjali Kapoor", actorRole: "manager", actionType: "reassignment", target: "Lead: Kavita Mishra", before: "Agent: Amit Verma", after: "Agent: Pooja Reddy", reason: "Cross-team balance" },
-];
-
-const actionTypes = ["All", "disposition_override", "config_change", "staff_deactivate", "staff_create", "reassignment", "disposition", "login"];
-const roles = ["All", "cluster_head", "manager", "system"];
-const actionLabel = (a: string) => a.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+function toCSV(rows: AuditEntry[]): string {
+  const header = ["timestamp", "actor", "role", "action", "entity_type", "entity_id", "reason"];
+  const body = rows.map(r => [
+    new Date(r.timestamp).toISOString(), r.actorName, r.actorRole, r.action,
+    r.entityType, r.entityId, r.reason ?? "",
+  ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(","));
+  return [header.join(","), ...body].join("\n");
+}
 
 const AuditTrailPage = () => {
   const { role } = useRole();
+  const { entries, loading } = useAudit();
   const [search, setSearch] = useState("");
   const [actionFilter, setActionFilter] = useState("All");
   const [roleFilter, setRoleFilter] = useState("All");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
+  const actionTypes = useMemo(() => ["All", ...Array.from(new Set(entries.map(e => e.action)))], [entries]);
+  const roles = useMemo(() => ["All", ...Array.from(new Set(entries.map(e => e.actorRole)))], [entries]);
+
   const filtered = useMemo(() => {
-    return mockAuditLog.filter(e => {
-      if (actionFilter !== "All" && e.actionType !== actionFilter) return false;
+    return entries.filter(e => {
+      if (actionFilter !== "All" && e.action !== actionFilter) return false;
       if (roleFilter !== "All" && e.actorRole !== roleFilter) return false;
-      if (search && !e.target.toLowerCase().includes(search.toLowerCase()) && !e.actor.toLowerCase().includes(search.toLowerCase())) return false;
+      const target = `${e.actorName} ${e.entityType} ${e.entityId}`.toLowerCase();
+      if (search && !target.includes(search.toLowerCase())) return false;
       if (dateFrom && new Date(e.timestamp) < new Date(dateFrom)) return false;
       if (dateTo && new Date(e.timestamp) > new Date(dateTo + "T23:59:59")) return false;
       return true;
     });
-  }, [search, actionFilter, roleFilter, dateFrom, dateTo]);
+  }, [entries, search, actionFilter, roleFilter, dateFrom, dateTo]);
+
+  const handleExport = () => {
+    const csv = toCSV(filtered);
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `audit-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${filtered.length} entries`);
+  };
 
   const columns: ColumnDef<AuditEntry>[] = [
     { id: "timestamp", label: "Timestamp", render: (e) => <span className="text-xs text-muted-foreground whitespace-nowrap">{new Date(e.timestamp).toLocaleString()}</span> },
-    { id: "actor", label: "Actor", render: (e) => <span className="font-medium text-sm">{e.actor}</span> },
-    { id: "role", label: "Role", render: (e) => (
-      <Badge variant={e.actorRole === "cluster_head" ? "default" : e.actorRole === "manager" ? "default" : "secondary"} className="text-[10px]">{actionLabel(e.actorRole)}</Badge>
-    )},
-    { id: "action", label: "Action", render: (e) => <Badge variant="outline" className="text-[10px]">{actionLabel(e.actionType)}</Badge> },
-    { id: "target", label: "Target", render: (e) => <span className="text-sm">{e.target}</span> },
-    { id: "before", label: "Before", render: (e) => <span className="text-xs text-muted-foreground">{e.before}</span> },
-    { id: "after", label: "After", render: (e) => <span className="text-xs font-medium">{e.after}</span> },
-    { id: "reason", label: "Reason", render: (e) => <span className="text-xs text-muted-foreground max-w-[200px] truncate block">{e.reason || "—"}</span> },
+    { id: "actor", label: "Actor", render: (e) => <span className="font-medium text-sm">{e.actorName}</span> },
+    { id: "role", label: "Role", render: (e) => <Badge variant="secondary" className="text-[10px]">{labelize(e.actorRole)}</Badge> },
+    { id: "action", label: "Action", render: (e) => <Badge variant="outline" className="text-[10px]">{labelize(e.action)}</Badge> },
+    { id: "entity", label: "Entity", render: (e) => <span className="text-sm">{e.entityType}<span className="text-muted-foreground"> · {e.entityId.slice(0, 8)}</span></span> },
+    { id: "reason", label: "Reason", render: (e) => <span className="text-xs text-muted-foreground max-w-[280px] truncate block">{e.reason || "—"}</span> },
   ];
 
   return (
@@ -72,7 +75,7 @@ const AuditTrailPage = () => {
           <p className="text-muted-foreground text-sm">Immutable log of all system actions.{role !== "data_admin" && " No export available."}</p>
         </div>
         {role === "data_admin" && (
-          <Button variant="outline" onClick={() => toast.success("Audit trail CSV exported. Action logged.")}>
+          <Button variant="outline" onClick={handleExport} disabled={filtered.length === 0}>
             <Download className="h-4 w-4 mr-1" /> Export CSV
           </Button>
         )}
@@ -81,19 +84,15 @@ const AuditTrailPage = () => {
       <div className="flex flex-wrap gap-2">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search actor or target..." className="pl-9" value={search} onChange={e => setSearch(e.target.value)} />
+          <Input placeholder="Search actor or entity..." className="pl-9" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <Select value={actionFilter} onValueChange={setActionFilter}>
-          <SelectTrigger className="w-44"><SelectValue placeholder="Action Type" /></SelectTrigger>
-          <SelectContent>
-            {actionTypes.map(a => <SelectItem key={a} value={a}>{a === "All" ? "All Actions" : actionLabel(a)}</SelectItem>)}
-          </SelectContent>
+          <SelectTrigger className="w-44"><SelectValue placeholder="Action" /></SelectTrigger>
+          <SelectContent>{actionTypes.map(a => <SelectItem key={a} value={a}>{a === "All" ? "All Actions" : labelize(a)}</SelectItem>)}</SelectContent>
         </Select>
         <Select value={roleFilter} onValueChange={setRoleFilter}>
           <SelectTrigger className="w-36"><SelectValue placeholder="Role" /></SelectTrigger>
-          <SelectContent>
-            {roles.map(r => <SelectItem key={r} value={r}>{r === "All" ? "All Roles" : actionLabel(r)}</SelectItem>)}
-          </SelectContent>
+          <SelectContent>{roles.map(r => <SelectItem key={r} value={r}>{r === "All" ? "All Roles" : labelize(r)}</SelectItem>)}</SelectContent>
         </Select>
         <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="w-36" aria-label="From date" />
         <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="w-36" aria-label="To date" />
@@ -101,12 +100,18 @@ const AuditTrailPage = () => {
 
       <Card>
         <CardContent className="p-0">
-          <ConfigurableTable tableId="audit-trail" columns={columns} data={filtered} />
+          {loading ? (
+            <div className="p-12 text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" /> Loading audit log…
+            </div>
+          ) : (
+            <ConfigurableTable tableId="audit-trail" columns={columns} data={filtered} />
+          )}
         </CardContent>
       </Card>
 
       <div className="text-xs text-muted-foreground text-center">
-        Showing {filtered.length} of {mockAuditLog.length} entries{role !== "data_admin" && " · Export disabled per policy"}
+        Showing {filtered.length} of {entries.length} entries{role !== "data_admin" && " · Export disabled per policy"}
       </div>
     </div>
   );
