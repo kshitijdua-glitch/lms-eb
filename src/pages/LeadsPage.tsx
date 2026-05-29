@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { leads, getLeadsForAgent, getDispositionLabel, getStageLabel, getProductLabel } from "@/data/mockData";
+import { getDispositionLabel, getStageLabel, getProductLabel } from "@/data/mockData";
+import { useLeads, useCreateLead } from "@/hooks/useLeads";
 import { useRole } from "@/contexts/RoleContext";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Plus, Download, Users, CheckCircle2, Clock4, AlertCircle } from "lucide-react";
+import { Search, Plus, Download, Users, CheckCircle2, Clock4, AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { ConfigurableTable } from "@/components/ConfigurableTable";
 import { PriorityBadge } from "@/components/PriorityBadge";
