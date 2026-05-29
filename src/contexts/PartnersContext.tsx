@@ -1,113 +1,157 @@
-import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, ReactNode, useCallback, useContext, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import type { LendingPartner, ProductDefinition, ProductType } from "@/types/lms";
-import { lendingPartners as seedPartners } from "@/data/mockData";
-
-const BUILTIN_PRODUCTS: ProductDefinition[] = [
-  { id: "personal_loan", label: "Personal Loan", status: "active" },
-  { id: "home_loan", label: "Home Loan", status: "active" },
-  { id: "business_loan", label: "Business Loan", status: "active" },
-  { id: "credit_card", label: "Credit Card", status: "active" },
-  { id: "loan_against_property", label: "Loan Against Property", status: "active" },
-];
 
 interface PartnersContextType {
   partners: LendingPartner[];
   products: ProductDefinition[];
-  addPartner: (p: Omit<LendingPartner, "id">) => LendingPartner;
-  updatePartner: (id: string, patch: Partial<LendingPartner>) => void;
-  togglePartnerStatus: (id: string) => void;
-  removePartner: (id: string) => void;
-  addProduct: (label: string) => ProductDefinition;
-  updateProduct: (id: string, patch: Partial<ProductDefinition>) => void;
-  toggleProductStatus: (id: string) => void;
-  removeProduct: (id: string) => void;
+  loading: boolean;
+  addPartner: (p: Omit<LendingPartner, "id">) => Promise<LendingPartner>;
+  updatePartner: (id: string, patch: Partial<LendingPartner>) => Promise<void>;
+  togglePartnerStatus: (id: string) => Promise<void>;
+  removePartner: (id: string) => Promise<void>;
+  addProduct: (label: string) => Promise<ProductDefinition>;
+  updateProduct: (id: string, patch: Partial<ProductDefinition>) => Promise<void>;
+  toggleProductStatus: (id: string) => Promise<void>;
+  removeProduct: (id: string) => Promise<void>;
   getProductLabel: (id: string) => string;
   getActivePartnersForProduct: (productId: ProductType | string) => LendingPartner[];
 }
 
 const PartnersContext = createContext<PartnersContextType | undefined>(undefined);
 
-const PARTNERS_KEY = "lms-partners";
-const PRODUCTS_KEY = "lms-products";
-
-function load<T>(key: string, fallback: T): T {
-  if (typeof window === "undefined") return fallback;
-  try {
-    const raw = sessionStorage.getItem(key);
-    if (raw) return JSON.parse(raw) as T;
-  } catch {
-    /* ignore */
-  }
-  return fallback;
-}
-
 function slugify(label: string) {
   return label.toLowerCase().trim().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
 }
 
+type PartnerRow = {
+  id: string; name: string; products: string[]; integration_type: string;
+  min_credit_score: number | null; max_foir: number | null; min_income: number | null;
+  status: string;
+};
+type ProductRow = { id: string; slug: string; label: string; status: string; is_custom: boolean };
+
+function rowToPartner(r: PartnerRow): LendingPartner {
+  return {
+    id: r.id, name: r.name, products: (r.products ?? []) as ProductType[],
+    integrationType: (r.integration_type ?? "manual") as LendingPartner["integrationType"],
+    minCreditScore: r.min_credit_score ?? 0, maxFoir: r.max_foir ?? 0, minIncome: r.min_income ?? 0,
+    status: r.status as "active" | "inactive",
+  };
+}
+function rowToProduct(r: ProductRow): ProductDefinition {
+  return { id: r.slug, label: r.label, status: r.status as "active" | "inactive", isCustom: r.is_custom };
+}
+
 export function PartnersProvider({ children }: { children: ReactNode }) {
-  const [partners, setPartners] = useState<LendingPartner[]>(() => load(PARTNERS_KEY, seedPartners));
-  const [products, setProducts] = useState<ProductDefinition[]>(() => load(PRODUCTS_KEY, BUILTIN_PRODUCTS));
+  const qc = useQueryClient();
 
-  useEffect(() => {
-    try { sessionStorage.setItem(PARTNERS_KEY, JSON.stringify(partners)); } catch { /* noop */ }
-  }, [partners]);
+  const partnersQ = useQuery({
+    queryKey: ["partners"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("lending_partners").select("*").order("name");
+      if (error) throw error;
+      return (data as PartnerRow[]).map(rowToPartner);
+    },
+  });
 
-  useEffect(() => {
-    try { sessionStorage.setItem(PRODUCTS_KEY, JSON.stringify(products)); } catch { /* noop */ }
-  }, [products]);
+  const productsQ = useQuery({
+    queryKey: ["products"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("products").select("*").order("label");
+      if (error) throw error;
+      return (data as ProductRow[]).map(rowToProduct);
+    },
+  });
 
-  const addPartner = useCallback((p: Omit<LendingPartner, "id">) => {
-    const created: LendingPartner = { ...p, id: `lp-${Date.now()}` };
-    setPartners(prev => [...prev, created]);
-    return created;
-  }, []);
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["partners"] });
+  const invalidateProducts = () => qc.invalidateQueries({ queryKey: ["products"] });
 
-  const updatePartner = useCallback((id: string, patch: Partial<LendingPartner>) => {
-    setPartners(prev => prev.map(p => (p.id === id ? { ...p, ...patch } : p)));
-  }, []);
+  const addPartner = useCallback(async (p: Omit<LendingPartner, "id">) => {
+    const { data, error } = await supabase.from("lending_partners").insert({
+      name: p.name, products: p.products, integration_type: p.integrationType,
+      min_credit_score: p.minCreditScore, max_foir: p.maxFoir, min_income: p.minIncome, status: p.status,
+    }).select().single();
+    if (error) throw error;
+    invalidate();
+    return rowToPartner(data as PartnerRow);
+  }, [qc]);
 
-  const togglePartnerStatus = useCallback((id: string) => {
-    setPartners(prev => prev.map(p => (p.id === id ? { ...p, status: p.status === "active" ? "inactive" : "active" } : p)));
-  }, []);
+  const updatePartner = useCallback(async (id: string, patch: Partial<LendingPartner>) => {
+    const row: Record<string, unknown> = {};
+    if (patch.name !== undefined) row.name = patch.name;
+    if (patch.products !== undefined) row.products = patch.products;
+    if (patch.integrationType !== undefined) row.integration_type = patch.integrationType;
+    if (patch.minCreditScore !== undefined) row.min_credit_score = patch.minCreditScore;
+    if (patch.maxFoir !== undefined) row.max_foir = patch.maxFoir;
+    if (patch.minIncome !== undefined) row.min_income = patch.minIncome;
+    if (patch.status !== undefined) row.status = patch.status;
+    const { error } = await supabase.from("lending_partners").update(row).eq("id", id);
+    if (error) throw error;
+    invalidate();
+  }, [qc]);
 
-  const removePartner = useCallback((id: string) => {
-    setPartners(prev => prev.filter(p => p.id !== id));
-  }, []);
+  const togglePartnerStatus = useCallback(async (id: string) => {
+    const current = (partnersQ.data ?? []).find(p => p.id === id);
+    if (!current) return;
+    await updatePartner(id, { status: current.status === "active" ? "inactive" : "active" });
+  }, [partnersQ.data, updatePartner]);
 
-  const addProduct = useCallback((label: string) => {
-    const id = slugify(label) || `product_${Date.now()}`;
-    const created: ProductDefinition = { id, label: label.trim(), status: "active", isCustom: true };
-    setProducts(prev => (prev.some(p => p.id === id) ? prev : [...prev, created]));
-    return created;
-  }, []);
+  const removePartner = useCallback(async (id: string) => {
+    const { error } = await supabase.from("lending_partners").delete().eq("id", id);
+    if (error) throw error;
+    invalidate();
+  }, [qc]);
 
-  const updateProduct = useCallback((id: string, patch: Partial<ProductDefinition>) => {
-    setProducts(prev => prev.map(p => (p.id === id ? { ...p, ...patch } : p)));
-  }, []);
+  const addProduct = useCallback(async (label: string) => {
+    const slug = slugify(label) || `product_${Date.now()}`;
+    const { data, error } = await supabase.from("products").insert({
+      slug, label: label.trim(), status: "active", is_custom: true,
+    }).select().single();
+    if (error) throw error;
+    invalidateProducts();
+    return rowToProduct(data as ProductRow);
+  }, [qc]);
 
-  const toggleProductStatus = useCallback((id: string) => {
-    setProducts(prev => prev.map(p => (p.id === id ? { ...p, status: p.status === "active" ? "inactive" : "active" } : p)));
-  }, []);
+  const updateProduct = useCallback(async (id: string, patch: Partial<ProductDefinition>) => {
+    const row: Record<string, unknown> = {};
+    if (patch.label !== undefined) row.label = patch.label;
+    if (patch.status !== undefined) row.status = patch.status;
+    const { error } = await supabase.from("products").update(row).eq("slug", id);
+    if (error) throw error;
+    invalidateProducts();
+  }, [qc]);
 
-  const removeProduct = useCallback((id: string) => {
-    setProducts(prev => prev.filter(p => !(p.id === id && p.isCustom)));
-  }, []);
+  const toggleProductStatus = useCallback(async (id: string) => {
+    const current = (productsQ.data ?? []).find(p => p.id === id);
+    if (!current) return;
+    await updateProduct(id, { status: current.status === "active" ? "inactive" : "active" });
+  }, [productsQ.data, updateProduct]);
+
+  const removeProduct = useCallback(async (id: string) => {
+    const { error } = await supabase.from("products").delete().eq("slug", id);
+    if (error) throw error;
+    invalidateProducts();
+  }, [qc]);
+
+  const partners = partnersQ.data ?? [];
+  const products = productsQ.data ?? [];
 
   const getProductLabel = useCallback((id: string) => {
-    return products.find(p => p.id === id)?.label ?? id.replace(/_/g, " ");
+    return products.find(p => p.id === id)?.label ?? id.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
   }, [products]);
 
   const getActivePartnersForProduct = useCallback((productId: ProductType | string) => {
     return partners.filter(p => p.status === "active" && p.products.includes(productId as ProductType));
   }, [partners]);
 
-  const value = useMemo(() => ({
-    partners, products,
+  const value = useMemo<PartnersContextType>(() => ({
+    partners, products, loading: partnersQ.isLoading || productsQ.isLoading,
     addPartner, updatePartner, togglePartnerStatus, removePartner,
     addProduct, updateProduct, toggleProductStatus, removeProduct,
     getProductLabel, getActivePartnersForProduct,
-  }), [partners, products, addPartner, updatePartner, togglePartnerStatus, removePartner, addProduct, updateProduct, toggleProductStatus, removeProduct, getProductLabel, getActivePartnersForProduct]);
+  }), [partners, products, partnersQ.isLoading, productsQ.isLoading, addPartner, updatePartner, togglePartnerStatus, removePartner, addProduct, updateProduct, toggleProductStatus, removeProduct, getProductLabel, getActivePartnersForProduct]);
 
   return <PartnersContext.Provider value={value}>{children}</PartnersContext.Provider>;
 }
