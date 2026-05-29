@@ -31,7 +31,7 @@ function agingColor(days: number) {
 }
 
 const LeadsPage = () => {
-  const { role, currentAgentId } = useRole();
+  const { role } = useRole();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState("");
@@ -41,15 +41,12 @@ const LeadsPage = () => {
   const [followUpFilter, setFollowUpFilter] = useState("all");
   const [showCreateLead, setShowCreateLead] = useState(searchParams.get("create") === "true");
 
+  const { data: leads = [], isLoading } = useLeads();
+  const createLead = useCreateLead();
 
-  // Scope per Section 4.3:
-  // - Agent: leads they own
-  // - Manager: leads directly owned by the manager (NOT team-wide — that's /group-leads)
-  // - Cluster Head / Data Admin: all leads
-  const allLeads =
-    role === "agent" ? getLeadsForAgent("agent-1")
-    : role === "manager" ? getLeadsForAgent(currentAgentId)
-    : leads;
+  // RLS already scopes leads server-side. Agents see their own; managers see
+  // their reports' leads; cluster_head / data_admin see all.
+  const allLeads = leads;
 
   const pageTitle =
     role === "agent" ? "My Leads"
@@ -248,10 +245,18 @@ const LeadsPage = () => {
         open={showCreateLead}
         onOpenChange={setShowCreateLead}
         existingMobiles={allLeads.map(l => l.mobile)}
-        onSubmit={(data) => {
-          toast.success(`Lead "${data.name}" created`);
+        onSubmit={async (data) => {
+          try {
+            await createLead.mutateAsync(data);
+            toast.success(`Lead "${data.name}" created`);
+          } catch (e: any) {
+            toast.error(e?.message ?? "Failed to create lead");
+          }
         }}
       />
+      {isLoading && (
+        <div className="text-xs text-muted-foreground flex items-center gap-1.5"><Loader2 className="h-3 w-3 animate-spin" /> Loading leads…</div>
+      )}
     </div>
   );
 };
