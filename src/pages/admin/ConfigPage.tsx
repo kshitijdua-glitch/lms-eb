@@ -40,24 +40,23 @@ const ConfigPage = () => {
     setProductDialogOpen(true);
   };
 
-  const submitProduct = async () => {
+  const submitProduct = () => {
     const trimmed = productLabel.trim();
     if (trimmed.length < 2) {
       toast.error("Product name must be at least 2 characters");
       return;
     }
-    try {
-      if (editingProductId) {
-        await updateProduct(editingProductId, { label: trimmed });
-        toast.success(`Updated ${trimmed}`);
-      } else {
-        const created = await addProduct(trimmed);
-        toast.success(`Added ${created.label}`);
-      }
-      setProductDialogOpen(false);
-    } catch (e) {
-      toast.error((e as Error).message);
+    const actor = buildActor(role, currentAgentId);
+    if (editingProductId) {
+      updateProduct(editingProductId, { label: trimmed });
+      logAudit({ ...actor, action: "product_updated", entityType: "config", entityId: editingProductId, after: { label: trimmed } });
+      toast.success(`Updated ${trimmed}`);
+    } else {
+      const created = addProduct(trimmed);
+      logAudit({ ...actor, action: "product_created", entityType: "config", entityId: created.id, entityLabel: created.label, after: { label: created.label } });
+      toast.success(`Added ${created.label}`);
     }
+    setProductDialogOpen(false);
   };
 
   return (

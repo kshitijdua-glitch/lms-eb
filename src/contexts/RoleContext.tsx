@@ -1,6 +1,5 @@
-import React, { createContext, useContext, ReactNode } from "react";
+import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { UserRole } from "@/types/lms";
-import { useAuth } from "@/contexts/AuthContext";
 
 interface RoleContextType {
   role: UserRole;
@@ -11,16 +10,42 @@ interface RoleContextType {
 
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
 
-export function RoleProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
-  const role = (user?.role ?? "agent") as UserRole;
+const STORAGE_KEY = "lms-role";
+const VALID_ROLES: UserRole[] = ["agent", "manager", "cluster_head", "data_admin"];
 
-  const setRole = () => {
-    // Role is server-managed via user_roles. No-op for backward compatibility.
+function loadRole(): UserRole {
+  if (typeof window === "undefined") return "agent";
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved && VALID_ROLES.includes(saved as UserRole)) return saved as UserRole;
+  } catch { /* noop */ }
+  return "agent";
+}
+
+export function RoleProvider({ children }: { children: ReactNode }) {
+  const [role, setRoleState] = useState<UserRole>(() => loadRole());
+
+  const setRole = (r: UserRole) => {
+    setRoleState(r);
+    try { localStorage.setItem(STORAGE_KEY, r); } catch { /* noop */ }
   };
 
+  // Cross-tab sync
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY && e.newValue && VALID_ROLES.includes(e.newValue as UserRole)) {
+        setRoleState(e.newValue as UserRole);
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  const currentAgentId = role === "agent" ? "agent-1" : "agent-9";
+  const currentTeamId = "team-1";
+
   return (
-    <RoleContext.Provider value={{ role, setRole, currentAgentId: user?.id ?? "", currentTeamId: "" }}>
+    <RoleContext.Provider value={{ role, setRole, currentAgentId, currentTeamId }}>
       {children}
     </RoleContext.Provider>
   );

@@ -82,7 +82,7 @@ const PartnersPage = () => {
     setDialogOpen(true);
   };
 
-  const submit = async () => {
+  const submit = () => {
     const result = partnerSchema.safeParse(form);
     if (!result.success) {
       const errs: Record<string, string> = {};
@@ -90,29 +90,27 @@ const PartnersPage = () => {
       setErrors(errs);
       return;
     }
-    try {
-      if (editingId) {
-        await updatePartner(editingId, result.data as Partial<LendingPartner>);
-        toast.success(`Updated ${result.data.name}`);
-      } else {
-        const created = await addPartner(result.data as Omit<LendingPartner, "id">);
-        toast.success(`Added ${created.name}`);
-      }
-      setDialogOpen(false);
-    } catch (e) {
-      toast.error((e as Error).message);
+    const actor = buildActor(role, currentAgentId);
+    if (editingId) {
+      const before = partners.find(p => p.id === editingId);
+      updatePartner(editingId, result.data as Partial<LendingPartner>);
+      logAudit({ ...actor, action: "partner_updated", entityType: "config", entityId: editingId, entityLabel: result.data.name, before: before as unknown as Record<string, unknown>, after: result.data as unknown as Record<string, unknown> });
+      toast.success(`Updated ${result.data.name}`);
+    } else {
+      const created = addPartner(result.data as Omit<LendingPartner, "id">);
+      logAudit({ ...actor, action: "partner_created", entityType: "config", entityId: created.id, entityLabel: created.name, after: created as unknown as Record<string, unknown> });
+      toast.success(`Added ${created.name}`);
     }
+    setDialogOpen(false);
   };
 
-  const confirmDelete = async () => {
+  const confirmDelete = () => {
     if (!deleteId) return;
     const partner = partners.find(p => p.id === deleteId);
-    try {
-      await removePartner(deleteId);
-      toast.success(`Removed ${partner?.name ?? "partner"}`);
-    } catch (e) {
-      toast.error((e as Error).message);
-    }
+    removePartner(deleteId);
+    const actor = buildActor(role, currentAgentId);
+    logAudit({ ...actor, action: "partner_deleted", entityType: "config", entityId: deleteId, entityLabel: partner?.name, before: partner as unknown as Record<string, unknown> });
+    toast.success(`Removed ${partner?.name ?? "partner"}`);
     setDeleteId(null);
   };
 

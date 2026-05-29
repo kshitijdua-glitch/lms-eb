@@ -1,7 +1,0 @@
-project_id = "vfsjwagblrkcxufkonqk"
-
-[functions.process-email-queue]
-verify_jwt = true
-
-[functions.bootstrap-admin]
-verify_jwt = false

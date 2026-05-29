@@ -281,16 +281,17 @@ function generateLeads(): Lead[] {
   });
 }
 
-// Live leads now come from Supabase via `useLeads()`. The in-memory mock list
-// is retained as an empty array so legacy pages that still import `leads` keep
-// compiling until they are individually rewired.
-void generateLeads; void calculatePriority; void defaultPriorityConfig;
-export const leads: Lead[] = [];
+const rawLeads = generateLeads();
+// Apply priority engine to all leads
+export const leads: Lead[] = rawLeads.map(lead => ({
+  ...lead,
+  priority: calculatePriority(lead, defaultPriorityConfig),
+}));
 
-export const getLeadsForAgent = (_agentId: string) => leads;
-export const getLeadsForTeam = (_teamId: string) => leads;
+export const getLeadsForAgent = (agentId: string) => leads.filter(l => l.assignedAgentId === agentId);
+export const getLeadsForTeam = (teamId: string) => leads.filter(l => l.assignedTeamId === teamId);
 export const getAgentsForTeam = (teamId: string) => agents.filter(a => a.teamId === teamId);
-export const getDispositionLabel = (d: DispositionType) => dispositionConfigs.find(c => c.type === d)?.label ?? String(d).replace(/_/g, " ");
+export const getDispositionLabel = (d: DispositionType) => dispositionConfigs.find(c => c.type === d)?.label ?? d.replace(/_/g, " ");
 export const getStageLabel = (s: LeadStage) => ({
   new: "New", contacted: "Contacted", interested: "Interested", bank_selected: "Bank Selected",
   stb_submitted: "Sent to Lending Partner", approved: "Approved", declined: "Declined",
