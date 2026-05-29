@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { leads, getLeadsForAgent, getDispositionLabel, getStageLabel, getProductLabel } from "@/data/mockData";
+import { getDispositionLabel, getStageLabel, getProductLabel } from "@/data/mockData";
+import { useLeads, useCreateLead } from "@/hooks/useLeads";
 import { useRole } from "@/contexts/RoleContext";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Plus, Download, Users, CheckCircle2, Clock4, AlertCircle } from "lucide-react";
+import { Search, Plus, Download, Users, CheckCircle2, Clock4, AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { ConfigurableTable } from "@/components/ConfigurableTable";
 import { PriorityBadge } from "@/components/PriorityBadge";
@@ -31,7 +32,7 @@ function agingColor(days: number) {
 }
 
 const LeadsPage = () => {
-  const { role, currentAgentId } = useRole();
+  const { role } = useRole();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState("");
@@ -41,15 +42,12 @@ const LeadsPage = () => {
   const [followUpFilter, setFollowUpFilter] = useState("all");
   const [showCreateLead, setShowCreateLead] = useState(searchParams.get("create") === "true");
 
+  const { data: leads = [], isLoading } = useLeads();
+  const createLead = useCreateLead();
 
-  // Scope per Section 4.3:
-  // - Agent: leads they own
-  // - Manager: leads directly owned by the manager (NOT team-wide — that's /group-leads)
-  // - Cluster Head / Data Admin: all leads
-  const allLeads =
-    role === "agent" ? getLeadsForAgent("agent-1")
-    : role === "manager" ? getLeadsForAgent(currentAgentId)
-    : leads;
+  // RLS already scopes leads server-side. Agents see their own; managers see
+  // their reports' leads; cluster_head / data_admin see all.
+  const allLeads = leads;
 
   const pageTitle =
     role === "agent" ? "My Leads"
@@ -79,7 +77,7 @@ const LeadsPage = () => {
   }, [allLeads, search, stageFilter, productFilter, sourceFilter, followUpFilter]);
 
 
-  const sources = [...new Set(allLeads.map(l => l.leadSource))];
+  const sources: string[] = Array.from(new Set(allLeads.map(l => l.leadSource).filter(Boolean)));
 
   const summaryTiles = [
     { label: "Total Leads", value: allLeads.length, icon: Users, tone: "text-muted-foreground" },
@@ -248,10 +246,18 @@ const LeadsPage = () => {
         open={showCreateLead}
         onOpenChange={setShowCreateLead}
         existingMobiles={allLeads.map(l => l.mobile)}
-        onSubmit={(data) => {
-          toast.success(`Lead "${data.name}" created`);
+        onSubmit={async (data) => {
+          try {
+            await createLead.mutateAsync(data);
+            toast.success(`Lead "${data.name}" created`);
+          } catch (e: any) {
+            toast.error(e?.message ?? "Failed to create lead");
+          }
         }}
       />
+      {isLoading && (
+        <div className="text-xs text-muted-foreground flex items-center gap-1.5"><Loader2 className="h-3 w-3 animate-spin" /> Loading leads…</div>
+      )}
     </div>
   );
 };
