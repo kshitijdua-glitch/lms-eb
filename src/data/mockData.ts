@@ -91,14 +91,6 @@ export const dispositionConfigs: DispositionConfig[] = [
   { type: "stb_approved", label: "STB Approved", category: "outcome", group: "STB", requiresFollowUp: true },
   { type: "stb_declined", label: "STB Declined", category: "outcome", group: "STB", requiresFollowUp: false },
   { type: "disbursed", label: "Disbursed", category: "outcome", group: "Outcome", requiresFollowUp: false },
-  // Section 5.6 — Manual Call canonical dispositions
-  { type: "needs_more_information", label: "Needs More Information", category: "connected", group: "Connected", requiresFollowUp: true },
-  { type: "ringing", label: "Ringing", category: "not_connected", group: "Not Connected", requiresFollowUp: true },
-  { type: "not_reachable", label: "Not Reachable", category: "not_connected", group: "Not Connected", requiresFollowUp: true },
-  { type: "duplicate_lead", label: "Duplicate Lead", category: "outcome", group: "Outcome", requiresFollowUp: false },
-  { type: "do_not_contact", label: "Do Not Contact", category: "compliance", group: "Compliance", requiresFollowUp: false },
-  
-  { type: "customer_complaint", label: "Customer Complaint", category: "compliance", group: "Compliance", requiresFollowUp: false },
 ];
 
 export const dispositionGroups = (): { group: string; items: DispositionConfig[] }[] => {
@@ -222,10 +214,8 @@ function generateLeads(): Lead[] {
       status: (stage === "approved" ? "approved" : stage === "disbursed" ? "disbursed" : "submitted") as "submitted" | "approved" | "disbursed",
       approvedAmount: stage === "approved" || stage === "disbursed" ? randomInt(100000, 1500000) : null,
       sanctionAmount: stage === "approved" || stage === "disbursed" ? randomInt(100000, 1500000) : null,
-      approvalDate: stage === "approved" || stage === "disbursed" ? daysAgo(randomInt(1, 7)) : null,
       disbursedAmount: stage === "disbursed" ? randomInt(100000, 1500000) : null,
       disbursementDate: stage === "disbursed" ? daysAgo(randomInt(1, 5)) : null,
-      referenceId: stage === "disbursed" ? `HDFC-${100000 + i}` : null,
       remarks: "Application processed",
       integrationType: "api" as const,
     }] : [];
@@ -274,7 +264,7 @@ function generateLeads(): Lead[] {
       createdAt: daysAgo(allocDays + randomInt(0, 10)),
       lastActivityAt: daysAgo(lastActivityDays),
       allocatedAt: daysAgo(allocDays),
-      
+      consentStatus: ["stb_submitted", "approved", "disbursed"].includes(stage) ? "received" : "not_sent",
       retryCount: ["number_busy", "no_response", "switched_off"].includes(disp) ? randomInt(1, 6) : 0,
       expiresAt: daysAgo(-(90 - allocDays)),
     };
@@ -294,7 +284,7 @@ export const getAgentsForTeam = (teamId: string) => agents.filter(a => a.teamId 
 export const getDispositionLabel = (d: DispositionType) => dispositionConfigs.find(c => c.type === d)?.label ?? d.replace(/_/g, " ");
 export const getStageLabel = (s: LeadStage) => ({
   new: "New", contacted: "Contacted", interested: "Interested", bank_selected: "Bank Selected",
-  stb_submitted: "Sent to Lending Partner", approved: "Approved", declined: "Declined",
+  stb_submitted: "STB Submitted", approved: "Approved", declined: "Declined",
   disbursed: "Disbursed", closed_lost: "Closed Lost",
 }[s]);
 export const getProductLabel = (p: ProductType) => ({
@@ -308,7 +298,7 @@ export const mockNotifications: Notification[] = [
   { id: "n-1", type: "follow_up_due", title: "Follow-Up Due", message: "Follow-up with Rajesh Khanna is due in 30 minutes", timestamp: daysAgo(0), read: false, leadId: "lead-1", scope: "agent", agentId: "agent-1" },
   { id: "n-2", type: "follow_up_missed", title: "Missed Follow-Up", message: "You missed a follow-up with Sunita Devi", timestamp: daysAgo(0), read: false, leadId: "lead-2", scope: "agent", agentId: "agent-1" },
   { id: "n-3", type: "lead_expiry", title: "Lead Expiring Soon", message: "Lead Mohd Irfan expires in 2 days", timestamp: daysAgo(0), read: false, leadId: "lead-3", scope: "agent", agentId: "agent-1" },
-  
+  { id: "n-4", type: "consent_received", title: "Consent Received", message: "Consent SMS confirmed for Lakshmi Narayan", timestamp: daysAgo(0), read: true, leadId: "lead-4", scope: "agent", agentId: "agent-1" },
   { id: "n-5", type: "new_allocation", title: "New Lead Allocated", message: "3 new leads have been assigned to you", timestamp: daysAgo(0), read: true, scope: "agent", agentId: "agent-1", clickTarget: "/leads" },
   { id: "n-6", type: "stb_status_update", title: "STB Update", message: "HDFC Bank approved loan for Vikram Chauhan", timestamp: daysAgo(1), read: true, leadId: "lead-5", scope: "agent", agentId: "agent-1" },
   { id: "n-7", type: "lead_reassigned", title: "Lead Reassigned", message: "Lead Nisha Agarwal reassigned to you from Sneha Gupta", timestamp: daysAgo(1), read: true, leadId: "lead-6", scope: "agent", agentId: "agent-1" },
@@ -323,13 +313,13 @@ export const mockNotifications: Notification[] = [
   // Org / cluster-head-scoped
   { id: "n-15", type: "agent_not_logged_in", title: "Agent Not Logged In", message: "Agent Ravi Kumar (Beta Force) has not logged in today", timestamp: daysAgo(0), read: false, scope: "org", clickTarget: "/staff-management" },
   { id: "n-16", type: "nc_escalation", title: "Team Missed F/U Threshold", message: "Alpha Squad has exceeded 10 missed follow-ups this week", timestamp: daysAgo(0), read: false, scope: "org", clickTarget: "/org-follow-ups" },
-  { id: "n-17", type: "stb_status_update", title: "Group SLP Update", message: "Bajaj Finserv declined loan for Manoj Tiwari — Manager: Vikram Mehta, Agent: Meera Patel", timestamp: daysAgo(0), read: false, leadId: "lead-15", scope: "org" },
+  { id: "n-17", type: "stb_status_update", title: "Group STB Update", message: "Bajaj Finserv declined loan for Manoj Tiwari — Manager: Vikram Mehta, Agent: Meera Patel", timestamp: daysAgo(0), read: false, leadId: "lead-15", scope: "org" },
   { id: "n-18", type: "lead_reassigned", title: "Override Confirmation", message: "You overrode a Closed/Lost disposition on lead Arjun Rao — lead moved to Contacted", timestamp: daysAgo(1), read: true, leadId: "lead-9", scope: "org" },
   { id: "n-19", type: "agent_not_logged_in", title: "Manager Not Logged In", message: "Manager Anjali Kapoor has not logged in today", timestamp: daysAgo(0), read: false, scope: "org", clickTarget: "/staff-management" },
-  
+  { id: "n-20", type: "nc_escalation", title: "Consent Risk Alert", message: "3 leads contacted without consent in South Zone", timestamp: daysAgo(0), read: false, scope: "org", clickTarget: "/audit-trail" },
   // Admin / data-admin-scoped
   { id: "n-21", type: "new_allocation", title: "Unallocated Pool Alert", message: "22 leads from Partner source remain unallocated for 48 hours", timestamp: daysAgo(0), read: false, scope: "admin", clickTarget: "/admin/allocation" },
-  { id: "n-22", type: "stb_status_update", title: "Stale SLP Pool", message: "5 SLP submissions pending >7 days across organisation", timestamp: daysAgo(0), read: false, scope: "admin", clickTarget: "/admin/pools" },
+  { id: "n-22", type: "stb_status_update", title: "Stale STB Pool", message: "5 STB submissions pending >7 days across organisation", timestamp: daysAgo(0), read: false, scope: "admin", clickTarget: "/admin/pools" },
   { id: "n-23", type: "config_changed", title: "Config Change Logged", message: "Allocation mode changed from Manual to Round Robin by CH Admin", timestamp: daysAgo(0), read: true, scope: "admin", clickTarget: "/audit-trail" },
   { id: "n-24", type: "lead_reassigned", title: "Staff Deactivated", message: "Agent Karan Singh deactivated. 12 leads need reassignment.", timestamp: daysAgo(1), read: true, scope: "admin", clickTarget: "/admin/staff" },
   { id: "n-25", type: "batch_uploaded", title: "Batch Uploaded", message: "Google_Ads_Apr14.csv uploaded — 238 valid rows awaiting allocation", timestamp: daysAgo(0), read: false, scope: "admin", clickTarget: "/admin/upload" },

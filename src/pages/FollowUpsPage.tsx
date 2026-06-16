@@ -6,16 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { CalendarClock, UserRound, Flame, Snowflake, Sun, Clock, AlertTriangle } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { useAudit, buildActor } from "@/contexts/AuditContext";
 import { cn } from "@/lib/utils";
 import { getFollowUpBucket, type FollowUpBucket } from "@/lib/followUpStatus";
-import { FOLLOW_UP_TYPE_LABELS, type FollowUpType } from "@/types/lms";
 
 type FUItem = {
   id: string; scheduledAt: string; type: string; status: string; notes: string;
@@ -60,36 +56,22 @@ const FollowUpsPage = () => {
   }, [allLeads, priorityFilter, productFilter]);
 
   const buckets = useMemo(() => {
-    const out: Record<Bucket, FUItem[]> = { overdue: [], today: [], upcoming: [], completed: [], escalated: [], cancelled: [] };
+    const out: Record<Bucket, FUItem[]> = { overdue: [], today: [], upcoming: [], completed: [] };
     for (const f of allFollowUps) {
-      // Auto-escalate when retry threshold exceeded
-      const status = f.retryCount >= 5 && f.status === "pending" ? "escalated" : f.status;
-      const b = bucketOf(f.scheduledAt, status);
+      const isCompleted = f.status === "completed";
+      const b = isCompleted ? "completed" : bucketOf(f.scheduledAt, f.status);
       out[b].push(f);
     }
-    (["overdue", "today", "upcoming", "escalated"] as Bucket[]).forEach(b =>
-      out[b].sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())
-    );
+    out.overdue.sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
+    out.today.sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
+    out.upcoming.sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
     return out;
   }, [allFollowUps]);
 
-  const [rescheduleFor, setRescheduleFor] = useState<FUItem | null>(null);
-  const [rescheduleReason, setRescheduleReason] = useState("");
-  const [rescheduleDateTime, setRescheduleDateTime] = useState("");
-
   const handleReschedule = (f: FUItem) => {
-    setRescheduleFor(f);
-    setRescheduleReason("");
-    setRescheduleDateTime("");
-  };
-
-  const submitReschedule = () => {
-    if (!rescheduleFor) return;
-    if (!rescheduleReason) { toast.error("Pick a reason"); return; }
-    if (!rescheduleDateTime) { toast.error("Pick a new date/time"); return; }
-    logAudit({ ...actor, action: "reschedule_follow_up", entityType: "follow_up", entityId: rescheduleFor.id, entityLabel: rescheduleFor.leadName, before: { scheduledAt: rescheduleFor.scheduledAt }, after: { scheduledAt: rescheduleDateTime }, reason: rescheduleReason });
-    toast.success(`Rescheduled ${rescheduleFor.leadName}`);
-    setRescheduleFor(null);
+    logAudit({ ...actor, action: "reschedule_follow_up", entityType: "follow_up", entityId: f.id, entityLabel: f.leadName, before: { scheduledAt: f.scheduledAt } });
+    toast.info(`Rescheduling for ${f.leadName} — open lead detail to set new time.`);
+    navigate(`/leads/${f.leadId}`);
   };
 
   const handleContact = (f: FUItem) => {
@@ -102,7 +84,7 @@ const FollowUpsPage = () => {
     const sched = new Date(f.scheduledAt);
     const PriBadge = PRIORITY_TONE[f.priority] ?? PRIORITY_TONE.cold;
     const PIcon = PriBadge.icon;
-    const isReadOnly = bucket === "completed" || bucket === "cancelled";
+    const isCompleted = bucket === "completed";
 
     return (
       <div className="border border-border rounded-lg bg-card p-4 hover:border-primary/30 transition-colors">
@@ -124,7 +106,7 @@ const FollowUpsPage = () => {
               <span className="opacity-50">·</span>
               <Badge variant="outline" className="text-[10px] py-0">{getProductLabel(f.productType as any)}</Badge>
               <span className="opacity-50">·</span>
-              <span>{FOLLOW_UP_TYPE_LABELS[f.type as FollowUpType] ?? f.type.replace(/_/g, " ")}</span>
+              <span className="capitalize">{f.type.replace(/_/g, " ")}</span>
             </div>
           </button>
 
@@ -141,7 +123,7 @@ const FollowUpsPage = () => {
             <span>Retry {f.retryCount}/5</span>
             {f.retryCount >= 5 && <Badge variant="destructive" className="text-[9px]">Manager review</Badge>}
           </div>
-          {!isReadOnly && (
+          {!isCompleted && (
             <div className="flex gap-2">
               <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleReschedule(f)}>
                 <CalendarClock className="h-3 w-3 mr-1" /> Reschedule
@@ -205,9 +187,7 @@ const FollowUpsPage = () => {
             { v: "overdue", label: "Overdue", count: buckets.overdue.length },
             { v: "today", label: "Today", count: buckets.today.length },
             { v: "upcoming", label: "Upcoming", count: buckets.upcoming.length },
-            { v: "escalated", label: "Escalated", count: buckets.escalated.length },
             { v: "completed", label: "Completed", count: buckets.completed.length },
-            { v: "cancelled", label: "Cancelled", count: buckets.cancelled.length },
           ] as { v: Bucket; label: string; count: number }[]).map(t => (
             <TabsTrigger
               key={t.v}
@@ -222,7 +202,7 @@ const FollowUpsPage = () => {
           ))}
         </TabsList>
 
-        {(["overdue", "today", "upcoming", "escalated", "completed", "cancelled"] as Bucket[]).map(b => (
+        {(["overdue", "today", "upcoming", "completed"] as Bucket[]).map(b => (
           <TabsContent key={b} value={b} className="mt-5">
             <div className="grid gap-3 md:grid-cols-1 lg:grid-cols-2">
               {buckets[b].length > 0
@@ -232,35 +212,6 @@ const FollowUpsPage = () => {
           </TabsContent>
         ))}
       </Tabs>
-
-      <Dialog open={!!rescheduleFor} onOpenChange={(o) => !o && setRescheduleFor(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle className="text-base">Reschedule — {rescheduleFor?.leadName}</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div>
-              <Label className="text-xs">New date & time</Label>
-              <Input type="datetime-local" value={rescheduleDateTime} onChange={(e) => setRescheduleDateTime(e.target.value)} />
-            </div>
-            <div>
-              <Label className="text-xs">Reason</Label>
-              <Select value={rescheduleReason} onValueChange={setRescheduleReason}>
-                <SelectTrigger><SelectValue placeholder="Pick a reason" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="customer_busy">Customer busy</SelectItem>
-                  <SelectItem value="not_reachable">Not reachable</SelectItem>
-                  <SelectItem value="documents_pending">Documents pending</SelectItem>
-                  <SelectItem value="agent_request">Agent request</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRescheduleFor(null)}>Cancel</Button>
-            <Button onClick={submitReschedule}>Reschedule</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

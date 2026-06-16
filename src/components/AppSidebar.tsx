@@ -1,68 +1,63 @@
 import {
-  LayoutDashboard, Users, Send, Clock, BarChart3, Upload, Settings, UserCog, FileText, TrendingUp, Shield, Bell, Inbox,
+  LayoutDashboard, Users, Phone, Send, Clock, BarChart3, Upload, Settings, UserCog, FileText, ChevronDown, TrendingUp, Shield,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
+import { useLocation } from "react-router-dom";
 import { useRole, roleLabels } from "@/contexts/RoleContext";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UserRole } from "@/types/lms";
 import { useAuth } from "@/contexts/AuthContext";
 import logoUrl from "@/assets/logo.png";
 
-// Sidebar lists per Master/Agent/Manager/Cluster Head/Data Admin PRDs.
-// Labels follow Phase-1 PRD: STB → "Send to Lending Partner". No "Team" wording.
-
 const agentNav = [
   { title: "Dashboard", url: "/app", icon: LayoutDashboard },
   { title: "My Leads", url: "/leads", icon: Users },
-  { title: "My Follow-Ups", url: "/follow-ups", icon: Clock },
-  { title: "My Send to Lending Partner", url: "/stb", icon: Send },
+  { title: "Follow-Ups", url: "/follow-ups", icon: Clock },
+  { title: "My STB", url: "/stb", icon: Send },
   { title: "Performance", url: "/performance", icon: TrendingUp },
-  { title: "Notifications", url: "/notifications", icon: Bell },
 ];
 
 const managerNav = [
   { title: "Dashboard", url: "/app", icon: LayoutDashboard },
   { title: "My Leads", url: "/leads", icon: Users },
   { title: "My Follow-Ups", url: "/follow-ups", icon: Clock },
-  { title: "My Send to Lending Partner", url: "/stb", icon: Send },
+  { title: "My STB", url: "/stb", icon: Send },
   { title: "Group Leads", url: "/group-leads", icon: Users },
   { title: "Group Follow-Ups", url: "/group-follow-ups", icon: Clock },
-  { title: "Group Send to Lending Partner", url: "/group-stb", icon: Send },
-  { title: "Group Management", url: "/group-management", icon: UserCog },
+  { title: "Group STB", url: "/group-stb", icon: Send },
+  { title: "Group Mgmt", url: "/group-management", icon: UserCog },
   { title: "Lead Report", url: "/group-reports", icon: FileText },
   { title: "Performance", url: "/performance", icon: TrendingUp },
-  { title: "MIS & Reports", url: "/reports", icon: BarChart3 },
-  { title: "Notifications", url: "/notifications", icon: Bell },
+  { title: "MIS Reports", url: "/reports", icon: BarChart3 },
 ];
 
 const clusterHeadNav = [
   { title: "Dashboard", url: "/app", icon: LayoutDashboard },
   { title: "Org Leads", url: "/org-leads", icon: Users },
   { title: "Org Follow-Ups", url: "/org-follow-ups", icon: Clock },
-  { title: "Org Send to Lending Partner", url: "/org-stb", icon: Send },
-  { title: "Staff Management", url: "/staff-management", icon: UserCog },
+  { title: "Org STB", url: "/org-stb", icon: Send },
+  { title: "Staff Mgmt", url: "/staff-management", icon: UserCog },
   { title: "System Config", url: "/system-config", icon: Settings },
-  { title: "Lead Allocation", url: "/lead-allocation", icon: Upload },
+  { title: "Lead Allocation", url: "/admin/allocation", icon: Upload },
   { title: "Lead Report", url: "/org-reports", icon: FileText },
-  { title: "Audit Trail", url: "/audit-trail", icon: Shield },
+  { title: "Audit Trail", url: "/audit-trail", icon: BarChart3 },
   { title: "MIS & Reports", url: "/reports", icon: BarChart3 },
-  { title: "Notifications", url: "/notifications", icon: Bell },
 ];
 
 const adminNav = [
   { title: "Dashboard", url: "/app", icon: LayoutDashboard },
   { title: "Lead Upload", url: "/admin/upload", icon: Upload },
   { title: "Lead Allocation", url: "/admin/allocation", icon: Users },
-  { title: "Lead Pools", url: "/admin/pools", icon: Inbox },
+  { title: "Lead Pools", url: "/admin/pools", icon: FileText },
   { title: "Lending Partners", url: "/admin/partners", icon: Send },
   { title: "MIS Export", url: "/admin/mis", icon: BarChart3 },
   { title: "System Config", url: "/system-config", icon: Settings },
-  { title: "Staff Management", url: "/admin/staff", icon: UserCog },
+  { title: "Staff Mgmt", url: "/admin/staff", icon: UserCog },
   { title: "Audit Trail", url: "/audit-trail", icon: Shield },
-  { title: "Notifications", url: "/notifications", icon: Bell },
 ];
 
 function getNav(role: UserRole) {
@@ -77,15 +72,22 @@ function getNav(role: UserRole) {
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const { role } = useRole();
-  const { user } = useAuth();
+  const { role, setRole } = useRole();
+  const { user, updateRole } = useAuth();
+  const location = useLocation();
   const nav = getNav(role);
+
+  const handleRoleChange = (v: string) => {
+    const next = v as UserRole;
+    setRole(next);
+    updateRole(next);
+  };
 
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-4">
         {!collapsed && (
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-4">
             <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center overflow-hidden ring-1 ring-sidebar-border shadow-sm">
               <img src={logoUrl} alt="Smart LMS logo" className="h-5 w-5 object-contain" />
             </div>
@@ -99,11 +101,17 @@ export function AppSidebar() {
             </div>
           </div>
         )}
-        {!collapsed && user && (
-          <div className="rounded-md bg-sidebar-accent/40 px-2.5 py-1.5">
-            <div className="text-[11px] font-medium text-sidebar-foreground truncate">{user.name}</div>
-            <div className="text-[10px] text-sidebar-foreground/60">{roleLabels[role]}</div>
-          </div>
+        {!collapsed && (
+          <Select value={role} onValueChange={handleRoleChange}>
+            <SelectTrigger className="w-full bg-sidebar-accent text-sidebar-foreground border-sidebar-border text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {(Object.keys(roleLabels) as UserRole[]).map((r) => (
+                <SelectItem key={r} value={r}>{roleLabels[r]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         )}
       </SidebarHeader>
       <SidebarContent>

@@ -16,7 +16,6 @@ import { toast } from "sonner";
 import { useAudit } from "@/contexts/AuditContext";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ConfigurableTable } from "@/components/ConfigurableTable";
-import { PriorityBadge } from "@/components/PriorityBadge";
 import type { ColumnDef } from "@/types/table";
 import type { Lead } from "@/types/lms";
 
@@ -89,7 +88,7 @@ const GroupLeadsPage = () => {
     if (!reassignAgent) { toast.error("Select target agent"); return; }
     const stbLocked = [...selectedIds].filter(id => allLeads.find(l => l.id === id)?.stbSubmissions.length);
     if (stbLocked.length > 0) {
-      toast.error(`${stbLocked.length} leads have active SLP and cannot be reassigned`);
+      toast.error(`${stbLocked.length} leads have active STB and cannot be reassigned`);
       return;
     }
     const target = agents.find(a => a.id === reassignAgent)?.name;
@@ -148,7 +147,7 @@ const GroupLeadsPage = () => {
     }},
     { id: "city", label: "City", defaultVisible: false, render: (lead) => <span className="text-xs">{lead.city}</span> },
     { id: "income", label: "Income", defaultVisible: false, render: (lead) => <span className="text-xs">₹{lead.monthlyIncome.toLocaleString()}</span> },
-    { id: "priority", label: "Priority", defaultVisible: true, render: (lead) => <PriorityBadge lead={lead} /> },
+    { id: "priority", label: "Priority", defaultVisible: false, render: (lead) => <Badge variant={lead.priority === "hot" ? "destructive" : lead.priority === "warm" ? "default" : "secondary"} className="text-xs">{lead.priority}</Badge> },
   ];
 
   return (

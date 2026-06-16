@@ -1,19 +1,22 @@
-import { useState } from "react";
 import { leads, getLeadsForAgent, lendingPartners, getProductLabel } from "@/data/mockData";
 import { useRole } from "@/contexts/RoleContext";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Send, CheckCircle, XCircle } from "lucide-react";
+import { toast } from "sonner";
 import { ConfigurableTable } from "@/components/ConfigurableTable";
-import { SLPStatusUpdateDialog } from "@/components/SLPStatusUpdateDialog";
-import { SLP_STATUS_LABELS } from "@/lib/slp";
-import { can } from "@/lib/permissions";
 import type { ColumnDef } from "@/types/table";
-import type { STBSubmission } from "@/types/lms";
 
-type STBItem = STBSubmission & { leadName: string; leadId: string; product: string };
+type STBItem = {
+  id: string; partnerId: string; partnerName: string; submittedAt: string;
+  status: "submitted" | "approved" | "declined" | "disbursed";
+  approvedAmount: number | null; sanctionAmount: number | null;
+  disbursedAmount: number | null; disbursementDate: string | null;
+  remarks: string; integrationType: "api" | "portal" | "email";
+  leadName: string; leadId: string; product: string;
+};
 
 const STBPage = () => {
   const { role } = useRole();
@@ -28,11 +31,9 @@ const STBPage = () => {
   const disbursed = allSubs.filter(s => s.status === "disbursed").length;
   const declined = allSubs.filter(s => s.status === "declined").length;
 
-  const [updateTarget, setUpdateTarget] = useState<STBItem | null>(null);
-  const [localSubs, setLocalSubs] = useState<STBItem[]>(allSubs);
-
-  const canUpdate = can.updateSlpStatus(role);
-  const TERMINAL = ["disbursed", "declined", "cancelled", "expired"];
+  const handleStatusUpdate = (subId: string, newStatus: string) => {
+    toast.success(`Status updated to ${newStatus}`);
+  };
 
   const columns: ColumnDef<STBItem>[] = [
     { id: "lead", label: "Lead", render: (s) => <span className="font-medium text-sm">{s.leadName}</span> },
@@ -42,27 +43,29 @@ const STBPage = () => {
     { id: "days", label: "Days", render: (s) => <span className="text-sm">{Math.floor((Date.now() - new Date(s.submittedAt).getTime()) / 86400000)}d</span> },
     { id: "status", label: "Status", render: (s) => (
       <Badge variant={s.status === "disbursed" ? "default" : s.status === "approved" ? "default" : s.status === "declined" ? "destructive" : "secondary"} className="text-xs">
-        {SLP_STATUS_LABELS[s.status] ?? s.status}
+        {s.status}
       </Badge>
     )},
     { id: "sanction", label: "Sanction Amt", render: (s) => <span className="text-sm">{s.sanctionAmount ? `₹${s.sanctionAmount.toLocaleString()}` : "—"}</span> },
     { id: "disbursedAmt", label: "Disbursed Amt", render: (s) => <span className="text-sm">{s.disbursedAmount ? `₹${s.disbursedAmount.toLocaleString()}` : "—"}</span> },
     { id: "disbDate", label: "Disb. Date", render: (s) => <span className="text-sm text-muted-foreground">{s.disbursementDate ? new Date(s.disbursementDate).toLocaleDateString() : "—"}</span> },
     { id: "integration", label: "Integration", defaultVisible: false, render: (s) => <Badge variant="outline" className="text-[10px]">{s.integrationType}</Badge> },
-    ...(canUpdate ? [{
+    ...(role === "agent" ? [{
       id: "update", label: "Update", locked: "end" as const,
       render: (s: STBItem) => {
-        const terminal = TERMINAL.includes(s.status);
+        const isNonApi = s.integrationType !== "api";
         return (
           <div onClick={e => e.stopPropagation()}>
-            {terminal ? (
-              <span className="text-xs text-muted-foreground">—</span>
-            ) : (
-              <Button size="sm" variant="outline" className="h-7 text-xs"
-                onClick={() => setUpdateTarget(s)}>
-                Update
-              </Button>
-            )}
+            {isNonApi && s.status !== "disbursed" ? (
+              <Select onValueChange={(v) => handleStatusUpdate(s.id, v)}>
+                <SelectTrigger className="h-7 w-28 text-xs"><SelectValue placeholder="Update" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="declined">Declined</SelectItem>
+                  <SelectItem value="disbursed">Disbursed</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : <span className="text-xs text-muted-foreground">{s.integrationType === "api" ? "Auto" : "—"}</span>}
           </div>
         );
       }
@@ -72,8 +75,8 @@ const STBPage = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Send to Lending Partner (SLP)</h1>
-        <p className="text-muted-foreground text-sm">{allSubs.length} total submissions to lending partners</p>
+        <h1 className="text-2xl font-bold">Send to Bank (STB)</h1>
+        <p className="text-muted-foreground text-sm">{allSubs.length} total submissions</p>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -94,29 +97,16 @@ const STBPage = () => {
       </div>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">SLP Submissions</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">STB Submissions</CardTitle></CardHeader>
         <CardContent className="p-0">
           <ConfigurableTable
             tableId="stb"
             columns={columns}
-            data={localSubs}
+            data={allSubs}
             onRowClick={(s) => navigate(`/leads/${s.leadId}`)}
           />
         </CardContent>
       </Card>
-
-      {updateTarget && (
-        <SLPStatusUpdateDialog
-          open={!!updateTarget}
-          onOpenChange={(o) => !o && setUpdateTarget(null)}
-          lead={{ id: updateTarget.leadId, name: updateTarget.leadName }}
-          submission={updateTarget}
-          onUpdated={(next) => {
-            setLocalSubs(prev => prev.map(s => s.id === next.id ? { ...s, ...next } : s));
-            setUpdateTarget(null);
-          }}
-        />
-      )}
     </div>
   );
 };

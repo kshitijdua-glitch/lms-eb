@@ -14,7 +14,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Search, Shuffle, Download } from "lucide-react";
 import { toast } from "sonner";
 import { ConfigurableTable } from "@/components/ConfigurableTable";
-import { PriorityBadge } from "@/components/PriorityBadge";
 import type { ColumnDef } from "@/types/table";
 import type { Lead } from "@/types/lms";
 
@@ -126,7 +125,7 @@ const OrgLeadsPage = () => {
     }},
     { id: "city", label: "City", defaultVisible: false, render: (lead) => <span className="text-xs">{lead.city}</span> },
     { id: "income", label: "Income", defaultVisible: false, render: (lead) => <span className="text-xs">₹{lead.monthlyIncome.toLocaleString()}</span> },
-    { id: "priority", label: "Priority", defaultVisible: true, render: (lead) => <PriorityBadge lead={lead} /> },
+    { id: "priority", label: "Priority", defaultVisible: false, render: (lead) => <Badge variant={lead.priority === "hot" ? "destructive" : lead.priority === "warm" ? "default" : "secondary"} className="text-xs">{lead.priority}</Badge> },
   ];
 
   return (

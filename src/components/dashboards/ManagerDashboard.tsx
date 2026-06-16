@@ -19,14 +19,10 @@ export function ManagerDashboard() {
 
   // --- Own Production (agent-style) ---
   const myLeads = leads.filter(l => l.assignedAgentId === currentAgentId);
-  const meaningfulToday = (l: typeof leads[number]) =>
-    l.callLogs.some(c => c.timestamp.split("T")[0] === today)
-    || l.followUps.some(f => f.status === "completed" && f.scheduledAt.split("T")[0] === today)
-    || (l.notes || []).some(n => n.createdAt.split("T")[0] === today);
-  const myWorkedToday = myLeads.filter(meaningfulToday).length;
+  const myWorkedToday = myLeads.filter(l => l.lastActivityAt.split("T")[0] === today).length;
   const myPendingFU = myLeads.filter(l => l.followUps.some(f => f.status === "pending")).length;
   const myMissedFU = myLeads.filter(l => l.followUps.some(f => f.status === "missed")).length;
-  const mySLP = myLeads.filter(l => l.stbSubmissions.length > 0).length;
+  const mySTB = myLeads.filter(l => l.stbSubmissions.length > 0).length;
   const myDisbursed = myLeads.filter(l => l.stage === "disbursed").length;
   const myCallsToday = myLeads.reduce((s, l) => s + l.callLogs.filter(c => c.timestamp.split("T")[0] === today).length, 0);
   const myDailyTarget = 10;
@@ -35,9 +31,8 @@ export function ManagerDashboard() {
   // --- Group (all teams) ---
   const allLeads = leads;
   const totalAllocated = allLeads.length;
-  // Contacted (PRD §20): lead has ≥1 connected call
-  const totalContacted = allLeads.filter(l => l.callLogs.some(c => c.outcome === "connected")).length;
-  const totalSLP = allLeads.filter(l => l.stbSubmissions.length > 0).length;
+  const totalContacted = allLeads.filter(l => l.stage !== "new").length;
+  const totalSTB = allLeads.filter(l => l.stbSubmissions.length > 0).length;
   const totalApproved = allLeads.filter(l => l.stage === "approved" || l.stage === "disbursed").length;
   const totalDisbursed = allLeads.filter(l => l.stage === "disbursed").length;
 
@@ -48,7 +43,7 @@ export function ManagerDashboard() {
   // Agent activity status (all agents)
   const agentStatus = agents.map(a => {
     const agentLeads = allLeads.filter(l => l.assignedAgentId === a.id);
-    const workedToday = agentLeads.filter(meaningfulToday).length;
+    const workedToday = agentLeads.filter(l => l.lastActivityAt.split("T")[0] === today).length;
     const callsToday = agentLeads.reduce((s, l) => s + l.callLogs.filter(c => c.timestamp.split("T")[0] === today).length, 0);
     const missedFUs = agentLeads.filter(l => l.followUps.some(f => f.status === "missed")).length;
     const loggedIn = workedToday > 0 || callsToday > 0;
@@ -69,7 +64,7 @@ export function ManagerDashboard() {
   const funnelSteps = [
     { label: "Allocated", value: totalAllocated, pct: 100 },
     { label: "Contacted", value: totalContacted, pct: totalAllocated > 0 ? Math.round((totalContacted / totalAllocated) * 100) : 0 },
-    { label: "SLP", value: totalSLP, pct: totalAllocated > 0 ? Math.round((totalSLP / totalAllocated) * 100) : 0 },
+    { label: "STB", value: totalSTB, pct: totalAllocated > 0 ? Math.round((totalSTB / totalAllocated) * 100) : 0 },
     { label: "Approved", value: totalApproved, pct: totalAllocated > 0 ? Math.round((totalApproved / totalAllocated) * 100) : 0 },
     { label: "Disbursed", value: totalDisbursed, pct: totalAllocated > 0 ? Math.round((totalDisbursed / totalAllocated) * 100) : 0 },
   ];
@@ -87,7 +82,7 @@ export function ManagerDashboard() {
             { label: "Worked Today", value: myWorkedToday, icon: CheckCircle, tone: "success", variant: "gradient" },
             { label: "Pending F/U", value: myPendingFU, icon: Clock, tone: "warning", variant: "gradient" },
             { label: "Missed F/U", value: myMissedFU, icon: AlertTriangle, tone: "destructive", variant: "gradient" },
-            { label: "SLP", value: mySLP, icon: Send, tone: "info", variant: "soft" },
+            { label: "STB", value: mySTB, icon: Send, tone: "info", variant: "soft" },
             { label: "Disbursed", value: myDisbursed, icon: TrendingUp, tone: "success", variant: "soft" },
           ] as const).map(k => (
             <StatTile key={k.label} label={k.label} value={k.value} icon={k.icon} tone={k.tone} variant={k.variant} />
@@ -182,7 +177,7 @@ export function ManagerDashboard() {
         {[
           { label: "Group Leads", path: "/group-leads", icon: FileText },
           { label: "Group Follow-Ups", path: "/group-follow-ups", icon: Calendar },
-          { label: "Group SLP", path: "/group-stb", icon: Send },
+          { label: "Group STB", path: "/group-stb", icon: Send },
           { label: "Group Management", path: "/group-management", icon: UserCog },
         ].map(nav => (
           <Button key={nav.path} variant="outline" className="h-16 flex flex-col gap-1" onClick={() => navigate(nav.path)}>

@@ -3,30 +3,19 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { StatTile } from "@/components/StatTile";
-
 import { leads, getLeadsForAgent, getDispositionLabel, getStageLabel } from "@/data/mockData";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
 import { AlertTriangle, Calendar, CheckCircle, Clock, Phone, Plus, Send, Target, TrendingUp, Users } from "lucide-react";
 
 export function AgentDashboard() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const firstName = user?.name.split(" ")[0] || "Agent";
   const myLeads = getLeadsForAgent("agent-1");
   const today = new Date().toISOString().split("T")[0];
 
   const totalAssigned = myLeads.length;
   const missedFollowUps = myLeads.filter(l => l.followUps.some(f => f.status === "missed"));
   const todayFollowUps = myLeads.filter(l => l.followUps.some(f => f.status === "pending" && f.scheduledAt.split("T")[0] <= today));
-  // Worked Today (PRD §20): lead had ≥1 meaningful action today (call logged, follow-up completed, or note added)
-  const workedToday = myLeads.filter(l =>
-    l.callLogs.some(c => c.timestamp.split("T")[0] === today)
-    || l.followUps.some(f => f.status === "completed" && f.scheduledAt.split("T")[0] === today)
-    || (l.notes || []).some(n => n.createdAt.split("T")[0] === today)
-  );
-  // Contacted (PRD §20): lead has ≥1 connected call ever
-  const contacted = myLeads.filter(l => l.callLogs.some(c => c.outcome === "connected"));
+  const workedToday = myLeads.filter(l => l.lastActivityAt.split("T")[0] === today);
   const neverContacted = myLeads.filter(l => l.callLogs.length === 0);
   const stbCount = myLeads.filter(l => l.stbSubmissions.length > 0);
   const approved = myLeads.filter(l => l.stage === "approved" || l.stage === "disbursed");
@@ -55,9 +44,8 @@ export function AgentDashboard() {
     { label: "Total Assigned", value: totalAssigned, icon: Users, tone: "primary", variant: "gradient" },
     { label: "Missed Follow-Ups", value: missedFollowUps.length, icon: AlertTriangle, tone: "destructive", variant: "gradient" },
     { label: "Today's Follow-Ups", value: todayFollowUps.length, icon: Calendar, tone: "warning", variant: "gradient" },
-    { label: "Worked Today", value: workedToday.length, icon: Phone, tone: "info", variant: "gradient" },
-    { label: "Contacted", value: contacted.length, icon: CheckCircle, tone: "info", variant: "soft" },
-    { label: "SLP (This Month)", value: stbCount.length, icon: Send, tone: "primary", variant: "soft" },
+    { label: "Leads Worked Today", value: workedToday.length, icon: Phone, tone: "info", variant: "gradient" },
+    { label: "STB Count (This Month)", value: stbCount.length, icon: Send, tone: "primary", variant: "soft" },
     { label: "Approved (This Month)", value: approved.length, icon: CheckCircle, tone: "success", variant: "soft" },
     { label: "Disbursed Amount", value: `₹${(totalDisbursed / 100000).toFixed(1)}L`, icon: TrendingUp, tone: "success", variant: "soft" },
   ];
@@ -66,8 +54,8 @@ export function AgentDashboard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1>Welcome back, {firstName}!</h1>
-          <p className="text-sm text-muted-foreground mt-1.5">Here's your daily overview</p>
+          <h1>Welcome back, Amit!</h1>
+          <p className="text-sm text-muted-foreground mt-1">Here's your daily overview</p>
         </div>
         <div className="text-sm text-muted-foreground">
           Never Contacted: <span className="font-semibold text-[hsl(var(--warning))]">{neverContacted.length}</span>
@@ -75,7 +63,7 @@ export function AgentDashboard() {
       </div>
 
       {/* KPI Cards — first 4 are highlighted gradient tiles */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
         {kpis.map((kpi) => (
           <StatTile
             key={kpi.label}
@@ -112,7 +100,7 @@ export function AgentDashboard() {
           <Calendar className="mr-2 h-4 w-4" /> Follow-Ups ({todayFollowUps.length})
         </Button>
         <Button variant="outline" className="h-16 text-sm" onClick={() => navigate("/stb")}>
-          <Send className="mr-2 h-4 w-4" /> My SLP ({stbCount.length})
+          <Send className="mr-2 h-4 w-4" /> My STB ({stbCount.length})
         </Button>
         <Button variant="outline" className="h-16 text-sm border-dashed" onClick={() => navigate("/leads?create=true")}>
           <Plus className="mr-2 h-4 w-4" /> Create New Lead

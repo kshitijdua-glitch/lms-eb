@@ -32,12 +32,6 @@ import { getLeadLockState, can } from "@/lib/permissions";
 import { evaluateAllPartners, DISPOSITION_BY_OUTCOME } from "@/lib/partnerEligibility";
 import { usePartners } from "@/contexts/PartnersContext";
 import { CheckCircle2, XCircle, Info, ShieldAlert } from "lucide-react";
-import { ManualCallPanel } from "@/components/ManualCallPanel";
-import { ManualCallLogDialog, type ManualCallSubmission } from "@/components/ManualCallLogDialog";
-import { STBWizardDialog, type STBWizardSubmission } from "@/components/STBWizardDialog";
-import { isFieldLockedAfterSLP, getSLPReadiness, SLP_STATUS_LABELS } from "@/lib/slp";
-import { SLPStatusUpdateDialog } from "@/components/SLPStatusUpdateDialog";
-import type { STBSubmission } from "@/types/lms";
 
 // Soft pill color map — clean tinted backgrounds for status chips
 const SOFT_PILL: Record<string, string> = {
@@ -77,11 +71,9 @@ const LeadDetailPage = () => {
   const { partners } = usePartners();
   const lead = leads.find(l => l.id === id);
   const [showCallLog, setShowCallLog] = useState(false);
-  const [pendingDuration, setPendingDuration] = useState(0);
   const [showEMI, setShowEMI] = useState(false);
   const [showReassign, setShowReassign] = useState(false);
   const [showOverride, setShowOverride] = useState(false);
-  const [showSTBWizard, setShowSTBWizard] = useState(false);
   const [overrideReason, setOverrideReason] = useState("");
   const [reassignAgent, setReassignAgent] = useState("");
   const [reassignTL, setReassignTL] = useState("");
@@ -113,11 +105,12 @@ const LeadDetailPage = () => {
   const [localLoans, setLocalLoans] = useState(lead?.existingLoans || []);
   const [showAddLoan, setShowAddLoan] = useState(false);
   const [newLoan, setNewLoan] = useState({ bankName: "", loanType: "", outstandingAmount: "", emi: "", tenure: "" });
-  const [slpUpdateTarget, setSlpUpdateTarget] = useState<STBSubmission | null>(null);
 
   const [leadSidebarOpen, setLeadSidebarOpen] = useState(true);
   const [leadListSearch, setLeadListSearch] = useState("");
   const [priorityOverride, setPriorityOverride] = useState<string | null>(null);
+  const [consentStatus, setConsentStatus] = useState<"not_sent" | "sent" | "received" | "expired">(lead?.consentStatus || "not_sent");
+  const [consentSentAt, setConsentSentAt] = useState<Date | null>(null);
 
   if (!lead) return <div className="p-8 text-center text-muted-foreground">Lead not found</div>;
 
@@ -159,7 +152,23 @@ const LeadDetailPage = () => {
   })();
   const emi = emiCalc.emi;
 
-  const handleManualCallSubmit = (data: ManualCallSubmission) => {
+  const handleLogCall = () => {
+    if (!callOutcome || !callDisposition) {
+      toast.error("Outcome and Disposition are required");
+      return;
+    }
+    // Validate backdating per role
+    if (callDate) {
+      const diff = Date.now() - callDate.getTime();
+      if (diff > 24 * 3600000 && !can.backdateBeyond24h(role)) {
+        toast.error("Cannot backdate call more than 24 hours");
+        return;
+      }
+    }
+    if (callNextAction === "follow_up" && !followUpDate) {
+      toast.error("Follow-up date is required");
+      return;
+    }
     logAudit({
       ...actor,
       action: "log_call",
@@ -167,23 +176,17 @@ const LeadDetailPage = () => {
       entityId: lead.id,
       entityLabel: lead.name,
       after: {
-        outcome: data.outcome,
-        disposition: data.disposition,
-        durationSec: data.durationSeconds,
-        nextAction: data.nextAction,
-        followUpAt: data.followUpAt ? data.followUpAt.toISOString() : null,
-        customerInterest: data.customerInterest || undefined,
-        escalated: data.escalate || undefined,
+        outcome: callOutcome,
+        disposition: callDisposition,
+        duration: callDuration,
+        nextAction: callNextAction,
+        followUpAt: followUpDate ? followUpDate.toISOString() : null,
       },
-      reason: data.backdatedReason || undefined,
-      notes: data.notes || undefined,
+      notes: callNotes || undefined,
     });
-    if (data.escalate) {
-      toast.info("Escalation flagged — manager will be notified.");
-    }
     setShowCallLog(false);
-    setPendingDuration(0);
-    toast.success("Manual call logged");
+    toast.success("Call logged successfully");
+    setCallOutcome(""); setCallDisposition(""); setCallNotes(""); setCallNextAction(""); setCallDuration("120"); setFollowUpDate(undefined); setFollowUpTime("");
   };
 
   const handleAddNote = () => {
@@ -200,12 +203,7 @@ const LeadDetailPage = () => {
     setNewNote("");
   };
 
-  const creditScoreLocked = isFieldLockedAfterSLP("creditScore", { ...lead, stbSubmissions: localStbSubmissions });
   const handleSaveCreditScore = () => {
-    if (creditScoreLocked && role === "agent") {
-      toast.error("Credit score is locked after SLP submission. Manager override required.");
-      return;
-    }
     logAudit({
       ...actor,
       action: "update_credit_score",
@@ -221,7 +219,7 @@ const LeadDetailPage = () => {
 
   const handleAddPair = () => {
     if (isProfileLocked) {
-      toast.error("SLP locked — cannot modify bank selection");
+      toast.error("STB locked — cannot modify bank selection");
       return;
     }
     if (!selectedProduct || !selectedBank) {
@@ -251,7 +249,7 @@ const LeadDetailPage = () => {
 
   const handleRemovePair = (index: number) => {
     if (isProfileLocked) {
-      toast.error("SLP locked — cannot remove bank");
+      toast.error("STB locked — cannot remove bank");
       return;
     }
     const removed = selectedPairs[index];
@@ -268,17 +266,73 @@ const LeadDetailPage = () => {
   };
 
 
+  const consentReceived = consentStatus === "received";
+
+  const handleTriggerConsent = () => {
+    setConsentStatus("sent");
+    setConsentSentAt(new Date());
+    logAudit({
+      ...actor,
+      action: "trigger_sms_consent",
+      entityType: "lead",
+      entityId: lead.id,
+      entityLabel: lead.name,
+      after: { channel: "sms", status: "sent" },
+    });
+    toast.success("Consent SMS triggered", { description: `Sent to ${lead.mobile}` });
+  };
+
+  const handleMarkConsentReceived = () => {
+    setConsentStatus("received");
+    logAudit({
+      ...actor,
+      action: "mark_consent_received",
+      entityType: "lead",
+      entityId: lead.id,
+      entityLabel: lead.name,
+      before: { consentStatus },
+      after: { consentStatus: "received" },
+    });
+    toast.success("Consent marked as received");
+  };
+
+  const handleClearConsent = () => {
+    setConsentStatus("not_sent");
+    setConsentSentAt(null);
+    logAudit({
+      ...actor,
+      action: "clear_consent_flag",
+      entityType: "lead",
+      entityId: lead.id,
+      entityLabel: lead.name,
+      before: { consentStatus },
+      after: { consentStatus: "not_sent" },
+    });
+    toast.success("Consent flag cleared");
+  };
 
   const handleSendToBank = () => {
     if (isProfileLocked) {
-      toast.error("SLP already submitted — cannot resubmit", { description: lockState.reason });
+      toast.error("STB already submitted — cannot resubmit", {
+        description: lockState.reason,
+      });
       return;
     }
-    setShowSTBWizard(true);
-  };
+    if (!consentReceived) {
+      toast.error("Customer consent required", { description: "Trigger SMS consent and mark as received before STB." });
+      return;
+    }
+    // Pre-STB checklist
+    const checks = [];
+    if (selectedPairs.length === 0) checks.push("No banks selected");
 
-  const handleSTBWizardSubmit = (data: STBWizardSubmission) => {
-    const newSubmissions = data.pairs.map((pair, i) => ({
+    if (checks.length > 0) {
+      toast.error("Pre-STB checklist failed", { description: checks.join(", ") });
+      return;
+    }
+
+    // Create STB submissions for each selected pair
+    const newSubmissions = selectedPairs.map((pair, i) => ({
       id: `stb-new-${Date.now()}-${i}`,
       partnerId: pair.partnerId,
       partnerName: pair.partnerName,
@@ -286,13 +340,12 @@ const LeadDetailPage = () => {
       status: "submitted" as const,
       approvedAmount: null,
       sanctionAmount: null,
-      approvalDate: null,
       disbursedAmount: null,
       disbursementDate: null,
-      referenceId: null,
-      remarks: data.remarks || `${getProductLabel(pair.productType as any)} application`,
+      remarks: `${getProductLabel(pair.productType as any)} application`,
       integrationType: "portal" as const,
     }));
+
     setLocalStbSubmissions([...localStbSubmissions, ...newSubmissions]);
     setStbSubmitted(true);
     newSubmissions.forEach(s => {
@@ -302,14 +355,13 @@ const LeadDetailPage = () => {
         entityType: "stb",
         entityId: s.id,
         entityLabel: `${lead.name} → ${s.partnerName}`,
-        after: { partner: s.partnerName, status: s.status, checklist: data.checklist, remarks: data.remarks },
+        after: { partner: s.partnerName, status: s.status },
       });
     });
-    toast.success(`SLP submitted to ${data.pairs.length} bank(s)`, {
-      description: data.pairs.map(p => `${p.partnerName} (${getProductLabel(p.productType as any)})`).join(", "),
+    toast.success(`STB initiated for ${selectedPairs.length} bank(s)`, {
+      description: selectedPairs.map(p => `${p.partnerName} (${getProductLabel(p.productType as any)})`).join(", "),
     });
   };
-
 
   // Build unified timeline (call logs + follow-ups + STB + notes + audit entries)
   const auditEntries = forLead(lead.id);
@@ -398,17 +450,26 @@ const LeadDetailPage = () => {
           <ArrowLeft className="h-4 w-4 mr-1.5" /> Back to Leads
         </Button>
         <div className="flex-1" />
-        <Button size="sm" onClick={() => setShowCallLog(true)} className="h-9"><Phone className="h-4 w-4 mr-1.5" /> Log Manual Call</Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={handleSendToBank}
-          disabled={isProfileLocked}
-          className="h-9"
-          aria-label="Submit to Lending Partner"
-        >
-          <Send className="h-4 w-4 mr-1.5" /> Submit to Lending Partner
-        </Button>
+        <Button size="sm" onClick={() => setShowCallLog(true)} className="h-9"><Phone className="h-4 w-4 mr-1.5" /> Log Call</Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span tabIndex={0}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleSendToBank}
+                disabled={isProfileLocked || !consentReceived}
+                className="h-9"
+                aria-label="Send to Bank"
+              >
+                <Send className="h-4 w-4 mr-1.5" /> Send to Bank
+              </Button>
+            </span>
+          </TooltipTrigger>
+          {!consentReceived && !isProfileLocked && (
+            <TooltipContent>Customer consent required before STB</TooltipContent>
+          )}
+        </Tooltip>
         <Button size="sm" variant="outline" onClick={() => setShowEMI(true)} className="h-9"><Calculator className="h-4 w-4 mr-1.5" /> EMI Calculator</Button>
         {(role === "manager" || role === "cluster_head") && (
           <Button size="sm" variant="outline" onClick={() => setShowReassign(true)} className="h-9">
@@ -422,7 +483,71 @@ const LeadDetailPage = () => {
         )}
       </div>
 
-      {/* Compliance Banner removed — consent flow disabled */}
+      {/* Compliance Banner */}
+      {!consentReceived ? (
+        <div className="rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3 flex items-start gap-3">
+          <div className="h-8 w-8 rounded-md bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+            <ShieldAlert className="h-4 w-4" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm font-semibold text-amber-900">Consent required</span>
+              <SoftPill tone={consentStatus === "sent" ? "pending" : consentStatus === "expired" ? "missed" : "warm"}>
+                {consentStatus.replace(/_/g, " ")}
+              </SoftPill>
+            </div>
+            <p className="text-xs text-amber-900/80 mt-0.5">
+              {consentStatus === "sent" && consentSentAt
+                ? <>SMS consent sent to <strong>{lead.mobile}</strong> at {consentSentAt.toLocaleTimeString()}. Awaiting customer response.</>
+                : <>Customer consent must be captured before sharing data with partner banks. STB is disabled until consent is received.</>}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleTriggerConsent}
+              className="h-8 bg-white border-amber-300 text-amber-900 hover:bg-amber-100"
+              aria-label="Trigger SMS consent"
+            >
+              <Send className="h-3.5 w-3.5 mr-1.5" />
+              {consentStatus === "sent" ? "Resend SMS" : "Trigger SMS Consent"}
+            </Button>
+            {consentStatus === "sent" && (
+              <Button
+                size="sm"
+                onClick={handleMarkConsentReceived}
+                className="h-8 bg-amber-700 hover:bg-amber-800 text-white"
+                aria-label="Mark consent received"
+              >
+                <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                Mark Received
+              </Button>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 px-4 py-3 flex items-center gap-3">
+          <div className="h-8 w-8 rounded-md bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="h-4 w-4" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-semibold text-emerald-900">Consent received</div>
+            <p className="text-xs text-emerald-900/80 mt-0.5">Customer has authorized data sharing with partner banks. STB is unlocked.</p>
+          </div>
+          {(role === "manager" || role === "cluster_head" || role === "data_admin") && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleClearConsent}
+              className="h-8 text-emerald-900 hover:bg-emerald-100"
+              aria-label="Clear consent flag"
+            >
+              Clear flag
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* STB Lock Banner */}
       {isProfileLocked && lockState.submission && (
@@ -432,7 +557,7 @@ const LeadDetailPage = () => {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-semibold text-indigo-900">SLP Locked</span>
+              <span className="text-sm font-semibold text-indigo-900">STB Locked</span>
               <SoftPill tone={lockState.submission.status === "approved" || lockState.submission.status === "disbursed" ? "completed" : lockState.submission.status === "declined" ? "missed" : "submitted"}>
                 {lockState.submission.status.charAt(0).toUpperCase() + lockState.submission.status.slice(1)}
               </SoftPill>
@@ -592,16 +717,10 @@ const LeadDetailPage = () => {
                       value={editCreditScore}
                       onChange={e => setEditCreditScore(e.target.value)}
                       placeholder="—"
-                      disabled={creditScoreLocked && role === "agent"}
                     />
-                    <Button size="sm" className="h-9" onClick={handleSaveCreditScore} disabled={creditScoreLocked && role === "agent"}>
-                      {creditScoreLocked && role === "agent" ? <Lock className="h-3.5 w-3.5" /> : "Save"}
-                    </Button>
+                    <Button size="sm" className="h-9" onClick={handleSaveCreditScore}>Save</Button>
                   </div>
                 </div>
-                {creditScoreLocked && role === "agent" && (
-                  <p className="text-[11px] text-muted-foreground -mt-1">Locked after SLP submission. Manager/Cluster Head can override.</p>
-                )}
               </div>
               <div>
                 <div className="text-sm font-medium mb-2">Existing Loans</div>
@@ -727,21 +846,15 @@ const LeadDetailPage = () => {
           </Card>
         </div>
 
-        {/* Manual Call + STB + Notes + Retry */}
+        {/* STB + Notes + Retry */}
         <div className="space-y-6">
-          <ManualCallPanel
-            customerName={lead.name}
-            primaryPhone={lead.mobile}
-            lastCallSummary={lead.callLogs[0] ? `${lead.callLogs[0].outcome === "connected" ? "Connected" : "Not connected"} · ${new Date(lead.callLogs[0].timestamp).toLocaleDateString()}` : undefined}
-            onLogCall={(secs) => { setPendingDuration(secs); setShowCallLog(true); }}
-          />
           <Card className="shadow-none">
             <CardHeader className="pb-3 border-b">
               <CardTitle className="text-sm flex items-center gap-2.5">
                 <span className="h-7 w-7 rounded-md bg-primary/10 text-primary flex items-center justify-center">
                   <Send className="h-4 w-4" />
                 </span>
-                SLP Status
+                STB Status
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-5">
@@ -765,7 +878,7 @@ const LeadDetailPage = () => {
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground">No SLP submissions yet</p>
+                <p className="text-xs text-muted-foreground">No STB submissions yet</p>
               )}
             </CardContent>
           </Card>
@@ -831,7 +944,7 @@ const LeadDetailPage = () => {
                   { v: "all", label: "All", count: timelineEvents.length },
                   { v: "calls", label: "Call", count: lead.callLogs.length },
                   { v: "followups", label: "Follow-up", count: lead.followUps.length },
-                  { v: "stb", label: "SLP", count: lead.stbSubmissions.length },
+                  { v: "stb", label: "STB", count: lead.stbSubmissions.length },
                 ].map(t => (
                   <TabsTrigger
                     key={t.v}
@@ -855,7 +968,7 @@ const LeadDetailPage = () => {
                     : ev.type === "audit" ? "bg-violet-50 text-violet-600"
                     : "bg-amber-50 text-amber-600";
                   const Icon = ev.type === "call" ? Phone : ev.type === "stb" ? Send : ev.type === "note" ? StickyNote : ev.type === "audit" ? Shield : Clock;
-                  const typeLabel = ev.type === "call" ? "Call" : ev.type === "stb" ? "SLP" : ev.type === "note" ? "Note" : "Follow-up";
+                  const typeLabel = ev.type === "call" ? "Call" : ev.type === "stb" ? "STB" : ev.type === "note" ? "Note" : "Follow-up";
                   const typeTone = ev.type === "call" ? "tone=\"new\"" : ev.type === "stb" ? "tone=\"submitted\"" : ev.type === "note" ? "tone=\"closed_lost\"" : "tone=\"pending\"";
                   return (
                     <div key={idx} className="flex items-start gap-4 px-5 py-4">
@@ -887,7 +1000,7 @@ const LeadDetailPage = () => {
                           const s = ev.data as typeof lead.stbSubmissions[0];
                           return <>
                             <div className="flex items-center gap-2 flex-wrap">
-                              <SoftPill tone="submitted">SLP</SoftPill>
+                              <SoftPill tone="submitted">STB</SoftPill>
                               <span className="text-sm font-semibold text-foreground">{s.partnerName}</span>
                             </div>
                             <p className="text-sm text-muted-foreground mt-1">{s.remarks || "Submission update"}</p>
@@ -994,41 +1107,25 @@ const LeadDetailPage = () => {
             </TabsContent>
             <TabsContent value="stb" className="mt-0">
               <div className="divide-y divide-border/60">
-                {localStbSubmissions.map(s => {
-                  const terminal = ["disbursed", "declined", "cancelled", "expired"].includes(s.status);
-                  const canUpdate = can.updateSlpStatus(role) && !terminal;
-                  return (
-                    <div key={s.id} className="flex items-start gap-4 px-5 py-4">
-                      <div className="h-9 w-9 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-                        <Send className="h-4 w-4" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <SoftPill tone="submitted">SLP</SoftPill>
-                          <span className="text-sm font-semibold">{s.partnerName}</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Submitted {new Date(s.submittedAt).toLocaleDateString()}
-                          {s.sanctionAmount ? ` · Sanction ₹${s.sanctionAmount.toLocaleString()}` : ""}
-                          {s.disbursedAmount ? ` · Disbursed ₹${s.disbursedAmount.toLocaleString()}` : ""}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <SoftPill tone={s.status === "approved" || s.status === "disbursed" ? "completed" : s.status === "declined" ? "missed" : "submitted"}>
-                          {SLP_STATUS_LABELS[s.status] ?? s.status}
-                        </SoftPill>
-                        {canUpdate && (
-                          <Button size="sm" variant="outline" className="h-7 text-xs"
-                            onClick={() => setSlpUpdateTarget(s)}>
-                            Update
-                          </Button>
-                        )}
-                      </div>
+                {lead.stbSubmissions.map(s => (
+                  <div key={s.id} className="flex items-start gap-4 px-5 py-4">
+                    <div className="h-9 w-9 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                      <Send className="h-4 w-4" />
                     </div>
-                  );
-                })}
-                {localStbSubmissions.length === 0 && (
-                  <div className="px-5 py-12 text-center text-sm text-muted-foreground">No SLP submissions</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <SoftPill tone="submitted">STB</SoftPill>
+                        <span className="text-sm font-semibold">{s.partnerName}</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">Submitted {new Date(s.submittedAt).toLocaleDateString()}</p>
+                    </div>
+                    <SoftPill tone={s.status === "approved" || s.status === "disbursed" ? "completed" : s.status === "declined" ? "missed" : "submitted"}>
+                      {s.status.charAt(0).toUpperCase() + s.status.slice(1)}
+                    </SoftPill>
+                  </div>
+                ))}
+                {lead.stbSubmissions.length === 0 && (
+                  <div className="px-5 py-12 text-center text-sm text-muted-foreground">No STB submissions</div>
                 )}
               </div>
             </TabsContent>
@@ -1123,42 +1220,131 @@ const LeadDetailPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Manual Call Log Dialog (Section 5.5–5.7) */}
-      <ManualCallLogDialog
-        open={showCallLog}
-        onOpenChange={(o) => { setShowCallLog(o); if (!o) setPendingDuration(0); }}
-        customerName={lead.name}
-        initialDuration={pendingDuration}
-        lastCallAt={lead.callLogs[0]?.timestamp}
-        canBackdateBeyond24h={can.backdateBeyond24h(role)}
-        onSubmit={handleManualCallSubmit}
-      />
+      {/* Revamped Call Log Dialog */}
+      <Dialog open={showCallLog} onOpenChange={setShowCallLog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle className="text-base">Log Call — {lead.name}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Date (max 24hr back)</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-8 text-xs", !callDate && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-1 h-3 w-3" />
+                      {callDate ? format(callDate, "PPP") : "Pick date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={callDate}
+                      onSelect={setCallDate}
+                      disabled={(d) => d > new Date() || d < new Date(Date.now() - 86400000)}
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div>
+                <Label className="text-xs">Time</Label>
+                <Input type="time" value={callTime} onChange={e => setCallTime(e.target.value)} className="h-8 text-xs" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Outcome *</Label>
+                <Select value={callOutcome} onValueChange={(v) => {
+                  setCallOutcome(v);
+                  setCallDisposition("");
+                  if (v === "not_connected") setCallDuration("0");
+                }}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="connected">Connected</SelectItem>
+                    <SelectItem value="not_connected">Not Connected</SelectItem>
+                    <SelectItem value="invalid">Invalid / Compliance</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Duration (sec)</Label>
+                <Input type="number" value={callDuration} onChange={e => setCallDuration(e.target.value)} disabled={callOutcome === "not_connected"} className="h-8 text-xs" />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs">Disposition *</Label>
+              <Select value={callDisposition} onValueChange={setCallDisposition} disabled={!callOutcome}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder={callOutcome ? "Select disposition" : "Select outcome first"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredGroups.map(g => (
+                    <SelectGroup key={g.group}>
+                      <SelectLabel className="text-[10px] font-bold">{g.group}</SelectLabel>
+                      {g.items.map(d => (
+                        <SelectItem key={d.type} value={d.type} className="text-xs">{d.label}</SelectItem>
+                      ))}
+                    </SelectGroup>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div><Label className="text-xs">Notes</Label><Textarea placeholder="Call notes..." value={callNotes} onChange={e => setCallNotes(e.target.value)} className="text-xs min-h-[60px]" /></div>
+            <div>
+              <Label className="text-xs">Next Action</Label>
+              <Select value={callNextAction} onValueChange={setCallNextAction}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="follow_up">Schedule Follow-Up</SelectItem>
+                  <SelectItem value="stb">Initiate STB</SelectItem>
+                  <SelectItem value="close">Close Lead</SelectItem>
+                  <SelectItem value="none">No Action</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {callNextAction === "follow_up" && (
+              <>
+                <div>
+                  <Label className="text-xs">Follow-Up Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-8 text-xs", !followUpDate && "text-muted-foreground")}>
+                        <CalendarIcon className="mr-1 h-3 w-3" />
+                        {followUpDate ? format(followUpDate, "PPP") : "Pick follow-up date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={followUpDate}
+                        onSelect={setFollowUpDate}
+                        disabled={(d) => d < new Date()}
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div>
+                  <Label className="text-xs">Follow-Up Time (optional)</Label>
+                  <Input
+                    type="time"
+                    value={followUpTime}
+                    onChange={e => setFollowUpTime(e.target.value)}
+                    className="h-8 text-xs"
+                  />
+                </div>
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setShowCallLog(false)}>Cancel</Button>
+            <Button size="sm" onClick={handleLogCall}>Save Call Log</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      {/* STB Wizard (Section 6) */}
-      <STBWizardDialog
-        open={showSTBWizard}
-        onOpenChange={setShowSTBWizard}
-        customerName={lead.name}
-        selectedPairs={selectedPairs}
-        creditScore={lead.creditScore ?? null}
-        readiness={getSLPReadiness({ ...lead, stbSubmissions: localStbSubmissions }, selectedPairs.length > 0)}
-        onSubmit={handleSTBWizardSubmit}
-      />
-
-      {slpUpdateTarget && (
-        <SLPStatusUpdateDialog
-          open={!!slpUpdateTarget}
-          onOpenChange={(o) => !o && setSlpUpdateTarget(null)}
-          lead={lead}
-          submission={slpUpdateTarget}
-          onUpdated={(next) => {
-            setLocalStbSubmissions(prev => prev.map(s => s.id === next.id ? next : s));
-            setSlpUpdateTarget(null);
-          }}
-        />
-      )}
-
-
+      {/* EMI Calculator */}
       <Dialog open={showEMI} onOpenChange={setShowEMI}>
         <DialogContent className="max-w-2xl p-0 overflow-hidden">
           <DialogHeader className="px-6 pt-5 pb-4 border-b border-border">
@@ -1272,7 +1458,7 @@ const LeadDetailPage = () => {
           <div className="space-y-4">
             {lead.stbSubmissions.length > 0 && (
               <div className="p-2 rounded border border-destructive/30 text-xs text-destructive">
-                ⚠ This lead has active SLP submissions. Reassignment is blocked.
+                ⚠ This lead has active STB submissions. Reassignment is blocked.
               </div>
             )}
             {(role === "manager" || role === "cluster_head") && (

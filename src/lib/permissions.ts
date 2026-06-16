@@ -14,7 +14,6 @@ const RULES: RouteRule[] = [
   { path: "/follow-ups", roles: ["agent", "manager", "cluster_head", "data_admin"] },
   { path: "/stb", roles: ["agent", "manager", "cluster_head", "data_admin"] },
   { path: "/performance", roles: ["agent", "manager", "cluster_head", "data_admin"] },
-  { path: "/notifications", roles: ["agent", "manager", "cluster_head", "data_admin"] },
 
   // Reports — managers and above
   { path: "/reports", roles: ["manager", "cluster_head", "data_admin"] },
@@ -58,30 +57,19 @@ export function rolesForRoute(pathname: string): UserRole[] | null {
 // ---------- Action-level guards ----------
 
 export const can = {
-  exportPII: (role: UserRole) => role === "data_admin",
+  exportPII: (role: UserRole) => role === "cluster_head" || role === "data_admin",
   exportTeamSummary: (role: UserRole) => role !== "agent",
   exportAny: (role: UserRole) => role !== "agent",
   reassign: (role: UserRole) => role === "manager" || role === "cluster_head" || role === "data_admin",
-  editLead: (role: UserRole) => role !== "data_admin",
-  /** PRD §10.4 — Agents and Managers initiate; Cluster Head only as override; Data Admin no. */
-  sendToLendingPartner: (role: UserRole) => role === "agent" || role === "manager" || role === "cluster_head",
+  editLead: (role: UserRole) => role !== "data_admin", // data_admin can edit metadata only via admin tools
   sendToBank: (role: UserRole) => role === "agent" || role === "manager" || role === "cluster_head",
-  /** PRD §10.4 — only Manager and Cluster Head update SLP status; Agent no. */
-  updateSlpStatus: (role: UserRole) => role === "manager" || role === "cluster_head",
-  cancelSlp: (role: UserRole) => role === "manager" || role === "cluster_head",
   backdateBeyond24h: (role: UserRole) => role !== "agent",
   viewLeadSource: (role: UserRole) => role !== "agent",
-  /** Legacy alias — kept for back-compat with existing call sites. */
-  updateStbStatus: (role: UserRole) => role === "manager" || role === "cluster_head",
+  updateStbStatus: (role: UserRole) => role === "cluster_head" || role === "data_admin",
   overrideClosedLead: (role: UserRole) => role === "manager" || role === "cluster_head",
   configureSystem: (role: UserRole) => role === "cluster_head" || role === "data_admin",
   uploadLeads: (role: UserRole) => role === "data_admin",
   allocateLeads: (role: UserRole) => role === "cluster_head" || role === "data_admin",
-  viewAuditTrail: (role: UserRole) => role === "cluster_head" || role === "data_admin",
-  viewActivityLog: (role: UserRole) => role !== "agent",
-  managePartners: (role: UserRole) => role === "data_admin",
-  manageStaff: (role: UserRole) => role === "cluster_head" || role === "data_admin",
-  unmaskedPan: (role: UserRole) => role === "data_admin",
 };
 
 // ---------- STB lock helpers ----------
@@ -113,7 +101,7 @@ export function getLeadLockState(lead: Pick<Lead, "stbSubmissions">): LeadLockSt
   return {
     locked: true,
     submission: blocking,
-    reason: `SLP ${blocking.status} with ${blocking.partnerName}`,
+    reason: `STB ${blocking.status} with ${blocking.partnerName}`,
     allowedNextAction,
   };
 }

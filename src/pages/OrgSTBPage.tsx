@@ -16,7 +16,7 @@ const managers = [
 
 type OSTBItem = {
   id: string; partnerId: string; partnerName: string; submittedAt: string;
-  status: "submitted" | "documents_pending" | "under_review" | "approved" | "declined" | "disbursed" | "cancelled" | "expired";
+  status: "submitted" | "approved" | "declined" | "disbursed";
   sanctionAmount: number | null; disbursedAmount: number | null;
   disbursementDate: string | null; integrationType: "api" | "portal" | "email";
   leadName: string; leadId: string; product: string;
@@ -85,7 +85,7 @@ const OrgSTBPage = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Organisation Send to Lending Partner</h1>
+          <h1 className="text-2xl font-bold">Organisation STB Pipeline</h1>
           <p className="text-muted-foreground text-sm">{allSubs.length} total submissions</p>
         </div>
         <Select value={managerFilter} onValueChange={setManagerFilter}>
@@ -115,7 +115,7 @@ const OrgSTBPage = () => {
       </div>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Organisation SLP Submissions</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">Organisation STB Submissions</CardTitle></CardHeader>
         <CardContent className="p-0">
           <ConfigurableTable tableId="org-stb" columns={columns} data={allSubs} onRowClick={(s) => navigate(`/leads/${s.leadId}`)} />
         </CardContent>

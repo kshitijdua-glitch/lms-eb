@@ -10,24 +10,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
 import type { ColumnDef } from "@/types/table";
-import { ExportConfirmationDialog } from "@/components/ExportConfirmationDialog";
-import { LastUpdated } from "@/components/LastUpdated";
-
 
 type AuditRow = { id: string; timestamp: string; agentName: string; leadName: string; disposition: string };
 
 const metrics = [
   { key: "contactRate", label: "Contact Rate %", color: "hsl(var(--primary))" },
-  { key: "stbRate", label: "SLP Rate %", color: "hsl(var(--info))" },
+  { key: "stbRate", label: "STB Rate %", color: "hsl(var(--info))" },
   { key: "followUpCompliance", label: "Follow-Up Compliance %", color: "hsl(var(--success))" },
   { key: "allocated", label: "Allocated", color: "hsl(var(--warning))" },
-  { key: "stbCount", label: "SLP Count", color: "hsl(var(--primary))" },
+  { key: "stbCount", label: "STB Count", color: "hsl(var(--primary))" },
   { key: "disbursedCount", label: "Disbursed Count", color: "hsl(var(--success))" },
 ];
 
 const ReportsPage = () => {
   const [selectedMetric, setSelectedMetric] = useState("contactRate");
-  const [exportOpen, setExportOpen] = useState(false);
 
   const dateWise = Array.from({ length: 14 }, (_, i) => {
     const d = new Date(); d.setDate(d.getDate() - 13 + i);
@@ -36,7 +32,7 @@ const ReportsPage = () => {
     return { date: d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" }), leads: dayLeads || Math.floor(Math.random() * 8) + 2 };
   });
 
-  const handleExport = () => setExportOpen(true);
+  const handleExport = () => toast.success("CSV export started");
 
   const auditData: AuditRow[] = leads.slice(0, 10).flatMap(l => l.callLogs.slice(0, 1).map(cl => ({
     id: cl.id, timestamp: cl.timestamp, agentName: cl.agentName, leadName: l.name, disposition: getDispositionLabel(cl.disposition),
@@ -58,7 +54,7 @@ const ReportsPage = () => {
     { label: "Allocated", value: current.allocated, icon: Users },
     { label: "Contacted", value: current.contacted, icon: Phone },
     { label: "Contact Rate", value: `${current.contactRate}%`, icon: Target },
-    { label: "SLP Count", value: current.stbCount, icon: Send },
+    { label: "STB Count", value: current.stbCount, icon: Send },
     { label: "Approved", value: current.approved, icon: CheckCircle },
     { label: "Disbursed Amt", value: `₹${(current.disbursedAmount / 100000).toFixed(1)}L`, icon: TrendingUp },
   ];
@@ -69,20 +65,9 @@ const ReportsPage = () => {
         <div>
           <h1 className="text-2xl font-bold">MIS & Reports</h1>
           <p className="text-muted-foreground text-sm">Analytics, data exports & team performance</p>
-          <div className="flex items-center gap-3 mt-1.5"><LastUpdated /></div>
-          <p className="text-[11px] text-muted-foreground italic mt-1">Manual call activity is self-reported by users.</p>
         </div>
-        <Button onClick={handleExport}><Download className="h-4 w-4 mr-1" /> Export Report</Button>
+        <Button onClick={handleExport}><Download className="h-4 w-4 mr-1" /> Export All</Button>
       </div>
-
-      <ExportConfirmationDialog
-        open={exportOpen}
-        onOpenChange={setExportOpen}
-        reportName="MIS — Call Activity"
-        scope="My Team"
-        fields={["Customer Name", "Phone", "Disposition", "Notes", "Date"]}
-        onExport={() => {}}
-      />
 
       <Tabs defaultValue="mis">
         <TabsList>
@@ -164,8 +149,8 @@ const ReportsPage = () => {
                       <th className="text-right p-2 font-medium">Allocated</th>
                       <th className="text-right p-2 font-medium">Contacted</th>
                       <th className="text-right p-2 font-medium">Contact %</th>
-                      <th className="text-right p-2 font-medium">SLP</th>
-                      <th className="text-right p-2 font-medium">SLP %</th>
+                      <th className="text-right p-2 font-medium">STB</th>
+                      <th className="text-right p-2 font-medium">STB %</th>
                       <th className="text-right p-2 font-medium">Approved</th>
                       <th className="text-right p-2 font-medium">Disbursed</th>
                       <th className="text-right p-2 font-medium">Amount</th>

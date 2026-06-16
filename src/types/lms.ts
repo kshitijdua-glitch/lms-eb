@@ -1,23 +1,6 @@
 export type UserRole = "agent" | "manager" | "cluster_head" | "data_admin";
 
-export type LeadStage =
-  | "new"
-  | "assigned"
-  | "contacted"
-  | "interested"
-  | "bank_selected"
-  | "ready_for_slp"
-  | "sent_to_lp"
-  | "stb_submitted" // legacy alias for sent_to_lp
-  | "approved"
-  | "declined"
-  | "disbursed"
-  | "closed_lost"
-  | "rejected"
-  | "invalid"
-  | "profile_correction"
-  | "compliance_hold"
-  | "expired";
+export type LeadStage = "new" | "contacted" | "interested" | "bank_selected" | "stb_submitted" | "approved" | "declined" | "disbursed" | "closed_lost";
 
 export type DispositionType =
   // Follow-Up
@@ -78,14 +61,7 @@ export type DispositionType =
   | "stb_initiated"
   | "stb_approved"
   | "stb_declined"
-  | "disbursed"
-  // Section 5.6 — Manual Call requirements
-  | "needs_more_information"
-  | "ringing"
-  | "not_reachable"
-  | "duplicate_lead"
-  | "do_not_contact"
-  | "customer_complaint";
+  | "disbursed";
 
 export type DispositionCategory =
   | "follow_up"
@@ -148,6 +124,7 @@ export interface Lead {
   createdAt: string;
   lastActivityAt: string;
   allocatedAt: string;
+  consentStatus: "not_sent" | "sent" | "received" | "expired";
   retryCount: number;
   expiresAt: string;
 }
@@ -174,22 +151,13 @@ export interface STBSubmission {
   partnerId: string;
   partnerName: string;
   submittedAt: string;
-  status: "submitted" | "documents_pending" | "under_review" | "approved" | "declined" | "disbursed" | "cancelled" | "expired";
+  status: "submitted" | "approved" | "declined" | "disbursed";
   approvedAmount: number | null;
   sanctionAmount: number | null;
-  approvalDate: string | null;
   disbursedAmount: number | null;
   disbursementDate: string | null;
-  /** Partner's loan reference / application number — required for Disbursed (PRD §15.5). */
-  referenceId: string | null;
   remarks: string;
   integrationType: "api" | "portal" | "email";
-  /** Last status update note (PRD §15.2). */
-  lastUpdateNote?: string | null;
-  /** Reason captured for Declined / Cancelled / Expired / Documents Pending. */
-  statusReason?: string | null;
-  /** Next follow-up scheduled when moving to Documents Pending. */
-  nextFollowUpAt?: string | null;
 }
 
 export interface CallLog {
@@ -205,40 +173,14 @@ export interface CallLog {
   followUpDate: string | null;
 }
 
-export type FollowUpType =
-  | "call"
-  | "document_collection"
-  | "document" // alias for document_collection
-  | "stb_follow_up" // legacy alias for slp_follow_up
-  | "slp_follow_up"
-  | "profile_correction"
-  | "manager_escalation";
-
-export type FollowUpStatus =
-  | "pending"
-  | "completed"
-  | "missed"
-  | "escalated"
-  | "cancelled";
-
 export interface FollowUp {
   id: string;
   scheduledAt: string;
-  type: FollowUpType;
-  status: FollowUpStatus;
+  type: "call" | "document_collection" | "stb_follow_up";
+  status: "pending" | "completed" | "missed";
   notes: string;
   subType?: string;
 }
-
-export const FOLLOW_UP_TYPE_LABELS: Record<FollowUpType, string> = {
-  call: "Call",
-  document_collection: "Document",
-  document: "Document",
-  stb_follow_up: "SLP",
-  slp_follow_up: "SLP",
-  profile_correction: "Profile Correction",
-  manager_escalation: "Manager Escalation",
-};
 
 export interface Agent {
   id: string;
@@ -289,21 +231,11 @@ export interface DispositionConfig {
   requiresFollowUp: boolean;
 }
 
-// "team" kept for legacy compat; new code uses "group" (manager-scoped).
-export type NotificationScope = "agent" | "team" | "group" | "org" | "admin";
-
-export type NotificationType =
-  | "follow_up_due" | "follow_up_missed" | "lead_expiry" | "lead_reassigned"
-  | "new_allocation" | "stb_status_update" | "agent_missed_fu" | "nc_escalation"
-  | "agent_not_logged_in" | "stb_initiated_by_agent" | "batch_uploaded"
-  | "allocation_done" | "export_completed" | "config_changed"
-  // SLP-specific (PRD §24.2)
-  | "slp_initiated" | "slp_pending_update" | "slp_approved" | "slp_declined" | "slp_disbursed"
-  | "retry_exceeded" | "staff_deactivated" | "partner_changed" | "lead_closed";
+export type NotificationScope = "agent" | "team" | "org" | "admin";
 
 export interface Notification {
   id: string;
-  type: NotificationType;
+  type: "follow_up_due" | "follow_up_missed" | "lead_expiry" | "consent_received" | "lead_reassigned" | "new_allocation" | "stb_status_update" | "agent_missed_fu" | "nc_escalation" | "agent_not_logged_in" | "stb_initiated_by_agent" | "batch_uploaded" | "allocation_done" | "export_completed" | "config_changed";
   title: string;
   message: string;
   timestamp: string;
@@ -312,7 +244,6 @@ export interface Notification {
   scope: NotificationScope;
   agentId?: string;
   teamId?: string;
-  managerId?: string;
   /** Optional override for click-through navigation. Defaults: leadId → /leads/:id */
   clickTarget?: string;
 }
