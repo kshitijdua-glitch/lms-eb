@@ -102,6 +102,8 @@ const App = () => (
                         <Route path="/audit-trail" element={guard(<AuditTrailPage />)} />
                         <Route path="*" element={<NotFound />} />
                       </Routes>
+                      </Suspense>
+
                     </AppLayout>
                   }
                 />
