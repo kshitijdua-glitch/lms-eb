@@ -132,23 +132,23 @@ const LeadsPage = () => {
   ];
 
   return (
-    <div className="space-y-6 max-w-[1600px] mx-auto">
+    <div className="space-y-5 sm:space-y-6 max-w-[1600px] mx-auto">
       {/* Page header */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">{role === "agent" ? "My Leads" : "All Leads"}</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">{role === "agent" ? "My Leads" : "All Leads"}</h1>
           <p className="text-sm text-muted-foreground">
             Showing <span className="font-medium text-foreground">{filtered.length}</span> of {allLeads.length} leads
           </p>
         </div>
         <div className="flex gap-2">
           {role === "agent" && (
-            <Button size="sm" onClick={() => setShowCreateLead(true)} className="h-9">
+            <Button size="sm" onClick={() => setShowCreateLead(true)} className="h-9 flex-1 sm:flex-none">
               <Plus className="h-4 w-4 mr-1.5" /> New Lead
             </Button>
           )}
           {role !== "agent" && (
-            <Button variant="outline" size="sm" className="h-9" onClick={() => toast.success("Team summary CSV exported (non-PII)")}>
+            <Button variant="outline" size="sm" className="h-9 flex-1 sm:flex-none" onClick={() => toast.success("Team summary CSV exported (non-PII)")}>
               <Download className="h-4 w-4 mr-1.5" /> Export
             </Button>
           )}
@@ -156,24 +156,25 @@ const LeadsPage = () => {
       </div>
 
       {/* Summary tiles */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {summaryTiles.map(t => {
           const Icon = t.icon;
           return (
             <Card key={t.label} className="shadow-none">
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between mb-3">
-                  <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              <CardContent className="p-4 sm:p-5">
+                <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
+                  <span className="text-[10px] sm:text-[11px] font-medium uppercase tracking-wide text-muted-foreground leading-tight">
                     {t.label}
                   </span>
-                  <Icon className={`h-4 w-4 ${t.tone}`} />
+                  <Icon className={`h-4 w-4 shrink-0 ${t.tone}`} />
                 </div>
-                <div className="text-2xl font-semibold tracking-tight leading-none">{t.value}</div>
+                <div className="text-xl sm:text-2xl font-semibold tracking-tight leading-none">{t.value}</div>
               </CardContent>
             </Card>
           );
         })}
       </div>
+
 
       {/* Stage tabs */}
       <Tabs value={stageFilter} onValueChange={setStageFilter} className="w-full">
