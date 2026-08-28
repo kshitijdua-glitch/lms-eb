@@ -225,3 +225,9 @@ export function useLmsData() {
   if (!ctx) throw new Error("useLmsData must be used within LmsDataProvider");
   return ctx;
 }
+
+/** Non-throwing variant for chrome components that can render outside the provider (e.g. during HMR). */
+export function useOptionalLmsData() {
+  return useContext(LmsDataContext);
+}
+
