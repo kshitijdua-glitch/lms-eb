@@ -622,16 +622,21 @@ const LeadDetailPage = () => {
                 size="sm"
                 variant="outline"
                 onClick={handleSendToBank}
-                disabled={isProfileLocked || !consentReceived}
+                disabled={isProfileLocked || !consentReceived || !creditReport || stbLoading}
                 className="h-9"
-                aria-label="Send to Bank"
+                aria-label="Submit to Lending Partner"
               >
-                <Send className="h-4 w-4 mr-1.5" /> Send to Bank
+                {stbLoading
+                  ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                  : <Send className="h-4 w-4 mr-1.5" />}
+                {stbLoading ? "Submitting…" : "Submit to Lending Partner"}
               </Button>
             </span>
           </TooltipTrigger>
-          {!consentReceived && !isProfileLocked && (
-            <TooltipContent>Customer consent required before STB</TooltipContent>
+          {!isProfileLocked && (!consentReceived || !creditReport) && (
+            <TooltipContent>
+              {!consentReceived ? "Customer consent required before submission" : "Fetch the bureau credit report before submission"}
+            </TooltipContent>
           )}
         </Tooltip>
         <Button size="sm" variant="outline" onClick={() => setShowEMI(true)} className="h-9"><Calculator className="h-4 w-4 mr-1.5" /> EMI Calculator</Button>
