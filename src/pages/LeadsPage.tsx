@@ -247,7 +247,8 @@ const LeadsPage = () => {
           <ConfigurableTable
             tableId="leads"
             columns={columns}
-            data={filtered.slice(0, 30)}
+            data={filtered}
+            pageSize={25}
             onRowClick={(lead) => navigate(`/leads/${lead.id}`)}
           />
         </CardContent>
