@@ -622,12 +622,27 @@ const LeadDetailPage = () => {
       <div className="flex-1 min-w-0 p-4 sm:p-6 xl:p-8 overflow-auto space-y-5 sm:space-y-6">
 
       {/* Action Bar */}
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
         <Button variant="ghost" size="sm" onClick={() => navigate("/leads")} className="text-muted-foreground hover:text-foreground -ml-2">
-          <ArrowLeft className="h-4 w-4 mr-1.5" /> Back to Leads
+          <ArrowLeft className="h-4 w-4 mr-1.5" /> <span className="hidden sm:inline">Back to Leads</span><span className="sm:hidden">Leads</span>
         </Button>
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="sm" className="h-9 lg:hidden" aria-label="Browse leads">
+              <List className="h-4 w-4 mr-1.5" /> Browse
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="p-0 w-[85vw] max-w-sm flex flex-col">
+            <SheetHeader className="px-4 py-3 border-b border-border text-left">
+              <SheetTitle className="text-sm">Leads</SheetTitle>
+            </SheetHeader>
+            <div className="p-3 border-b border-border">{leadSearchInput}</div>
+            <ScrollArea className="flex-1">{leadListItems()}</ScrollArea>
+          </SheetContent>
+        </Sheet>
         <div className="flex-1" />
-        <Button size="sm" onClick={() => setShowCallLog(true)} className="h-9"><Phone className="h-4 w-4 mr-1.5" /> Log Call</Button>
+        <Button size="sm" onClick={() => setShowCallLog(true)} className="h-9 flex-1 sm:flex-none"><Phone className="h-4 w-4 mr-1.5" /> Log Call</Button>
+
         <Tooltip>
           <TooltipTrigger asChild>
             <span tabIndex={0}>
