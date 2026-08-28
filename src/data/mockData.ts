@@ -320,7 +320,11 @@ function generateLeads(): Lead[] {
       createdAt: daysAgo(allocDays + randomInt(0, 10)),
       lastActivityAt: daysAgo(lastActivityDays),
       allocatedAt: daysAgo(allocDays),
-      consentStatus: ["stb_submitted", "approved", "disbursed"].includes(stage) ? "received" : "not_sent",
+      consentStatus: submissionStages.includes(stage)
+        ? "received"
+        : stage === "bank_selected" || stage === "interested"
+          ? (i % 3 === 0 ? "requested" : "received")
+          : "not_sent",
       retryCount: ["number_busy", "no_response", "switched_off"].includes(disp) ? randomInt(1, 6) : 0,
       expiresAt: daysAgo(-(90 - allocDays)),
     };
