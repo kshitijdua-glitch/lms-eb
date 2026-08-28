@@ -115,14 +115,19 @@ const LeadDetailPage = () => {
 
   const [leadSidebarOpen, setLeadSidebarOpen] = useState(true);
   const [leadListSearch, setLeadListSearch] = useState("");
+  const [railLimit, setRailLimit] = useState(30);
   const [priorityOverride, setPriorityOverride] = useState<string | null>(null);
 
   if (!lead) return <div className="p-8 text-center text-muted-foreground">Lead not found</div>;
 
   const allLeads = role === "agent" ? allStoreLeads.filter(l => l.assignedAgentId === "agent-1") : allStoreLeads;
-  const filteredLeads = allLeads
-    .filter(l => l.name.toLowerCase().includes(leadListSearch.toLowerCase()))
-    .slice(0, 50);
+  const matchingLeads = allLeads.filter(l =>
+    l.name.toLowerCase().includes(leadListSearch.toLowerCase())
+  );
+  // Render a window of the list and extend on demand — keeps the rail cheap
+  // for large books of business without layout jumps.
+  const filteredLeads = matchingLeads.slice(0, railLimit);
+  const railRemaining = matchingLeads.length - filteredLeads.length;
 
   // Derived, persisted state — everything reads from the store
   const localStbSubmissions = lead.stbSubmissions ?? [];
@@ -573,6 +578,14 @@ const LeadDetailPage = () => {
           </button>
         );
       })}
+      {railRemaining > 0 && (
+        <button
+          className="w-full px-4 py-3 text-xs font-medium text-primary hover:bg-muted/40 transition-colors"
+          onClick={() => setRailLimit(n => n + 30)}
+        >
+          Show {Math.min(30, railRemaining)} more · {railRemaining} remaining
+        </button>
+      )}
       {filteredLeads.length === 0 && (
         <div className="p-6 text-xs text-muted-foreground text-center">No leads found</div>
       )}
@@ -585,7 +598,7 @@ const LeadDetailPage = () => {
       <Input
         placeholder="Search leads"
         value={leadListSearch}
-        onChange={e => setLeadListSearch(e.target.value)}
+        onChange={e => { setLeadListSearch(e.target.value); setRailLimit(30); }}
         className="h-9 text-xs pl-8 bg-background"
       />
     </div>
