@@ -10,7 +10,7 @@ import type { Lead } from "@/types/lms";
  * notifies React subscribers.
  */
 
-const STORAGE_KEY = "lms.demo.leads.v1";
+const STORAGE_KEY = "lms.demo.leads.v2";
 
 export interface LmsSnapshot {
   leads: Lead[];

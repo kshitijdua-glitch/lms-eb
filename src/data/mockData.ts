@@ -1,4 +1,4 @@
-import { Lead, Agent, Team, LendingPartner, DispositionConfig, Notification, type DispositionType, type LeadStage, type ProductType, type EmploymentType, type Priority } from "@/types/lms";
+import { Lead, Agent, Team, LendingPartner, DispositionConfig, Notification, type DispositionType, type LeadStage, type ProductType, type EmploymentType, type Priority, type STBStatus } from "@/types/lms";
 import { calculatePriority, defaultPriorityConfig } from "@/utils/priorityEngine";
 
 // Teams
@@ -103,7 +103,7 @@ export const dispositionGroups = (): { group: string; items: DispositionConfig[]
   return groups;
 };
 
-const names = ["Rajesh Khanna","Sunita Devi","Mohd Irfan","Lakshmi Narayan","Vikram Chauhan","Nisha Agarwal","Suresh Babu","Fatima Begum","Arjun Rao","Kavita Mishra","Dinesh Thakur","Rekha Pandey","Sanjay Dubey","Asha Kumari","Manoj Tiwari","Geeta Sinha","Ramprasad Yadav","Zainab Khan","Harish Chandra","Padma Lakshmi","Gopal Krishna","Savitri Devi","Naresh Agarwal","Mumtaz Patel","Vijay Shankar","Usha Rani","Prakash Joshi","Salma Sheikh","Ashok Mehta","Kamla Devi","Bharat Bhushan","Parveen Akhtar","Sunil Sharma","Annapurna Iyer","Ramesh Chand","Indira Soni","Arun Kapoor","Sarita Gupta","Mukesh Ambani","Lata Deshmukh","Raghav Mehra","Shobha Rajan","Nilesh Puri","Rina Chakraborty","Satish Kale","Uma Mahesh","Jagdish Prasad","Rubina Sayyed","Kishore Bhat","Malti Sharma"];
+const names = ["Rajesh Khanna","Sunita Devi","Mohd Irfan","Lakshmi Narayan","Vikram Chauhan","Nisha Agarwal","Suresh Babu","Fatima Begum","Arjun Rao","Kavita Mishra","Dinesh Thakur","Rekha Pandey","Sanjay Dubey","Asha Kumari","Manoj Tiwari","Geeta Sinha","Ramprasad Yadav","Zainab Khan","Harish Chandra","Padma Lakshmi","Gopal Krishna","Savitri Devi","Naresh Agarwal","Mumtaz Patel","Vijay Shankar","Usha Rani","Prakash Joshi","Salma Sheikh","Ashok Mehta","Kamla Devi","Bharat Bhushan","Parveen Akhtar","Sunil Sharma","Annapurna Iyer","Ramesh Chand","Indira Soni","Arun Kapoor","Sarita Gupta","Mukesh Ambani","Lata Deshmukh","Raghav Mehra","Shobha Rajan","Nilesh Puri","Rina Chakraborty","Satish Kale","Uma Mahesh","Jagdish Prasad","Rubina Sayyed","Kishore Bhat","Malti Sharma","Aditya Bhandari","Pallavi Kulkarni","Imran Qureshi","Devendra Yadav","Snehal Joshi","Rohit Malhotra","Tanvi Shah","Yogesh Pawar","Farhan Ansari","Meenal Deshpande","Chandan Prasad","Bhavna Solanki","Sameer Kulkarni","Anjum Sheikh","Girish Rao","Neeta Bansal","Pravin Salunkhe","Shilpa Menon","Alok Ranjan","Trupti Naik","Hemant Choudhary","Ritika Bajaj","Zubair Ahmed","Vandana Rathore","Sachin Gaikwad","Preeti Dhawan","Om Prakash","Swati Mahajan","Nitin Kadam","Ayesha Siddiqui","Basant Kumar","Jyoti Vaidya","Mahesh Pillai","Komal Ahuja","Tarun Sethi","Renuka Prabhu","Vishal Tomar","Sneha Barve","Rizwan Shaikh","Deepti Saxena","Kailash Meena","Aarti Wagh","Sundar Raman","Poonam Chhabra","Abhijit Ghosh","Varsha Lele","Faizal Memon","Nandini Rao","Jitendra Verma","Sharmila Bose","Amol Jadhav","Ruchi Kalra","Naveen Reddy","Sheetal Nikam","Kabir Chopra","Divya Menon","Sarfaraz Khan","Anushka Dubey","Mangesh Patil","Leela Krishnan","Vivek Anand","Priyanka Rane","Iqbal Hussain","Rashmi Kaul","Dattatray More","Kirti Bhagat","Ashwin Kamath","Nazia Parveen","Bhaskar Dutt","Seema Chauhan","Lokesh Yadav","Aparna Iyengar","Rehan Sheikh","Charulata Desai","Ganesh Shetty","Madhuri Wankhede","Suraj Chauhan","Ekta Malviya","Noor Fatima","Prashant Kale"];
 
 function maskPan(p: string) { return p.slice(0, 4) + "XXXX" + p.slice(-2); }
 
@@ -166,10 +166,12 @@ function generateLeads(): Lead[] {
     const income = randomInt(15000, 200000);
     const obligations = randomInt(0, income * 0.4);
     const foir = Math.round((obligations / income) * 100);
-    const stage = stages[Math.min(Math.floor(i / 6), stages.length - 1)];
+    // Round-robin across every stage so each module shows all statuses.
+    const stage = stages[i % stages.length];
     const disp = newDispositions[i % newDispositions.length];
-    const agentIdx = (i % 8) + 1;
-    const teamId = agentIdx <= 5 ? "team-1" : "team-2";
+    const agentIdx = (i % agents.length) + 1;
+    const agent = agents[agentIdx - 1];
+    const teamId = agent.teamId;
     const mobile = `98${randomInt(10000000, 99999999)}`;
     const pan = generatePAN();
     const allocDays = randomInt(1, 60);
@@ -177,6 +179,7 @@ function generateLeads(): Lead[] {
     const creditScore = randomInt(550, 850);
     const city = randomFrom(cities);
     const source = randomFrom(leadSources);
+
 
     const callLogs = Array.from({ length: randomInt(1, 5) }, (_, ci) => ({
       id: `call-${i}-${ci}`,
@@ -191,14 +194,42 @@ function generateLeads(): Lead[] {
       followUpDate: ci % 4 === 0 ? daysAgo(-randomInt(1, 7)) : null,
     }));
 
-    const followUps = Array.from({ length: randomInt(0, 3) }, (_, fi) => ({
-      id: `fu-${i}-${fi}`,
-      scheduledAt: daysAgo(-randomInt(-2, 5)),
-      type: (["call", "document_collection", "stb_follow_up"] as const)[fi % 3],
-      status: (["pending", "completed", "missed"] as const)[fi % 3],
-      notes: "Follow up on documentation",
-      subType: fi === 0 ? "hot_follow_up" : undefined,
-    }));
+    // Deterministic spread of overdue / today / upcoming / completed follow-ups so
+    // every agent, team and the org view always demonstrate each bucket.
+    const followUpPlans: { offset: number; status: "pending" | "completed" | "missed" }[] =
+      i % 3 === 0
+        ? [
+            { offset: -(1 + (i % 5)), status: i % 9 === 0 ? "missed" : "pending" },
+            { offset: 0, status: "pending" },
+            { offset: 1 + (i % 6), status: "pending" },
+          ]
+        : i % 3 === 1
+          ? [
+              { offset: 0, status: "pending" },
+              { offset: 2 + (i % 5), status: "pending" },
+              { offset: -(2 + (i % 4)), status: "completed" },
+            ]
+          : [
+              { offset: -(1 + (i % 3)), status: "pending" },
+              { offset: 3 + (i % 7), status: "pending" },
+              { offset: -(5 + (i % 6)), status: "completed" },
+            ];
+
+    const followUps = followUpPlans.map((plan, fi) => {
+      const when = new Date();
+      when.setDate(when.getDate() + plan.offset);
+      when.setHours(plan.offset === 0 ? Math.min(23, new Date().getHours() + 1) : 11, 0, 0, 0);
+      return {
+        id: `fu-${i}-${fi}`,
+        scheduledAt: when.toISOString(),
+        type: (["call", "document_collection", "stb_follow_up"] as const)[(i + fi) % 3],
+        status: plan.status,
+        notes: ["Follow up on documentation", "Confirm income proof", "Share sanction letter update", "Reconfirm interest"][(i + fi) % 4],
+        subType: fi === 0 ? "hot_follow_up" : undefined,
+      };
+    });
+
+
 
     const existingLoans = Array.from({ length: randomInt(0, 3) }, (_, li) => ({
       id: `loan-${i}-${li}`,
@@ -219,19 +250,48 @@ function generateLeads(): Lead[] {
         }))
       : [];
 
-    const stbSubmissions = ["stb_submitted", "approved", "disbursed"].includes(stage) ? [{
+    const submissionStages = ["stb_submitted", "approved", "disbursed", "declined"];
+    const partner = lendingPartners[i % lendingPartners.length];
+    const submittedDays = randomInt(1, 15);
+    const sanction = randomInt(100000, 1500000);
+    // Leads sitting in stb_submitted alternate between "submitted" and "under_review"
+    // so the partner pipeline shows the full status ladder.
+    const stbStatus: STBStatus =
+      stage === "approved" ? "approved"
+      : stage === "disbursed" ? "disbursed"
+      : stage === "declined" ? "declined"
+      : i % 2 === 0 ? "submitted" : "under_review";
+
+    const stbSubmissions = submissionStages.includes(stage) ? [{
       id: `stb-${i}-1`,
-      partnerId: "lp-1",
-      partnerName: "HDFC Bank",
-      submittedAt: daysAgo(randomInt(1, 15)),
-      status: (stage === "approved" ? "approved" : stage === "disbursed" ? "disbursed" : "submitted") as "submitted" | "approved" | "disbursed",
-      approvedAmount: stage === "approved" || stage === "disbursed" ? randomInt(100000, 1500000) : null,
-      sanctionAmount: stage === "approved" || stage === "disbursed" ? randomInt(100000, 1500000) : null,
-      disbursedAmount: stage === "disbursed" ? randomInt(100000, 1500000) : null,
-      disbursementDate: stage === "disbursed" ? daysAgo(randomInt(1, 5)) : null,
-      remarks: "Application processed",
-      integrationType: "api" as const,
+      partnerId: partner.id,
+      partnerName: partner.name,
+      submittedAt: daysAgo(submittedDays),
+      status: stbStatus,
+      approvedAmount: stbStatus === "approved" || stbStatus === "disbursed" ? sanction : null,
+      sanctionAmount: stbStatus === "approved" || stbStatus === "disbursed" ? sanction : null,
+      disbursedAmount: stbStatus === "disbursed" ? Math.round(sanction * 0.95) : null,
+      disbursementDate: stbStatus === "disbursed" ? daysAgo(randomInt(1, 5)) : null,
+      remarks: stbStatus === "declined"
+        ? "Declined by partner credit policy"
+        : stbStatus === "under_review"
+          ? "Under credit review with partner"
+          : "Application processed",
+      integrationType: partner.integrationType,
+      applicationRef: `${partner.name.split(" ")[0].toUpperCase()}-${100000 + i}`,
+      decisionReasons: stbStatus === "declined" ? ["Credit score below partner cut-off", "High existing obligations"] : undefined,
+      statusHistory: stbStatus === "submitted" ? [] : [{
+        status: stbStatus,
+        previousStatus: "submitted" as STBStatus,
+        at: daysAgo(Math.max(0, submittedDays - randomInt(1, 3))),
+        note: stbStatus === "declined" ? "Partner declined the application" : `Partner moved application to ${stbStatus.replace("_", " ")}`,
+        source: "partner_api" as const,
+        actorName: partner.name,
+        sanctionAmount: stbStatus === "approved" || stbStatus === "disbursed" ? sanction : null,
+        disbursedAmount: stbStatus === "disbursed" ? Math.round(sanction * 0.95) : null,
+      }],
     }] : [];
+
 
     const noteTexts = ["Initial contact made", "Customer interested in PL ₹5L", "Documents collection pending", "Bureau pulled - score 720", "Submitted to HDFC"];
     const leadNotes = Array.from({ length: randomInt(0, 3) }, (_, ni) => ({
@@ -246,7 +306,7 @@ function generateLeads(): Lead[] {
       id: `lead-${i + 1}`,
       name,
       mobile,
-      email: `${name.split(" ")[0].toLowerCase()}@email.com`,
+      email: `${name.split(" ")[0].toLowerCase()}${i + 1}@email.com`,
       pan: maskPan(pan),
       dob: `${1970 + randomInt(0, 35)}-${String(randomInt(1, 12)).padStart(2, "0")}-${String(randomInt(1, 28)).padStart(2, "0")}`,
       city,
@@ -277,7 +337,11 @@ function generateLeads(): Lead[] {
       createdAt: daysAgo(allocDays + randomInt(0, 10)),
       lastActivityAt: daysAgo(lastActivityDays),
       allocatedAt: daysAgo(allocDays),
-      consentStatus: ["stb_submitted", "approved", "disbursed"].includes(stage) ? "received" : "not_sent",
+      consentStatus: submissionStages.includes(stage)
+        ? "received"
+        : stage === "bank_selected" || stage === "interested"
+          ? (i % 3 === 0 ? "sent" : "received")
+          : "not_sent",
       retryCount: ["number_busy", "no_response", "switched_off"].includes(disp) ? randomInt(1, 6) : 0,
       expiresAt: daysAgo(-(90 - allocDays)),
     };

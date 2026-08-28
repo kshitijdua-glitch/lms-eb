@@ -104,7 +104,7 @@ const OrgReportsPage = () => {
       <Card>
         <CardHeader><CardTitle className="text-base">Detailed Breakdown</CardTitle></CardHeader>
         <CardContent className="p-0">
-          <ConfigurableTable tableId="org-reports" columns={columns} data={reportData.slice(0, 100)} />
+          <ConfigurableTable tableId="org-reports" columns={columns} data={reportData} pageSize={25} />
         </CardContent>
       </Card>
     </div>
