@@ -107,8 +107,21 @@ const names = ["Rajesh Khanna","Sunita Devi","Mohd Irfan","Lakshmi Narayan","Vik
 
 function maskPan(p: string) { return p.slice(0, 4) + "XXXX" + p.slice(-2); }
 
-function randomFrom<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
-function randomInt(min: number, max: number) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+/**
+ * Deterministic pseudo-random generator (mulberry32) so the demo dataset is
+ * identical on every page load — leads, scores and history never shuffle.
+ */
+let seedState = 0x9e3779b9;
+function rand() {
+  seedState |= 0;
+  seedState = (seedState + 0x6d2b79f5) | 0;
+  let t = Math.imul(seedState ^ (seedState >>> 15), 1 | seedState);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+
+function randomFrom<T>(arr: T[]): T { return arr[Math.floor(rand() * arr.length)]; }
+function randomInt(min: number, max: number) { return Math.floor(rand() * (max - min + 1)) + min; }
 
 const stages: LeadStage[] = ["new","contacted","interested","bank_selected","stb_submitted","approved","declined","disbursed","closed_lost"];
 const products: ProductType[] = ["personal_loan","home_loan","business_loan","credit_card","loan_against_property"];
