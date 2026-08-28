@@ -33,7 +33,7 @@ import { useAudit, buildActor } from "@/contexts/AuditContext";
 import { getLeadLockState, can } from "@/lib/permissions";
 import { evaluateAllPartners, DISPOSITION_BY_OUTCOME } from "@/lib/partnerEligibility";
 import { usePartners } from "@/contexts/PartnersContext";
-import { CheckCircle2, XCircle, Info, ShieldAlert, Loader2 } from "lucide-react";
+import { CheckCircle2, XCircle, Info, ShieldAlert, Loader2, List } from "lucide-react";
 import { useLmsData } from "@/contexts/LmsDataContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { CreditReportPanel } from "@/components/CreditReportPanel";
