@@ -331,18 +331,33 @@ const LeadDetailPage = () => {
       toast.error("Select both product and bank");
       return;
     }
-    const partner = lendingPartners.find(lp => lp.id === selectedBank);
+    const partner = partners.find(lp => lp.id === selectedBank);
     if (!partner) return;
     const exists = selectedPairs.some(p => p.partnerId === selectedBank && p.productType === selectedProduct);
     if (exists) {
       toast.error("This product + bank combination already added");
       return;
     }
-    setSelectedPairs([...selectedPairs, { partnerId: partner.id, partnerName: partner.name, productType: selectedProduct }]);
+    updateLead(lead.id, current => ({
+      selectedBanks: [
+        ...(current.selectedBanks ?? []),
+        {
+          partnerId: partner.id,
+          partnerName: partner.name,
+          productType: selectedProduct as ProductType,
+          selectedAt: new Date().toISOString(),
+          selectedBy: actor.actorId,
+        },
+      ],
+      stage: current.stage === "new" || current.stage === "contacted" || current.stage === "interested"
+        ? "bank_selected"
+        : current.stage,
+    }));
     setSelectedProduct("");
     setSelectedBank("");
     logAudit({
       ...actor,
+      actorName,
       action: "select_bank",
       entityType: "lead",
       entityId: lead.id,
@@ -358,9 +373,12 @@ const LeadDetailPage = () => {
       return;
     }
     const removed = selectedPairs[index];
-    setSelectedPairs(selectedPairs.filter((_, i) => i !== index));
+    updateLead(lead.id, current => ({
+      selectedBanks: (current.selectedBanks ?? []).filter((_, i) => i !== index),
+    }));
     logAudit({
       ...actor,
+      actorName,
       action: "remove_bank",
       entityType: "lead",
       entityId: lead.id,
@@ -374,10 +392,10 @@ const LeadDetailPage = () => {
   const consentReceived = consentStatus === "received";
 
   const handleTriggerConsent = () => {
-    setConsentStatus("sent");
-    setConsentSentAt(new Date());
+    updateLead(lead.id, { consentStatus: "sent" });
     logAudit({
       ...actor,
+      actorName,
       action: "trigger_sms_consent",
       entityType: "lead",
       entityId: lead.id,
@@ -388,9 +406,10 @@ const LeadDetailPage = () => {
   };
 
   const handleMarkConsentReceived = () => {
-    setConsentStatus("received");
+    updateLead(lead.id, { consentStatus: "received" });
     logAudit({
       ...actor,
+      actorName,
       action: "mark_consent_received",
       entityType: "lead",
       entityId: lead.id,
@@ -402,10 +421,10 @@ const LeadDetailPage = () => {
   };
 
   const handleClearConsent = () => {
-    setConsentStatus("not_sent");
-    setConsentSentAt(null);
+    updateLead(lead.id, { consentStatus: "not_sent" });
     logAudit({
       ...actor,
+      actorName,
       action: "clear_consent_flag",
       entityType: "lead",
       entityId: lead.id,
@@ -416,57 +435,97 @@ const LeadDetailPage = () => {
     toast.success("Consent flag cleared");
   };
 
-  const handleSendToBank = () => {
+  const handleSendToBank = async () => {
     if (isProfileLocked) {
-      toast.error("STB already submitted — cannot resubmit", {
-        description: lockState.reason,
-      });
+      toast.error("Already submitted — cannot resubmit", { description: lockState.reason });
+      return;
+    }
+    if (!can.sendToBank(role)) {
+      toast.error("Your role cannot submit applications to lending partners");
       return;
     }
     if (!consentReceived) {
-      toast.error("Customer consent required", { description: "Trigger SMS consent and mark as received before STB." });
+      toast.error("Customer consent required", { description: "Trigger SMS consent and mark as received before submitting." });
       return;
     }
-    // Pre-STB checklist
-    const checks = [];
-    if (selectedPairs.length === 0) checks.push("No banks selected");
-
-    if (checks.length > 0) {
-      toast.error("Pre-STB checklist failed", { description: checks.join(", ") });
+    if (!creditReport) {
+      toast.error("Bureau report required", { description: "Fetch the Experian Griffith credit report before submitting." });
+      return;
+    }
+    if (selectedPairs.length === 0) {
+      toast.error("Pre-submission checklist failed", { description: "No lending partners selected" });
       return;
     }
 
-    // Create STB submissions for each selected pair
-    const newSubmissions = selectedPairs.map((pair, i) => ({
-      id: `stb-new-${Date.now()}-${i}`,
-      partnerId: pair.partnerId,
-      partnerName: pair.partnerName,
-      submittedAt: new Date().toISOString(),
-      status: "submitted" as const,
-      approvedAmount: null,
-      sanctionAmount: null,
-      disbursedAmount: null,
-      disbursementDate: null,
-      remarks: `${getProductLabel(pair.productType as any)} application`,
-      integrationType: "portal" as const,
-    }));
+    setStbLoading(true);
+    try {
+      const results = await Promise.all(
+        selectedPairs.map(async pair => {
+          const partner = partners.find(p => p.id === pair.partnerId);
+          if (!partner) throw new PartnerApiError(`${pair.partnerName} is no longer configured.`);
+          const res = await submitApplication({
+            lead,
+            partner,
+            productType: pair.productType as ProductType,
+            report: creditReport,
+          });
+          const submission: STBSubmission = {
+            id: `stb-${Date.now()}-${pair.partnerId}`,
+            leadId: lead.id,
+            partnerId: partner.id,
+            partnerName: partner.name,
+            productType: pair.productType as ProductType,
+            submittedAt: new Date().toISOString(),
+            status: res.status,
+            applicationRef: res.applicationRef,
+            approvedAmount: null,
+            sanctionAmount: res.sanctionAmount,
+            disbursedAmount: null,
+            disbursementDate: null,
+            roi: res.roi,
+            tenureMonths: res.tenureMonths,
+            decisionReasons: res.decisionReasons,
+            remarks: res.status === "declined" ? "Declined at submission (BRE)" : "Application accepted by partner",
+            integrationType: partner.integrationType,
+            statusHistory: [{
+              status: res.status,
+              at: new Date().toISOString(),
+              note: res.status === "declined"
+                ? `${partner.name} declined at submission`
+                : `${partner.name} accepted application ${res.applicationRef}`,
+            }],
+          };
+          return submission;
+        }),
+      );
 
-    setLocalStbSubmissions([...localStbSubmissions, ...newSubmissions]);
-    setStbSubmitted(true);
-    newSubmissions.forEach(s => {
-      logAudit({
-        ...actor,
-        action: "send_to_bank",
-        entityType: "stb",
-        entityId: s.id,
-        entityLabel: `${lead.name} → ${s.partnerName}`,
-        after: { partner: s.partnerName, status: s.status },
+      const anyAccepted = results.some(r => r.status !== "declined");
+      addSubmissions(lead.id, results, anyAccepted ? "stb_submitted" : "declined");
+
+      results.forEach(s => {
+        logAudit({
+          ...actor,
+          actorName,
+          action: "submit_to_lending_partner",
+          entityType: "stb",
+          entityId: s.id,
+          entityLabel: `${lead.name} → ${s.partnerName}`,
+          after: { partner: s.partnerName, status: s.status, ref: s.applicationRef, sanction: s.sanctionAmount },
+          notes: s.decisionReasons?.join(" | "),
+        });
       });
-    });
-    toast.success(`STB initiated for ${selectedPairs.length} bank(s)`, {
-      description: selectedPairs.map(p => `${p.partnerName} (${getProductLabel(p.productType as any)})`).join(", "),
-    });
+
+      toast.success(`Submitted to ${results.length} lending partner(s)`, {
+        description: results.map(r => `${r.partnerName}: ${STB_STATUS_LABEL[r.status]}`).join(" · "),
+      });
+    } catch (e) {
+      const msg = e instanceof PartnerApiError ? e.message : "Partner API submission failed. Please retry.";
+      toast.error("Submission failed", { description: msg });
+    } finally {
+      setStbLoading(false);
+    }
   };
+
 
   // Build unified timeline (call logs + follow-ups + STB + notes + audit entries)
   const auditEntries = forLead(lead.id);
