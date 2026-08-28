@@ -834,7 +834,7 @@ const LeadDetailPage = () => {
         )}
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-12 gap-4 sm:gap-6 [&>*:nth-child(1)]:xl:col-span-4 [&>*:nth-child(2)]:xl:col-span-5 [&>*:nth-child(3)]:xl:col-span-3">
         {/* Customer Profile */}
         <Card className="shadow-none">
           <CardHeader className="pb-3 border-b">
