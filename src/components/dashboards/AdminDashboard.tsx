@@ -1,92 +1,118 @@
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { leads, agents, teams } from "@/data/mockData";
-import { Upload, Users, Settings, FileText, Database, AlertTriangle, UserCog, BarChart3, Building2, Shield } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { StatTile } from "@/components/StatTile";
+import { Button } from "@/components/ui/button";
+import { KpiCard } from "@/components/KpiCard";
+import { FunnelChart } from "@/components/FunnelChart";
+import { EmptyState } from "@/components/EmptyState";
+import { agents, teams } from "@/data/mockData";
+import { useLmsData } from "@/contexts/LmsDataContext";
+import { computeFunnel, computeKpis, inrCompact } from "@/lib/metrics";
 import { useNavigate } from "react-router-dom";
+import {
+  AlertTriangle, BarChart3, Building2, Database, FileText, Gauge,
+  Settings, Shield, Upload, UserCog, Users,
+} from "lucide-react";
 
 export function AdminDashboard() {
   const navigate = useNavigate();
+  const { leads } = useLmsData();
+
+  const kpis = useMemo(() => computeKpis(leads), [leads]);
+  const funnel = useMemo(() => computeFunnel(leads), [leads]);
+
   const unallocated = leads.filter(l => l.stage === "new").length;
-  const pendingValidation = 12; // mock
   const staleLeads = leads.filter(l => {
     const days = Math.floor((Date.now() - new Date(l.lastActivityAt).getTime()) / 86400000);
     return days > 10 && l.stage !== "disbursed" && l.stage !== "closed_lost";
   }).length;
   const activeAgents = agents.filter(a => a.status === "active").length;
-  const activeTLs = 2; // mock
-  const flaggedProfiles = 3; // mock
+  const missingPan = leads.filter(l => !l.pan).length;
 
-  const recentBatches = [
-    { name: "Google_Ads_Apr10", date: "2026-04-10", rows: 250, valid: 238, status: "Allocated" },
-    { name: "Partner_HDFC_Apr08", date: "2026-04-08", rows: 180, valid: 175, status: "Partial" },
-    { name: "Website_Apr06", date: "2026-04-06", rows: 320, valid: 305, status: "Unallocated" },
-    { name: "Facebook_Apr04", date: "2026-04-04", rows: 150, valid: 142, status: "Allocated" },
-    { name: "IVR_Apr02", date: "2026-04-02", rows: 90, valid: 88, status: "Allocated" },
+  /** Batch view derived from the live lead set. */
+  const batches = useMemo(() => {
+    const map = new Map<string, { name: string; rows: number; allocated: number; latest: string }>();
+    for (const l of leads) {
+      const key = l.batchId || l.leadSource || l.source || "unknown";
+      const row = map.get(key) ?? { name: key, rows: 0, allocated: 0, latest: l.createdAt };
+      row.rows += 1;
+      if (l.assignedAgentId) row.allocated += 1;
+      if (l.createdAt > row.latest) row.latest = l.createdAt;
+      map.set(key, row);
+    }
+    return [...map.values()].sort((a, b) => b.latest.localeCompare(a.latest)).slice(0, 6);
+  }, [leads]);
+
+  const quickNav = [
+    { label: "Upload leads", icon: Upload, path: "/admin/upload" },
+    { label: "Lead allocation", icon: Users, path: "/admin/allocation" },
+    { label: "Lead pools", icon: Database, path: "/admin/pools" },
+    { label: "Lending partners", icon: Building2, path: "/admin/partners" },
+    { label: "MIS export", icon: BarChart3, path: "/admin/mis" },
+    { label: "Staff management", icon: UserCog, path: "/admin/staff" },
+    { label: "System config", icon: Settings, path: "/system-config" },
+    { label: "Audit trail", icon: Shield, path: "/audit-trail" },
   ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1>Data Admin Dashboard</h1>
-        <p className="text-sm text-muted-foreground mt-1">Data operations & system health overview</p>
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Data admin dashboard</h1>
+        <p className="text-sm text-muted-foreground mt-1">Data operations, allocation coverage and system health</p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        {([
-          { label: "Unallocated Pools", value: unallocated, tone: "primary", icon: Database, variant: "gradient" },
-          { label: "Pending Validation", value: pendingValidation, tone: "warning", icon: AlertTriangle, variant: "gradient" },
-          { label: "Stale Lead Pools", value: staleLeads, tone: "destructive", icon: AlertTriangle, variant: "gradient" },
-          { label: "Active Agents", value: activeAgents, tone: "success", icon: Users, variant: "soft" },
-          { label: "Active TLs", value: activeTLs, tone: "info", icon: UserCog, variant: "soft" },
-          { label: "Flagged Profiles", value: flaggedProfiles, tone: "destructive", icon: Shield, variant: "soft" },
-        ] as const).map(k => (
-          <StatTile key={k.label} label={k.label} value={k.value} icon={k.icon} tone={k.tone} variant={k.variant} />
-        ))}
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+        <KpiCard label="Total leads" value={kpis.total} icon={Database} to="/admin/pools" />
+        <KpiCard label="Unallocated" value={unallocated} icon={AlertTriangle} tone={unallocated ? "warning" : "success"} to="/admin/allocation" />
+        <KpiCard label="Stale (>10d)" value={staleLeads} icon={AlertTriangle} tone={staleLeads ? "danger" : "success"} />
+        <KpiCard label="Missing PAN" value={missingPan} icon={FileText} tone={missingPan ? "warning" : "success"} />
+        <KpiCard label="Bureau pulls" value={kpis.bureauPulled} icon={Gauge} />
+        <KpiCard label="Active staff" value={`${activeAgents}/${agents.length}`} icon={UserCog} hint={`${teams.length} teams`} />
       </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { label: "Upload Leads", icon: Upload, path: "/admin/upload" },
-          { label: "Lead Allocation", icon: Users, path: "/admin/allocation" },
-          { label: "Lead Pools", icon: Database, path: "/admin/pools" },
-          { label: "MIS Export", icon: BarChart3, path: "/admin/mis" },
-          { label: "Staff Mgmt", icon: UserCog, path: "/admin/staff" },
-          { label: "System Config", icon: Settings, path: "/system-config" },
-          { label: "Audit Trail", icon: Shield, path: "/audit-trail" },
-        ].map(b => (
+      <div className="grid gap-4 lg:grid-cols-2">
+        <FunnelChart steps={funnel} title="Data-to-disbursal funnel" />
+
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-base">Batch &amp; source coverage</CardTitle></CardHeader>
+          <CardContent className={batches.length ? "space-y-2" : ""}>
+            {batches.length === 0 ? (
+              <EmptyState title="No batches ingested" description="Upload a lead file to see batch coverage here." />
+            ) : (
+              batches.map(b => {
+                const pct = b.rows ? Math.round((b.allocated / b.rows) * 100) : 0;
+                return (
+                  <div key={b.name} className="flex items-center justify-between gap-2 border-b border-border pb-2 last:border-0 text-sm">
+                    <span className="min-w-0">
+                      <span className="font-medium block truncate">{b.name}</span>
+                      <span className="text-xs text-muted-foreground">{b.latest.slice(0, 10)}</span>
+                    </span>
+                    <span className="flex items-center gap-3 shrink-0">
+                      <span className="text-xs text-muted-foreground tabular-nums">{b.allocated}/{b.rows} allocated</span>
+                      <Badge variant={pct === 100 ? "success" : pct > 0 ? "warning" : "outline"} className="text-[10px]">
+                        {pct === 100 ? "Allocated" : pct > 0 ? "Partial" : "Unallocated"}
+                      </Badge>
+                    </span>
+                  </div>
+                );
+              })
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {quickNav.map(b => (
           <Button key={b.label} variant="outline" className="h-20 flex-col gap-2" onClick={() => navigate(b.path)}>
-            <b.icon className="h-5 w-5" />
-            <span className="text-xs">{b.label}</span>
+            <b.icon className="h-5 w-5" aria-hidden />
+            <span className="text-xs text-center leading-tight">{b.label}</span>
           </Button>
         ))}
       </div>
 
-      <Card>
-        <CardHeader><CardTitle className="text-base">Recent Upload Activity</CardTitle></CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {recentBatches.map(b => (
-              <div key={b.name} className="flex items-center justify-between text-sm border-b border-border pb-2 last:border-0">
-                <div>
-                  <span className="font-medium">{b.name}</span>
-                  <span className="text-muted-foreground ml-2 text-xs">{b.date}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-muted-foreground">{b.valid}/{b.rows} valid</span>
-                  <Badge
-                    variant={b.status === "Allocated" ? "success" : b.status === "Partial" ? "warning" : "outline"}
-                    className="text-[10px]"
-                  >
-                    {b.status}
-                  </Badge>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <p className="text-xs text-muted-foreground">
+        Pipeline value in system · sanctioned {inrCompact(kpis.sanctionedAmount)} · disbursed {inrCompact(kpis.disbursedAmount)}
+      </p>
     </div>
   );
 }

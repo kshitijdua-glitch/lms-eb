@@ -13,6 +13,15 @@ import { nextWebhookEvent } from "@/services/partnerApi";
 import { useAudit } from "@/contexts/AuditContext";
 import { toast } from "sonner";
 
+export interface SubmissionUpdateMeta {
+  actorId: string;
+  actorName: string;
+  actorRole: "agent" | "manager" | "cluster_head" | "data_admin";
+  note?: string;
+  /** Manual overrides stop the simulated partner webhook from moving this submission. */
+  manual?: boolean;
+}
+
 interface LmsDataValue {
   leads: Lead[];
   version: number;
@@ -22,8 +31,15 @@ interface LmsDataValue {
   addLeads: (leads: Lead[]) => void;
   setCreditReport: (leadId: string, report: CreditReport) => void;
   addSubmissions: (leadId: string, submissions: STBSubmission[], stage?: LeadStage) => void;
+  updateSubmission: (
+    leadId: string,
+    submissionId: string,
+    patch: Partial<STBSubmission> & { status: STBSubmission["status"] },
+    meta: SubmissionUpdateMeta,
+  ) => void;
   resetDemoData: () => void;
 }
+
 
 const LmsDataContext = createContext<LmsDataValue | null>(null);
 
@@ -63,6 +79,67 @@ export function LmsDataProvider({ children }: { children: React.ReactNode }) {
     }));
   }, []);
 
+  /** Derives the lead stage from the current set of submissions. */
+  const deriveStage = (subs: STBSubmission[]): LeadStage =>
+    subs.some(s => s.status === "disbursed")
+      ? "disbursed"
+      : subs.some(s => s.status === "approved")
+        ? "approved"
+        : subs.length > 0 && subs.every(s => s.status === "declined")
+          ? "declined"
+          : "stb_submitted";
+
+  const updateSubmission = useCallback<LmsDataValue["updateSubmission"]>(
+    (leadId, submissionId, patch, meta) => {
+      const lead = getSnapshot().leads.find(l => l.id === leadId);
+      const before = lead?.stbSubmissions.find(s => s.id === submissionId);
+      if (!lead || !before) return;
+
+      storeUpdateLead(leadId, current => {
+        const nextSubs = current.stbSubmissions.map(s =>
+          s.id === submissionId
+            ? {
+                ...s,
+                ...patch,
+                manualOverride: meta.manual ? true : s.manualOverride,
+                statusHistory: [
+                  ...(s.statusHistory ?? []),
+                  {
+                    status: patch.status,
+                    at: new Date().toISOString(),
+                    note: `${meta.note?.trim() || "Status updated"} · ${meta.manual ? "Manual override" : "System"} by ${meta.actorName}`,
+                  },
+                ],
+              }
+            : s,
+        );
+        return { stbSubmissions: nextSubs, stage: deriveStage(nextSubs) };
+      });
+
+      logAudit({
+        actorId: meta.actorId,
+        actorName: meta.actorName,
+        actorRole: meta.actorRole,
+        action: `update_partner_status_${patch.status}`,
+        entityType: "stb",
+        entityId: submissionId,
+        entityLabel: `${lead.name} → ${before.partnerName}`,
+        before: { status: before.status, sanctionAmount: before.sanctionAmount, disbursedAmount: before.disbursedAmount },
+        after: {
+          status: patch.status,
+          sanctionAmount: patch.sanctionAmount ?? before.sanctionAmount,
+          disbursedAmount: patch.disbursedAmount ?? before.disbursedAmount,
+          applicationRef: patch.applicationRef ?? before.applicationRef,
+        },
+        notes: meta.note,
+        reason: meta.manual ? "Manual status override" : undefined,
+      });
+
+      toast.success(`${before.partnerName} · status set to ${patch.status.replace("_", " ")}`);
+    },
+    [logAudit],
+  );
+
   /** Webhook-style partner status progression. */
   useEffect(() => {
     const timer = setInterval(() => {
@@ -71,6 +148,8 @@ export function LmsDataProvider({ children }: { children: React.ReactNode }) {
         if (!lead.stbSubmissions?.length) continue;
         let changed = false;
         const nextSubs = lead.stbSubmissions.map(sub => {
+          // Manual overrides win — the simulated partner API stops touching them.
+          if (sub.manualOverride) return sub;
           const event = nextWebhookEvent(sub, now);
           if (!event) return sub;
           changed = true;
@@ -98,14 +177,7 @@ export function LmsDataProvider({ children }: { children: React.ReactNode }) {
           return updated;
         });
         if (changed) {
-          const worst = nextSubs.some(s => s.status === "disbursed")
-            ? "disbursed"
-            : nextSubs.some(s => s.status === "approved")
-              ? "approved"
-              : nextSubs.every(s => s.status === "declined")
-                ? "declined"
-                : "stb_submitted";
-          storeUpdateLead(lead.id, { stbSubmissions: nextSubs, stage: worst as LeadStage });
+          storeUpdateLead(lead.id, { stbSubmissions: nextSubs, stage: deriveStage(nextSubs) });
         }
       }
     }, POLL_MS);
@@ -121,11 +193,13 @@ export function LmsDataProvider({ children }: { children: React.ReactNode }) {
     addLeads,
     setCreditReport,
     addSubmissions,
+    updateSubmission,
     resetDemoData: () => {
       clearPersisted();
       window.location.reload();
     },
-  }), [snapshot, setCreditReport, addSubmissions]);
+  }), [snapshot, setCreditReport, addSubmissions, updateSubmission]);
+
 
   return <LmsDataContext.Provider value={value}>{children}</LmsDataContext.Provider>;
 }

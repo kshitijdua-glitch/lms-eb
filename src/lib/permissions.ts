@@ -72,6 +72,46 @@ export const can = {
   allocateLeads: (role: UserRole) => role === "cluster_head" || role === "data_admin",
 };
 
+// ---------- Partner submission status control ----------
+
+/**
+ * Who may manually move a partner submission forward.
+ * Manager: own team only. Cluster Head / Data Admin: everything.
+ */
+export function canUpdateSubmissionStatus(
+  role: UserRole,
+  ctx?: { leadTeamId?: string; userTeamId?: string },
+): boolean {
+  if (role === "cluster_head" || role === "data_admin") return true;
+  if (role === "manager") {
+    if (!ctx?.leadTeamId || !ctx?.userTeamId) return true;
+    return ctx.leadTeamId === ctx.userTeamId;
+  }
+  return false;
+}
+
+const STATUS_FLOW: Record<STBSubmission["status"], STBSubmission["status"][]> = {
+  submitted: ["under_review", "approved", "declined"],
+  under_review: ["approved", "declined"],
+  approved: ["disbursed", "declined"],
+  declined: [],
+  disbursed: [],
+};
+
+/** Valid forward transitions for a submission (no backward jumps). */
+export function nextAllowedStatuses(current: STBSubmission["status"]): STBSubmission["status"][] {
+  return STATUS_FLOW[current] ?? [];
+}
+
+export const STB_STATUS_LABELS: Record<STBSubmission["status"], string> = {
+  submitted: "Submitted",
+  under_review: "Under Review",
+  approved: "Approved",
+  declined: "Declined",
+  disbursed: "Disbursed",
+};
+
+
 // ---------- STB lock helpers ----------
 
 export const STB_TERMINAL_STATUSES: STBSubmission["status"][] = [

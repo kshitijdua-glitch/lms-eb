@@ -1,170 +1,104 @@
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { StatTile } from "@/components/StatTile";
-import { leads, teams, agents, getStageLabel, getLeadsForTeam, getLeadsForAgent, getAgentsForTeam, lendingPartners } from "@/data/mockData";
+import { KpiCard } from "@/components/KpiCard";
+import { FunnelChart } from "@/components/FunnelChart";
+import { EmptyState } from "@/components/EmptyState";
+import { agents } from "@/data/mockData";
 import { useRole } from "@/contexts/RoleContext";
+import { useLmsData } from "@/contexts/LmsDataContext";
+import { agentBreakdown, computeFunnel, computeKpis, inrCompact, partnerBreakdown, scopeLeads } from "@/lib/metrics";
 import { useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard, Users, Clock, Send, TrendingUp, BarChart3, UserCog,
-  FileText, AlertTriangle, CheckCircle, Target, Phone, Calendar,
+  AlertTriangle, BarChart3, Calendar, CheckCircle, Clock, FileText, LayoutDashboard,
+  Send, Target, TrendingUp, UserCog, Users,
 } from "lucide-react";
+
+const MY_TARGET = 10;
 
 export function ManagerDashboard() {
   const navigate = useNavigate();
-  const { currentAgentId } = useRole();
-  const today = new Date().toISOString().split("T")[0];
+  const { role, currentAgentId, currentTeamId } = useRole();
+  const { leads } = useLmsData();
+
+  const today = new Date().toISOString().slice(0, 10);
   const now = Date.now();
 
-  // --- Own Production (agent-style) ---
-  const myLeads = leads.filter(l => l.assignedAgentId === currentAgentId);
-  const myWorkedToday = myLeads.filter(l => l.lastActivityAt.split("T")[0] === today).length;
-  const myPendingFU = myLeads.filter(l => l.followUps.some(f => f.status === "pending")).length;
-  const myMissedFU = myLeads.filter(l => l.followUps.some(f => f.status === "missed")).length;
-  const mySTB = myLeads.filter(l => l.stbSubmissions.length > 0).length;
-  const myDisbursed = myLeads.filter(l => l.stage === "disbursed").length;
-  const myCallsToday = myLeads.reduce((s, l) => s + l.callLogs.filter(c => c.timestamp.split("T")[0] === today).length, 0);
-  const myDailyTarget = 10;
-  const myTargetPct = Math.min(100, Math.round((myCallsToday / myDailyTarget) * 100));
+  const teamLeads = useMemo(
+    () => scopeLeads(leads, { role, agentId: currentAgentId, teamId: currentTeamId }),
+    [leads, role, currentAgentId, currentTeamId],
+  );
+  const myLeads = useMemo(() => leads.filter(l => l.assignedAgentId === currentAgentId), [leads, currentAgentId]);
 
-  // --- Group (all teams) ---
-  const allLeads = leads;
-  const totalAllocated = allLeads.length;
-  const totalContacted = allLeads.filter(l => l.stage !== "new").length;
-  const totalSTB = allLeads.filter(l => l.stbSubmissions.length > 0).length;
-  const totalApproved = allLeads.filter(l => l.stage === "approved" || l.stage === "disbursed").length;
-  const totalDisbursed = allLeads.filter(l => l.stage === "disbursed").length;
+  const teamKpis = useMemo(() => computeKpis(teamLeads), [teamLeads]);
+  const myKpis = useMemo(() => computeKpis(myLeads), [myLeads]);
+  const funnel = useMemo(() => computeFunnel(teamLeads), [teamLeads]);
+  const partners = useMemo(() => partnerBreakdown(teamLeads).slice(0, 5), [teamLeads]);
 
-  const groupMissedFUs = allLeads.filter(l => l.followUps.some(f => f.status === "missed")).length;
-  const groupFUCompliance = totalAllocated > 0
-    ? Math.round(((totalAllocated - groupMissedFUs) / totalAllocated) * 100) : 100;
+  const teamAgents = useMemo(
+    () => agents.filter(a => teamLeads.some(l => l.assignedAgentId === a.id) || a.teamId === currentTeamId),
+    [teamLeads, currentTeamId],
+  );
+  const rows = useMemo(() => agentBreakdown(teamLeads, teamAgents), [teamLeads, teamAgents]);
 
-  // Agent activity status (all agents)
-  const agentStatus = agents.map(a => {
-    const agentLeads = allLeads.filter(l => l.assignedAgentId === a.id);
-    const workedToday = agentLeads.filter(l => l.lastActivityAt.split("T")[0] === today).length;
-    const callsToday = agentLeads.reduce((s, l) => s + l.callLogs.filter(c => c.timestamp.split("T")[0] === today).length, 0);
-    const missedFUs = agentLeads.filter(l => l.followUps.some(f => f.status === "missed")).length;
-    const loggedIn = workedToday > 0 || callsToday > 0;
-    return { ...a, agentLeads: agentLeads.length, workedToday, callsToday, missedFUs, loggedIn };
+  const myCallsToday = myLeads.reduce((s, l) => s + (l.callLogs ?? []).filter(c => c.timestamp.slice(0, 10) === today).length, 0);
+  const myTargetPct = Math.min(100, Math.round((myCallsToday / MY_TARGET) * 100));
+
+  const activity = teamAgents.map(a => {
+    const own = teamLeads.filter(l => l.assignedAgentId === a.id);
+    const callsToday = own.reduce((s, l) => s + (l.callLogs ?? []).filter(c => c.timestamp.slice(0, 10) === today).length, 0);
+    const workedToday = own.filter(l => l.lastActivityAt?.slice(0, 10) === today).length;
+    const k = computeKpis(own);
+    return { ...a, leadCount: own.length, callsToday, workedToday, overdue: k.followUpsOverdue, active: callsToday > 0 || workedToday > 0 };
   });
-
-  const agentsOnline = agentStatus.filter(a => a.loggedIn).length;
-  const agentsOffline = agentStatus.filter(a => !a.loggedIn).length;
-  const zeroActivityAgents = agentStatus.filter(a => !a.loggedIn && a.agentLeads > 0);
-
-  // Expiring leads (within 7 days)
-  const expiringLeads = allLeads.filter(l => {
+  const online = activity.filter(a => a.active).length;
+  const zeroActivity = activity.filter(a => !a.active && a.leadCount > 0);
+  const expiring = teamLeads.filter(l => {
     const exp = new Date(l.expiresAt).getTime();
     return exp > now && exp - now < 7 * 86400000;
-  });
-
-  // Business Funnel
-  const funnelSteps = [
-    { label: "Allocated", value: totalAllocated, pct: 100 },
-    { label: "Contacted", value: totalContacted, pct: totalAllocated > 0 ? Math.round((totalContacted / totalAllocated) * 100) : 0 },
-    { label: "STB", value: totalSTB, pct: totalAllocated > 0 ? Math.round((totalSTB / totalAllocated) * 100) : 0 },
-    { label: "Approved", value: totalApproved, pct: totalAllocated > 0 ? Math.round((totalApproved / totalAllocated) * 100) : 0 },
-    { label: "Disbursed", value: totalDisbursed, pct: totalAllocated > 0 ? Math.round((totalDisbursed / totalAllocated) * 100) : 0 },
-  ];
+  }).length;
 
   return (
     <div className="space-y-6">
-      <h1 className="flex items-center gap-2"><LayoutDashboard className="h-6 w-6" /> Manager Dashboard</h1>
-
-      {/* My Production */}
       <div>
-        <h3 className="text-eyebrow mb-2">My Production</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-          {([
-            { label: "My Leads", value: myLeads.length, icon: FileText, tone: "primary", variant: "gradient" },
-            { label: "Worked Today", value: myWorkedToday, icon: CheckCircle, tone: "success", variant: "gradient" },
-            { label: "Pending F/U", value: myPendingFU, icon: Clock, tone: "warning", variant: "gradient" },
-            { label: "Missed F/U", value: myMissedFU, icon: AlertTriangle, tone: "destructive", variant: "gradient" },
-            { label: "STB", value: mySTB, icon: Send, tone: "info", variant: "soft" },
-            { label: "Disbursed", value: myDisbursed, icon: TrendingUp, tone: "success", variant: "soft" },
-          ] as const).map(k => (
-            <StatTile key={k.label} label={k.label} value={k.value} icon={k.icon} tone={k.tone} variant={k.variant} />
-          ))}
-        </div>
-        <Card className="mt-3">
-          <CardContent className="p-4 flex items-center gap-4">
-            <Target className="h-4 w-4 text-primary" />
-            <div className="flex-1">
-              <div className="text-xs text-muted-foreground">Daily Target: {myCallsToday}/{myDailyTarget} calls</div>
-              <Progress value={myTargetPct} className="h-2 mt-1" />
-            </div>
-            <span className="text-sm font-semibold">{myTargetPct}%</span>
-          </CardContent>
-        </Card>
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight flex items-center gap-2">
+          <LayoutDashboard className="h-5 w-5" aria-hidden /> Manager dashboard
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">Live team production, SLA health and partner pipeline</p>
       </div>
 
-      {/* Business Funnel */}
-      <div>
-        <h3 className="text-eyebrow mb-2">Business Performance Funnel</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-          {funnelSteps.map((step) => (
-            <Card key={step.label}>
-              <CardContent className="p-4 text-center">
-                <div className="text-stat text-foreground">{step.value}</div>
-                <div className="mt-1 text-[11px] font-medium text-muted-foreground">{step.label}</div>
-                <div className="mt-0.5 text-[11px] font-semibold text-primary">{step.pct}%</div>
-              </CardContent>
-            </Card>
-          ))}
+      <section className="space-y-3">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Team performance</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+          <KpiCard label="Team leads" value={teamKpis.total} icon={FileText} to="/group-leads" />
+          <KpiCard label="Contact rate" value={`${teamKpis.contactRate}%`} icon={CheckCircle} tone="info" hint={`${teamKpis.contacted} contacted`} />
+          <KpiCard label="Overdue follow-ups" value={teamKpis.followUpsOverdue} icon={AlertTriangle} tone="danger" to="/group-follow-ups" />
+          <KpiCard label="Due today" value={teamKpis.followUpsToday} icon={Clock} tone="warning" to="/group-follow-ups" />
+          <KpiCard label="Submissions" value={teamKpis.submitted} icon={Send} to="/group-stb" hint={`${teamKpis.approvalRate}% approval`} />
+          <KpiCard label="Disbursed value" value={inrCompact(teamKpis.disbursedAmount)} icon={TrendingUp} tone="success" hint={`${teamKpis.disbursed} disbursed`} />
         </div>
-      </div>
+      </section>
 
-      {/* Group Health */}
-      <div className="grid md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><Users className="h-4 w-4" /> Agent Activity</CardTitle></CardHeader>
-          <CardContent>
-            <div className="flex gap-4 mb-3 text-xs">
-              <span>Online: <strong className="text-success">{agentsOnline}</strong></span>
-              <span>Offline: <strong className="text-destructive">{agentsOffline}</strong></span>
-            </div>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {agentStatus.map(a => (
-                <div key={a.id} className="flex items-center justify-between text-xs p-1.5 rounded border">
-                  <div className="flex items-center gap-2">
-                    <div className={`h-2 w-2 rounded-full ${a.loggedIn ? "bg-success" : "bg-destructive"}`} />
-                    <span className="font-medium">{a.name}</span>
-                    <span className="text-muted-foreground">({a.teamName})</span>
-                  </div>
-                  <div className="flex gap-3">
-                    <span>{a.callsToday} calls</span>
-                    <span>{a.workedToday} worked</span>
-                    {a.missedFUs > 0 && <Badge variant="destructive" className="text-[9px]">{a.missedFUs} missed</Badge>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <FunnelChart steps={funnel} title="Team lifecycle funnel" />
 
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><BarChart3 className="h-4 w-4" /> Group Health</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">F/U Compliance</span>
-              <span className={groupFUCompliance >= 90 ? "text-success font-bold" : groupFUCompliance >= 70 ? "text-warning font-bold" : "text-destructive font-bold"}>{groupFUCompliance}%</span>
-            </div>
-            <Progress value={groupFUCompliance} className="h-2" />
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Total Missed F/U</span>
-              <span className="font-bold">{groupMissedFUs}</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Expiring Leads (7d)</span>
-              <span className="font-bold">{expiringLeads.length}</span>
-            </div>
-            {zeroActivityAgents.length > 0 && (
-              <div className="p-2 rounded border border-destructive/30">
-                <div className="text-[10px] text-destructive font-medium mb-1">⚠ Zero Activity Today</div>
-                {zeroActivityAgents.map(a => (
-                  <div key={a.id} className="text-[10px] text-muted-foreground">{a.name} ({a.agentLeads} leads)</div>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2"><BarChart3 className="h-4 w-4" aria-hidden /> Team health</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-xs">
+            <div className="flex justify-between"><span className="text-muted-foreground">Follow-up compliance</span><span className="font-semibold">{teamKpis.followUpCompliance}%</span></div>
+            <Progress value={teamKpis.followUpCompliance} className="h-2" />
+            <div className="flex justify-between"><span className="text-muted-foreground">Agents active today</span><span className="font-semibold">{online}/{activity.length}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Expiring leads (7d)</span><span className="font-semibold">{expiring}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Bureau pulls</span><span className="font-semibold">{teamKpis.bureauPulled}</span></div>
+            {zeroActivity.length > 0 && (
+              <div className="p-2 rounded border border-destructive/30 space-y-1">
+                <div className="text-[11px] font-medium text-destructive">Zero activity today</div>
+                {zeroActivity.map(a => (
+                  <div key={a.id} className="text-[11px] text-muted-foreground">{a.name} · {a.leadCount} leads</div>
                 ))}
               </div>
             )}
@@ -172,16 +106,100 @@ export function ManagerDashboard() {
         </Card>
       </div>
 
-      {/* Quick Nav */}
+      <section className="space-y-3">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">My own production</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <KpiCard label="My leads" value={myKpis.total} icon={FileText} to="/leads" />
+          <KpiCard label="My submissions" value={myKpis.submitted} icon={Send} />
+          <KpiCard label="My overdue F/U" value={myKpis.followUpsOverdue} icon={AlertTriangle} tone="danger" to="/follow-ups" />
+          <KpiCard label="My disbursed" value={myKpis.disbursed} icon={TrendingUp} tone="success" />
+        </div>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-4">
+            <Target className="h-4 w-4 text-primary shrink-0" aria-hidden />
+            <div className="flex-1">
+              <div className="text-xs text-muted-foreground">Daily target · {myCallsToday}/{MY_TARGET} calls</div>
+              <Progress value={myTargetPct} className="h-2 mt-1" />
+            </div>
+            <span className="text-sm font-semibold tabular-nums">{myTargetPct}%</span>
+          </CardContent>
+        </Card>
+      </section>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2"><Users className="h-4 w-4" aria-hidden /> Agent leaderboard</CardTitle>
+          </CardHeader>
+          <CardContent className={rows.length ? "p-0" : ""}>
+            {rows.length === 0 ? (
+              <EmptyState title="No agent activity yet" description="Metrics appear once leads are allocated to your team." />
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="text-left p-2 font-medium">Agent</th>
+                      <th className="text-right p-2 font-medium">Leads</th>
+                      <th className="text-right p-2 font-medium">Contact %</th>
+                      <th className="text-right p-2 font-medium">Subs</th>
+                      <th className="text-right p-2 font-medium">Disb.</th>
+                      <th className="text-right p-2 font-medium">Overdue</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map(r => (
+                      <tr key={r.agentId} className="border-t">
+                        <td className="p-2 whitespace-nowrap">{r.agentName}</td>
+                        <td className="p-2 text-right tabular-nums">{r.total}</td>
+                        <td className="p-2 text-right tabular-nums">{r.contactRate}%</td>
+                        <td className="p-2 text-right tabular-nums">{r.submitted}</td>
+                        <td className="p-2 text-right tabular-nums">{r.disbursed}</td>
+                        <td className="p-2 text-right tabular-nums">
+                          {r.followUpsOverdue > 0
+                            ? <Badge variant="destructive" className="text-[10px]">{r.followUpsOverdue}</Badge>
+                            : <span className="text-muted-foreground">0</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2"><Send className="h-4 w-4" aria-hidden /> Partner pipeline</CardTitle>
+          </CardHeader>
+          <CardContent className={partners.length ? "space-y-3" : ""}>
+            {partners.length === 0 ? (
+              <EmptyState title="No submissions yet" description="Partner metrics appear after the first application is submitted." />
+            ) : (
+              partners.map(p => (
+                <div key={p.partnerId} className="space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-medium truncate">{p.partnerName}</span>
+                    <span className="text-muted-foreground tabular-nums">{p.approved}/{p.submitted} · {p.approvalRate}% · {p.avgTat}d TAT</span>
+                  </div>
+                  <Progress value={p.approvalRate} className="h-1.5" />
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: "Group Leads", path: "/group-leads", icon: FileText },
-          { label: "Group Follow-Ups", path: "/group-follow-ups", icon: Calendar },
-          { label: "Group STB", path: "/group-stb", icon: Send },
-          { label: "Group Management", path: "/group-management", icon: UserCog },
+          { label: "Group leads", path: "/group-leads", icon: FileText },
+          { label: "Group follow-ups", path: "/group-follow-ups", icon: Calendar },
+          { label: "Partner submissions", path: "/group-stb", icon: Send },
+          { label: "Group management", path: "/group-management", icon: UserCog },
         ].map(nav => (
-          <Button key={nav.path} variant="outline" className="h-16 flex flex-col gap-1" onClick={() => navigate(nav.path)}>
-            <nav.icon className="h-5 w-5" />
+          <Button key={nav.path} variant="outline" className="h-16 flex-col gap-1" onClick={() => navigate(nav.path)}>
+            <nav.icon className="h-5 w-5" aria-hidden />
             <span className="text-xs">{nav.label}</span>
           </Button>
         ))}
