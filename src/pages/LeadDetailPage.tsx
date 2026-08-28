@@ -978,8 +978,8 @@ const LeadDetailPage = () => {
                     </div>
                   );
                 })()}
-                <Button variant="outline" className="w-full h-10" onClick={handleAddPair} disabled={isProfileLocked}>
-                  <Plus className="h-4 w-4 mr-1.5" /> Add
+                <Button variant="outline" className="w-full h-10" onClick={handleAddPair} disabled={isProfileLocked} aria-label="Add lending partner">
+                  <Plus className="h-4 w-4 mr-1.5" /> Add Partner
                 </Button>
               </div>
               {selectedPairs.length > 0 ? (
