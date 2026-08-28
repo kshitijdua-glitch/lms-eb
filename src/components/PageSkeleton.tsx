@@ -13,7 +13,7 @@ export function PageSkeleton() {
         ))}
       </div>
       <Skeleton className="h-16 rounded-lg" />
-      <Skeleton className="h-80 rounded-lg" />
+      <Skeleton className="h-[520px] rounded-lg" />
     </div>
   );
 }
