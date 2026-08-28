@@ -9,6 +9,7 @@ import { PriorityConfigProvider } from "@/contexts/PriorityConfigContext";
 import { AuditProvider } from "@/contexts/AuditContext";
 import { PartnersProvider } from "@/contexts/PartnersContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { LmsDataProvider } from "@/contexts/LmsDataContext";
 import LoginPage from "./pages/LoginPage";
 import { AppLayout } from "@/components/AppLayout";
 import { RouteGuard } from "@/components/RouteGuard";
@@ -57,6 +58,7 @@ const App = () => (
         <AuditProvider>
           <PartnersProvider>
           <PriorityConfigProvider>
+          <LmsDataProvider>
             <BrowserRouter>
               <Routes>
                 <Route path="/" element={<LandingPage />} />
@@ -101,6 +103,7 @@ const App = () => (
                 />
               </Routes>
             </BrowserRouter>
+          </LmsDataProvider>
           </PriorityConfigProvider>
           </PartnersProvider>
         </AuditProvider>

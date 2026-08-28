@@ -83,10 +83,6 @@ const LeadDetailPage = () => {
   const [emiTenure, setEmiTenure] = useState("36");
   const [isEditing, setIsEditing] = useState(false);
   const [newNote, setNewNote] = useState("");
-  const [editCreditScore, setEditCreditScore] = useState(lead?.creditScore?.toString() || "");
-  const [selectedPairs, setSelectedPairs] = useState<Array<{partnerId: string, partnerName: string, productType: string}>>(
-    lead?.selectedBanks?.map(b => ({ partnerId: b.partnerId, partnerName: b.partnerName, productType: b.productType })) || []
-  );
   const [selectedProduct, setSelectedProduct] = useState("");
   const [selectedBank, setSelectedBank] = useState("");
 
@@ -100,17 +96,16 @@ const LeadDetailPage = () => {
   const [callNextAction, setCallNextAction] = useState("");
   const [followUpDate, setFollowUpDate] = useState<Date | undefined>();
   const [followUpTime, setFollowUpTime] = useState("");
-  const [stbSubmitted, setStbSubmitted] = useState(lead?.stbSubmissions?.length ? lead.stbSubmissions.length > 0 : false);
-  const [localStbSubmissions, setLocalStbSubmissions] = useState(lead?.stbSubmissions || []);
-  const [localLoans, setLocalLoans] = useState(lead?.existingLoans || []);
   const [showAddLoan, setShowAddLoan] = useState(false);
   const [newLoan, setNewLoan] = useState({ bankName: "", loanType: "", outstandingAmount: "", emi: "", tenure: "" });
+
+  const [creditLoading, setCreditLoading] = useState(false);
+  const [creditError, setCreditError] = useState<string | null>(null);
+  const [stbLoading, setStbLoading] = useState(false);
 
   const [leadSidebarOpen, setLeadSidebarOpen] = useState(true);
   const [leadListSearch, setLeadListSearch] = useState("");
   const [priorityOverride, setPriorityOverride] = useState<string | null>(null);
-  const [consentStatus, setConsentStatus] = useState<"not_sent" | "sent" | "received" | "expired">(lead?.consentStatus || "not_sent");
-  const [consentSentAt, setConsentSentAt] = useState<Date | null>(null);
 
   if (!lead) return <div className="p-8 text-center text-muted-foreground">Lead not found</div>;
 

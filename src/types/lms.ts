@@ -115,6 +115,8 @@ export interface Lead {
   assignedAgentId: string;
   assignedTeamId: string;
   creditScore: number | null;
+  /** Latest bureau pull (Experian Griffith sandbox). Null until fetched. */
+  creditReport?: CreditReport | null;
   existingLoans: ExistingLoan[];
   selectedBanks: SelectedBank[];
   stbSubmissions: STBSubmission[];
@@ -146,18 +148,80 @@ export interface SelectedBank {
   selectedBy: string;
 }
 
+export type STBStatus = "submitted" | "under_review" | "approved" | "declined" | "disbursed";
+
+export interface STBStatusEvent {
+  status: STBStatus;
+  at: string;
+  note: string;
+  /** Simulated partner webhook event id */
+  eventId?: string;
+}
+
 export interface STBSubmission {
   id: string;
   partnerId: string;
   partnerName: string;
   submittedAt: string;
-  status: "submitted" | "approved" | "declined" | "disbursed";
+  status: STBStatus;
   approvedAmount: number | null;
   sanctionAmount: number | null;
   disbursedAmount: number | null;
   disbursementDate: string | null;
   remarks: string;
   integrationType: "api" | "portal" | "email";
+  /** Partner API application reference */
+  applicationRef?: string;
+  productType?: ProductType;
+  roi?: number | null;
+  tenureMonths?: number | null;
+  decisionReasons?: string[];
+  statusHistory?: STBStatusEvent[];
+  leadId?: string;
+}
+
+/** ---------- Credit bureau (Experian Griffith sandbox) ---------- */
+
+export type CreditBand = "excellent" | "good" | "fair" | "poor" | "no_history";
+
+export interface CreditTradeLine {
+  id: string;
+  lender: string;
+  accountType: string;
+  sanctionedAmount: number;
+  outstandingAmount: number;
+  emi: number;
+  tenure: number;
+  openedAt: string;
+  status: "active" | "closed";
+  /** Worst days-past-due in last 24 months */
+  maxDpd: number;
+}
+
+export interface CreditScoreFactor {
+  label: string;
+  impact: "positive" | "negative";
+  detail: string;
+}
+
+export interface CreditReport {
+  referenceId: string;
+  bureau: string;
+  environment: "sandbox";
+  pulledAt: string;
+  pulledBy: string;
+  pulledByRole: UserRole;
+  pan: string;
+  score: number;
+  band: CreditBand;
+  scoreFactors: CreditScoreFactor[];
+  tradeLines: CreditTradeLine[];
+  enquiries6m: number;
+  enquiries12m: number;
+  totalObligations: number;
+  activeAccounts: number;
+  maxDpd: number;
+  writeOff: boolean;
 }
 
 export interface CallLog {

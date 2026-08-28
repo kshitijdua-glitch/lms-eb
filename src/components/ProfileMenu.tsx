@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { LogOut, User as UserIcon, Settings as SettingsIcon } from "lucide-react";
+import { LogOut, User as UserIcon, Settings as SettingsIcon, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRole, roleLabels } from "@/contexts/RoleContext";
 import { can } from "@/lib/permissions";
 import { toast } from "@/hooks/use-toast";
+import { useLmsData } from "@/contexts/LmsDataContext";
 
 function initialsOf(name: string) {
   return name.split(" ").map(p => p[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
@@ -22,6 +23,7 @@ function initialsOf(name: string) {
 export function ProfileMenu() {
   const { user, logout } = useAuth();
   const { role } = useRole();
+  const { resetDemoData } = useLmsData();
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
 
@@ -70,6 +72,17 @@ export function ProfileMenu() {
               </Link>
             </DropdownMenuItem>
           )}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onSelect={() => {
+              if (window.confirm("Reset all demo data back to the seeded state? This clears calls, credit pulls and submissions.")) {
+                resetDemoData();
+              }
+            }}
+          >
+            <RotateCcw className="mr-2 h-4 w-4" />
+            Reset demo data
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={handleLogout} className="text-destructive focus:text-destructive">
             <LogOut className="mr-2 h-4 w-4" />
