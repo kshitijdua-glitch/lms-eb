@@ -31,7 +31,13 @@ import { useAudit, buildActor } from "@/contexts/AuditContext";
 import { getLeadLockState, can } from "@/lib/permissions";
 import { evaluateAllPartners, DISPOSITION_BY_OUTCOME } from "@/lib/partnerEligibility";
 import { usePartners } from "@/contexts/PartnersContext";
-import { CheckCircle2, XCircle, Info, ShieldAlert } from "lucide-react";
+import { CheckCircle2, XCircle, Info, ShieldAlert, Loader2 } from "lucide-react";
+import { useLmsData } from "@/contexts/LmsDataContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { CreditReportPanel } from "@/components/CreditReportPanel";
+import { BureauError, fetchCreditReport } from "@/services/experianSandbox";
+import { PartnerApiError, STB_STATUS_LABEL, submitApplication } from "@/services/partnerApi";
+import type { LeadStage, ProductType, STBSubmission } from "@/types/lms";
 
 // Soft pill color map — clean tinted backgrounds for status chips
 const SOFT_PILL: Record<string, string> = {
@@ -69,7 +75,9 @@ const LeadDetailPage = () => {
   const { config } = usePriorityConfig();
   const { logAudit, forLead } = useAudit();
   const { partners } = usePartners();
-  const lead = leads.find(l => l.id === id);
+  const { user } = useAuth();
+  const { leads: allStoreLeads, updateLead, setCreditReport, addSubmissions } = useLmsData();
+  const lead = allStoreLeads.find(l => l.id === id);
   const [showCallLog, setShowCallLog] = useState(false);
   const [showEMI, setShowEMI] = useState(false);
   const [showReassign, setShowReassign] = useState(false);
