@@ -166,10 +166,12 @@ function generateLeads(): Lead[] {
     const income = randomInt(15000, 200000);
     const obligations = randomInt(0, income * 0.4);
     const foir = Math.round((obligations / income) * 100);
-    const stage = stages[Math.min(Math.floor(i / 6), stages.length - 1)];
+    // Round-robin across every stage so each module shows all statuses.
+    const stage = stages[i % stages.length];
     const disp = newDispositions[i % newDispositions.length];
-    const agentIdx = (i % 8) + 1;
-    const teamId = agentIdx <= 5 ? "team-1" : "team-2";
+    const agentIdx = (i % agents.length) + 1;
+    const agent = agents[agentIdx - 1];
+    const teamId = agent.teamId;
     const mobile = `98${randomInt(10000000, 99999999)}`;
     const pan = generatePAN();
     const allocDays = randomInt(1, 60);
@@ -177,6 +179,7 @@ function generateLeads(): Lead[] {
     const creditScore = randomInt(550, 850);
     const city = randomFrom(cities);
     const source = randomFrom(leadSources);
+
 
     const callLogs = Array.from({ length: randomInt(1, 5) }, (_, ci) => ({
       id: `call-${i}-${ci}`,
