@@ -109,10 +109,21 @@ const LeadDetailPage = () => {
 
   if (!lead) return <div className="p-8 text-center text-muted-foreground">Lead not found</div>;
 
-  const allLeads = role === "agent" ? getLeadsForAgent("agent-1") : leads;
+  const allLeads = role === "agent" ? allStoreLeads.filter(l => l.assignedAgentId === "agent-1") : allStoreLeads;
   const filteredLeads = allLeads
     .filter(l => l.name.toLowerCase().includes(leadListSearch.toLowerCase()))
     .slice(0, 50);
+
+  // Derived, persisted state — everything reads from the store
+  const localStbSubmissions = lead.stbSubmissions ?? [];
+  const localLoans = lead.existingLoans ?? [];
+  const selectedPairs = (lead.selectedBanks ?? []).map(b => ({
+    partnerId: b.partnerId,
+    partnerName: b.partnerName,
+    productType: b.productType as string,
+  }));
+  const consentStatus = lead.consentStatus;
+  const creditReport = lead.creditReport ?? null;
 
   const daysSinceAlloc = Math.floor((Date.now() - new Date(lead.allocatedAt).getTime()) / 86400000);
   const lockState = getLeadLockState({ stbSubmissions: localStbSubmissions });
