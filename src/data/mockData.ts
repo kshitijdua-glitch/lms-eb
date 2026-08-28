@@ -181,8 +181,8 @@ function generateLeads(): Lead[] {
     const callLogs = Array.from({ length: randomInt(1, 5) }, (_, ci) => ({
       id: `call-${i}-${ci}`,
       timestamp: daysAgo(randomInt(0, allocDays)),
-      outcome: (Math.random() > 0.3 ? "connected" : "not_connected") as "connected" | "not_connected",
-      duration: Math.random() > 0.3 ? randomInt(30, 600) : 0,
+      outcome: (rand() > 0.3 ? "connected" : "not_connected") as "connected" | "not_connected",
+      duration: rand() > 0.3 ? randomInt(30, 600) : 0,
       disposition: disp,
       notes: ["Discussed loan options", "Customer busy, will call back", "Interested in PL", "Documents requested", "Not reachable"][ci % 5],
       agentId: `agent-${agentIdx}`,
