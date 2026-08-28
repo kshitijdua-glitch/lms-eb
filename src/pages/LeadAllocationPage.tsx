@@ -183,7 +183,7 @@ const LeadAllocationPage = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Lead Allocation</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Lead Allocation</h1>
           <p className="text-muted-foreground text-sm">{totalUnallocated} unallocated leads across {activeBatches} batches</p>
         </div>
         <Button onClick={() => openWizard()}>
@@ -192,10 +192,10 @@ const LeadAllocationPage = () => {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card><CardContent className="p-4"><div className="text-2xl font-bold">{totalUnallocated}</div><div className="text-xs text-muted-foreground">Total Unallocated</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-2xl font-bold">{activeBatches}</div><div className="text-xs text-muted-foreground">Active Batches</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-2xl font-bold">{agents.filter(a => a.status === "active").length}</div><div className="text-xs text-muted-foreground">Active Agents</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-2xl font-bold">{teams.length}</div><div className="text-xs text-muted-foreground">Active Teams</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-2xl font-semibold tracking-tight">{totalUnallocated}</div><div className="text-xs text-muted-foreground">Total Unallocated</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-2xl font-semibold tracking-tight">{activeBatches}</div><div className="text-xs text-muted-foreground">Active Batches</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-2xl font-semibold tracking-tight">{agents.filter(a => a.status === "active").length}</div><div className="text-xs text-muted-foreground">Active Agents</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-2xl font-semibold tracking-tight">{teams.length}</div><div className="text-xs text-muted-foreground">Active Teams</div></CardContent></Card>
       </div>
 
       <Card>

@@ -95,7 +95,7 @@ const GroupSTBPage = () => {
           <Card key={k.label}>
             <CardContent className="p-4">
               <k.icon className={`h-4 w-4 ${k.color} mb-1`} />
-              <div className="text-2xl font-bold">{k.value}</div>
+              <div className="text-2xl font-semibold tracking-tight">{k.value}</div>
               <div className="text-xs text-muted-foreground">{k.label}</div>
             </CardContent>
           </Card>

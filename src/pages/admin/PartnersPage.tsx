@@ -125,7 +125,7 @@ const PartnersPage = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Lending Partners</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Lending Partners</h1>
           <p className="text-muted-foreground text-sm">{partners.length} partners configured · {partners.filter(p => p.status === "active").length} active</p>
         </div>
         {canEdit ? (

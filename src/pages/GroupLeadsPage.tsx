@@ -154,7 +154,7 @@ const GroupLeadsPage = () => {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Group Leads</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Group Leads</h1>
           <p className="text-muted-foreground text-sm">{filtered.length} of {allLeads.length} leads</p>
         </div>
         <div className="flex flex-wrap gap-2">

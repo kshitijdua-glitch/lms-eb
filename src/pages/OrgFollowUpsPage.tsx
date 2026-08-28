@@ -87,7 +87,7 @@ const OrgFollowUpsPage = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Organisation Follow-Ups</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Organisation Follow-Ups</h1>
           <p className="text-muted-foreground text-sm">
             {allFollowUps.length} total · <span className="text-destructive">{overdue.length} overdue</span>
           </p>

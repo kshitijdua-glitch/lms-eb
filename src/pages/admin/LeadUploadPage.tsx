@@ -90,7 +90,7 @@ const LeadUploadPage = () => {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold">Lead Upload</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Lead Upload</h1>
           <p className="text-muted-foreground text-sm">Upload CSV/XLSX files and validate before ingestion</p>
         </div>
         <Card>
@@ -114,7 +114,7 @@ const LeadUploadPage = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Lead Upload</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Lead Upload</h1>
         <p className="text-muted-foreground text-sm">Upload CSV/XLSX files (max 50MB) and validate before ingestion</p>
       </div>
 
@@ -242,22 +242,22 @@ const LeadUploadPage = () => {
         <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card><CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold">{validationResult.total}</div>
+              <div className="text-2xl font-semibold tracking-tight">{validationResult.total}</div>
               <div className="text-xs text-muted-foreground">Total Rows</div>
             </CardContent></Card>
             <Card><CardContent className="p-4 text-center">
               <CheckCircle className="h-5 w-5 text-green-600 mx-auto mb-1" />
-              <div className="text-2xl font-bold text-green-600">{validationResult.valid}</div>
+              <div className="text-2xl font-semibold tracking-tight text-green-600">{validationResult.valid}</div>
               <div className="text-xs text-muted-foreground">Valid</div>
             </CardContent></Card>
             <Card><CardContent className="p-4 text-center">
               <XCircle className="h-5 w-5 text-red-600 mx-auto mb-1" />
-              <div className="text-2xl font-bold text-red-600">{validationResult.invalid}</div>
+              <div className="text-2xl font-semibold tracking-tight text-red-600">{validationResult.invalid}</div>
               <div className="text-xs text-muted-foreground">Invalid</div>
             </CardContent></Card>
             <Card><CardContent className="p-4 text-center">
               <AlertTriangle className="h-5 w-5 text-yellow-600 mx-auto mb-1" />
-              <div className="text-2xl font-bold text-yellow-600">{validationResult.duplicates}</div>
+              <div className="text-2xl font-semibold tracking-tight text-yellow-600">{validationResult.duplicates}</div>
               <div className="text-xs text-muted-foreground">Duplicates</div>
             </CardContent></Card>
           </div>

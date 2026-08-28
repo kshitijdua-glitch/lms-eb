@@ -87,7 +87,7 @@ const AdminStaffPage = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Staff Management</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Staff Management</h1>
           <p className="text-muted-foreground text-sm">Create, edit, deactivate, and manage all staff profiles</p>
         </div>
         <Button onClick={() => setShowCreate(true)}><Plus className="h-4 w-4 mr-1" /> Add Staff</Button>

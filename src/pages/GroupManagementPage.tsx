@@ -127,7 +127,7 @@ const GroupManagementPage = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Group Management</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Group Management</h1>
         <p className="text-muted-foreground text-sm">{agents.length} agents across {teams.length} teams</p>
       </div>
 

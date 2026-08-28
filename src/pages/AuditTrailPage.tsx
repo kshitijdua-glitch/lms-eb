@@ -64,7 +64,7 @@ const AuditTrailPage = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2"><Shield className="h-6 w-6" /> Audit Trail</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight flex items-center gap-2"><Shield className="h-6 w-6" /> Audit Trail</h1>
           <p className="text-muted-foreground text-sm">Immutable log of all system actions.{role !== "data_admin" && " No export available."}</p>
         </div>
         {role === "data_admin" && (

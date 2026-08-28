@@ -132,7 +132,7 @@ const OrgLeadsPage = () => {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Organisation Leads</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Organisation Leads</h1>
           <p className="text-muted-foreground text-sm">{filtered.length} of {leads.length} leads</p>
         </div>
         <div className="flex gap-2">

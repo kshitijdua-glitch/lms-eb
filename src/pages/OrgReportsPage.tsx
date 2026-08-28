@@ -70,7 +70,7 @@ const OrgReportsPage = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Organisation Lead Count Report</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Organisation Lead Count Report</h1>
           <p className="text-muted-foreground text-sm">{totalLeads} leads across organisation</p>
         </div>
         <Button variant="outline" size="sm" onClick={() => toast.success("CSV exported")}>
@@ -96,9 +96,9 @@ const OrgReportsPage = () => {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        <Card><CardContent className="p-4"><div className="text-2xl font-bold">{totalLeads}</div><div className="text-xs text-muted-foreground">Total Leads</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-2xl font-bold">{mgrSummary.size}</div><div className="text-xs text-muted-foreground">Managers</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-2xl font-bold">{new Set(reportData.map(r => r.category)).size}</div><div className="text-xs text-muted-foreground">Disposition Categories</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-2xl font-semibold tracking-tight">{totalLeads}</div><div className="text-xs text-muted-foreground">Total Leads</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-2xl font-semibold tracking-tight">{mgrSummary.size}</div><div className="text-xs text-muted-foreground">Managers</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-2xl font-semibold tracking-tight">{new Set(reportData.map(r => r.category)).size}</div><div className="text-xs text-muted-foreground">Disposition Categories</div></CardContent></Card>
       </div>
 
       <Card>
