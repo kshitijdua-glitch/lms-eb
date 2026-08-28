@@ -14,7 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRole, roleLabels } from "@/contexts/RoleContext";
 import { can } from "@/lib/permissions";
 import { toast } from "@/hooks/use-toast";
-import { useLmsData } from "@/contexts/LmsDataContext";
+import { useOptionalLmsData } from "@/contexts/LmsDataContext";
 
 function initialsOf(name: string) {
   return name.split(" ").map(p => p[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
@@ -23,7 +23,7 @@ function initialsOf(name: string) {
 export function ProfileMenu() {
   const { user, logout } = useAuth();
   const { role } = useRole();
-  const { resetDemoData } = useLmsData();
+  const lmsData = useOptionalLmsData();
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
 
@@ -76,7 +76,7 @@ export function ProfileMenu() {
           <DropdownMenuItem
             onSelect={() => {
               if (window.confirm("Reset this workspace back to its baseline state? Calls, bureau enquiries and partner submissions recorded on this device will be cleared.")) {
-                resetDemoData();
+                lmsData?.resetDemoData();
               }
             }}
           >
