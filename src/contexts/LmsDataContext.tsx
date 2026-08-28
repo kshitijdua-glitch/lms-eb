@@ -106,8 +106,14 @@ export function LmsDataProvider({ children }: { children: React.ReactNode }) {
                   ...(s.statusHistory ?? []),
                   {
                     status: patch.status,
+                    previousStatus: s.status,
                     at: new Date().toISOString(),
-                    note: `${meta.note?.trim() || "Status updated"} · ${meta.manual ? "Manual override" : "System"} by ${meta.actorName}`,
+                    note: meta.note?.trim() || "Status updated",
+                    actorName: meta.actorName,
+                    actorRole: meta.actorRole,
+                    source: (meta.manual ? "manual" : "system") as "manual" | "system",
+                    sanctionAmount: patch.sanctionAmount ?? s.sanctionAmount,
+                    disbursedAmount: patch.disbursedAmount ?? s.disbursedAmount,
                   },
                 ],
               }
@@ -158,7 +164,17 @@ export function LmsDataProvider({ children }: { children: React.ReactNode }) {
             ...event.patch,
             statusHistory: [
               ...(sub.statusHistory ?? []),
-              { status: event.status, at: new Date(now).toISOString(), note: event.note, eventId: event.eventId },
+              {
+                status: event.status,
+                previousStatus: sub.status,
+                at: new Date(now).toISOString(),
+                note: event.note,
+                eventId: event.eventId,
+                actorName: `${sub.partnerName} integration`,
+                source: "partner_api",
+                sanctionAmount: event.patch.sanctionAmount ?? sub.sanctionAmount,
+                disbursedAmount: event.patch.disbursedAmount ?? sub.disbursedAmount,
+              },
             ],
           };
           logAudit({

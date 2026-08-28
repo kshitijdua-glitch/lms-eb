@@ -78,7 +78,7 @@ export default function LandingPage() {
               </Link>
             </Button>
             <Button asChild variant="ghost" size="lg">
-              <Link to={ctaTo}>{isAuthenticated ? "View dashboard" : "Explore as demo user"}</Link>
+              <Link to={ctaTo}>{isAuthenticated ? "View dashboard" : "Sign in to your workspace"}</Link>
             </Button>
           </div>
         </section>
@@ -106,7 +106,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-border/60 bg-card/40">
         <div className="mx-auto max-w-6xl px-6 h-14 flex items-center justify-between text-xs text-muted-foreground">
-          <span>Prototype • Mock data</span>
+          <span>Built for NBFCs, banks and DSA networks</span>
           <span>© {new Date().getFullYear()} Smart LMS</span>
         </div>
       </footer>

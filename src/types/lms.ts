@@ -154,9 +154,19 @@ export interface STBStatusEvent {
   status: STBStatus;
   at: string;
   note: string;
-  /** Simulated partner webhook event id */
+  /** Status the application moved from, when known. */
+  previousStatus?: STBStatus;
+  /** Who recorded the change. */
+  actorName?: string;
+  actorRole?: UserRole;
+  /** How the change was recorded. */
+  source?: "partner_api" | "manual" | "system";
+  sanctionAmount?: number | null;
+  disbursedAmount?: number | null;
+  /** Partner integration event id */
   eventId?: string;
 }
+
 
 export interface STBSubmission {
   id: string;

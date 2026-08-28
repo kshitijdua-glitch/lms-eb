@@ -6,10 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { CheckCircle, Clock, IndianRupee, PencilLine, Search, Send, XCircle } from "lucide-react";
+import { CheckCircle, Clock, History as HistoryIcon, IndianRupee, PencilLine, Search, Send, XCircle } from "lucide-react";
 import { ConfigurableTable } from "@/components/ConfigurableTable";
 import { KpiCard } from "@/components/KpiCard";
 import { SubmissionStatusDialog, type SubmissionTarget } from "@/components/SubmissionStatusDialog";
+import { SubmissionHistoryPanel } from "@/components/SubmissionHistoryPanel";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useLmsData } from "@/contexts/LmsDataContext";
 import { useRole } from "@/contexts/RoleContext";
 import { agents, teams, getProductLabel } from "@/data/mockData";
@@ -40,6 +42,7 @@ export function PartnerSubmissionsBoard({ scope, title, subtitle, tableId }: Pro
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [ownerFilter, setOwnerFilter] = useState("all");
   const [target, setTarget] = useState<SubmissionTarget | null>(null);
+  const [historyTarget, setHistoryTarget] = useState<SubmissionTarget | null>(null);
 
   const scoped = useMemo(
     () =>
@@ -115,27 +118,43 @@ export function PartnerSubmissionsBoard({ scope, title, subtitle, tableId }: Pro
       render: s => {
         const allowed = canUpdateSubmissionStatus(role, { leadTeamId: s.assignedTeamId, userTeamId: currentTeamId });
         const canMove = nextAllowedStatuses(s.status).length > 0;
-        if (!allowed) return <span className="text-xs text-muted-foreground">View only</span>;
         return (
-          <div onClick={e => e.stopPropagation()}>
+          <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant="ghost"
                   className="h-7 text-xs"
-                  disabled={!canMove}
-                  aria-label={`Update status for ${s.leadName} with ${s.partnerName}`}
-                  onClick={() => setTarget(s)}
+                  aria-label={`View status history for ${s.leadName} with ${s.partnerName}`}
+                  onClick={() => setHistoryTarget(s)}
                 >
-                  <PencilLine className="h-3.5 w-3.5 mr-1" aria-hidden /> Update
+                  <HistoryIcon className="h-3.5 w-3.5 mr-1" aria-hidden /> History
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>{canMove ? "Update partner status" : "Final status — no change allowed"}</TooltipContent>
+              <TooltipContent>Status history &amp; audit download</TooltipContent>
             </Tooltip>
+            {allowed && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs"
+                    disabled={!canMove}
+                    aria-label={`Update status for ${s.leadName} with ${s.partnerName}`}
+                    onClick={() => setTarget(s)}
+                  >
+                    <PencilLine className="h-3.5 w-3.5 mr-1" aria-hidden /> Update
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{canMove ? "Update partner status" : "Final status — no change allowed"}</TooltipContent>
+              </Tooltip>
+            )}
           </div>
         );
       },
+
     },
   ];
 
@@ -204,6 +223,19 @@ export function PartnerSubmissionsBoard({ scope, title, subtitle, tableId }: Pro
       </Card>
 
       <SubmissionStatusDialog submission={target} onOpenChange={open => !open && setTarget(null)} />
+
+      <Dialog open={!!historyTarget} onOpenChange={open => !open && setHistoryTarget(null)}>
+        <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-base">
+              {historyTarget?.leadName} · application history
+            </DialogTitle>
+          </DialogHeader>
+          {historyTarget && (
+            <SubmissionHistoryPanel submission={historyTarget} leadName={historyTarget.leadName} dense />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

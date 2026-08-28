@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { useLmsData } from "@/contexts/LmsDataContext";
 import { useRole } from "@/contexts/RoleContext";
 import { agents } from "@/data/mockData";
+import { SavedViewsBar } from "@/components/SavedViewsBar";
 import {
   agentBreakdown,
   computeFunnel,
@@ -96,7 +97,23 @@ const PerformancePage = () => {
               <SelectItem value="12">Last 12 months</SelectItem>
             </SelectContent>
           </Select>
+          <SavedViewsBar
+            module="performance"
+            owner={`${role}:${currentAgentId}`}
+            filters={{ scope, months: String(months), metric }}
+            onApply={f => {
+              if (f.scope) setScope(f.scope as typeof scope);
+              if (f.months) setMonths(Number(f.months));
+              if (f.metric) setMetric(f.metric);
+            }}
+            onReset={() => {
+              setScope(role === "agent" ? "self" : role === "manager" ? "team" : "org");
+              setMonths(6);
+              setMetric("contactRate");
+            }}
+          />
         </div>
+
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">

@@ -33,7 +33,7 @@ export function AdminDashboard() {
   const batches = useMemo(() => {
     const map = new Map<string, { name: string; rows: number; allocated: number; latest: string }>();
     for (const l of leads) {
-      const key = l.batchId || l.leadSource || l.source || "unknown";
+      const key = l.leadSource || l.source || "unknown";
       const row = map.get(key) ?? { name: key, rows: 0, allocated: 0, latest: l.createdAt };
       row.rows += 1;
       if (l.assignedAgentId) row.allocated += 1;
