@@ -65,7 +65,7 @@ export const can = {
   sendToBank: (role: UserRole) => role === "agent" || role === "manager" || role === "cluster_head",
   backdateBeyond24h: (role: UserRole) => role !== "agent",
   viewLeadSource: (role: UserRole) => role !== "agent",
-  updateStbStatus: (role: UserRole) => role === "cluster_head" || role === "data_admin",
+  updateStbStatus: (role: UserRole) => role === "manager" || role === "cluster_head" || role === "data_admin",
   overrideClosedLead: (role: UserRole) => role === "manager" || role === "cluster_head",
   configureSystem: (role: UserRole) => role === "cluster_head" || role === "data_admin",
   uploadLeads: (role: UserRole) => role === "data_admin",
