@@ -547,69 +547,80 @@ const LeadDetailPage = () => {
     return [{ group: key === "connected" ? "Connected" : key === "not_connected" ? "Not connected" : "Invalid / Compliance", items: items.map(i => ({ ...i, type: i.type as any, category: "connected" as any, group: "x", requiresFollowUp: false })) }];
   })();
 
+  const leadListItems = (onPick?: () => void) => (
+    <div className="divide-y divide-border">
+      {filteredLeads.map(l => {
+        const daysSince = Math.floor((Date.now() - new Date(l.lastActivityAt || l.allocatedAt).getTime()) / 86400000);
+        const isCurrent = l.id === id;
+        return (
+          <button
+            key={l.id}
+            className={cn(
+              "w-full text-left px-4 py-3.5 hover:bg-muted/40 transition-colors relative",
+              isCurrent && "bg-primary/5"
+            )}
+            onClick={() => { navigate(`/leads/${l.id}`); onPick?.(); }}
+          >
+            {isCurrent && <span className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary" />}
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <span className="text-sm font-semibold text-foreground truncate">{l.name}</span>
+              <SoftPill tone={l.stage}>{getStageLabel(l.stage)}</SoftPill>
+            </div>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{getProductLabel(l.productType)}</span>
+              <span>{daysSince}d</span>
+            </div>
+          </button>
+        );
+      })}
+      {filteredLeads.length === 0 && (
+        <div className="p-6 text-xs text-muted-foreground text-center">No leads found</div>
+      )}
+    </div>
+  );
+
+  const leadSearchInput = (
+    <div className="relative">
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+      <Input
+        placeholder="Search leads"
+        value={leadListSearch}
+        onChange={e => setLeadListSearch(e.target.value)}
+        className="h-9 text-xs pl-8 bg-background"
+      />
+    </div>
+  );
+
   return (
-    <div className="flex gap-0 -m-6 min-h-screen">
-      {/* Lead List Sidebar */}
+    <div className="flex gap-0 -m-4 sm:-m-6 min-h-screen">
+      {/* Lead List Sidebar — desktop only */}
       <div className={cn(
-        "border-r border-border bg-card shrink-0 flex flex-col transition-all duration-200",
+        "border-r border-border bg-card shrink-0 hidden lg:flex flex-col transition-all duration-200",
         leadSidebarOpen ? "w-80" : "w-12"
       )}>
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           {leadSidebarOpen && <span className="text-sm font-semibold">Leads</span>}
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setLeadSidebarOpen(!leadSidebarOpen)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => setLeadSidebarOpen(!leadSidebarOpen)}
+            aria-label={leadSidebarOpen ? "Collapse lead list" : "Expand lead list"}
+          >
             {leadSidebarOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           </Button>
         </div>
         {leadSidebarOpen && (
           <>
-            <div className="p-3 border-b border-border">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <Input
-                  placeholder="Search"
-                  value={leadListSearch}
-                  onChange={e => setLeadListSearch(e.target.value)}
-                  className="h-9 text-xs pl-8 bg-background"
-                />
-              </div>
-            </div>
-            <ScrollArea className="flex-1">
-              <div className="divide-y divide-border">
-                {filteredLeads.map(l => {
-                  const daysSince = Math.floor((Date.now() - new Date(l.lastActivityAt || l.allocatedAt).getTime()) / 86400000);
-                  const isCurrent = l.id === id;
-                  return (
-                    <button
-                      key={l.id}
-                      className={cn(
-                        "w-full text-left px-4 py-3.5 hover:bg-muted/40 transition-colors relative",
-                        isCurrent && "bg-primary/5"
-                      )}
-                      onClick={() => navigate(`/leads/${l.id}`)}
-                    >
-                      {isCurrent && <span className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary" />}
-                      <div className="flex items-center justify-between gap-2 mb-1.5">
-                        <span className="text-sm font-semibold text-foreground truncate">{l.name}</span>
-                        <SoftPill tone={l.stage}>{getStageLabel(l.stage)}</SoftPill>
-                      </div>
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>{getProductLabel(l.productType)}</span>
-                        <span>{daysSince}d</span>
-                      </div>
-                    </button>
-                  );
-                })}
-                {filteredLeads.length === 0 && (
-                  <div className="p-6 text-xs text-muted-foreground text-center">No leads found</div>
-                )}
-              </div>
-            </ScrollArea>
+            <div className="p-3 border-b border-border">{leadSearchInput}</div>
+            <ScrollArea className="flex-1">{leadListItems()}</ScrollArea>
           </>
         )}
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 min-w-0 p-8 overflow-auto space-y-6">
+      <div className="flex-1 min-w-0 p-4 sm:p-6 xl:p-8 overflow-auto space-y-5 sm:space-y-6">
+
       {/* Action Bar */}
       <div className="flex items-center gap-3 flex-wrap">
         <Button variant="ghost" size="sm" onClick={() => navigate("/leads")} className="text-muted-foreground hover:text-foreground -ml-2">
