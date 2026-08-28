@@ -323,7 +323,7 @@ function generateLeads(): Lead[] {
       consentStatus: submissionStages.includes(stage)
         ? "received"
         : stage === "bank_selected" || stage === "interested"
-          ? (i % 3 === 0 ? "requested" : "received")
+          ? (i % 3 === 0 ? "sent" : "received")
           : "not_sent",
       retryCount: ["number_busy", "no_response", "switched_off"].includes(disp) ? randomInt(1, 6) : 0,
       expiresAt: daysAgo(-(90 - allocDays)),
