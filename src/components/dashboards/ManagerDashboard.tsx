@@ -103,7 +103,7 @@ export function ManagerDashboard() {
       {/* Business Funnel */}
       <div>
         <h3 className="text-eyebrow mb-2">Business Performance Funnel</h3>
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
           {funnelSteps.map((step) => (
             <Card key={step.label}>
               <CardContent className="p-4 text-center">

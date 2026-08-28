@@ -108,7 +108,7 @@ export function ClusterHeadDashboard() {
             Total Disbursed: <strong className="text-foreground">₹{(totalDisbursedAmt / 100000).toFixed(1)}L</strong>
           </span>
         </div>
-        <div className="grid grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {funnelSteps.map((step, idx) => (
             <StatTile
               key={step.label}
