@@ -682,7 +682,7 @@ const LeadDetailPage = () => {
 
       {/* Compliance Banner */}
       {!consentReceived ? (
-        <div className="rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3 flex items-start gap-3">
+        <div className="rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3 flex flex-col sm:flex-row sm:items-start gap-3">
           <div className="h-8 w-8 rounded-md bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
             <ShieldAlert className="h-4 w-4" />
           </div>
