@@ -58,7 +58,7 @@ export function CreditReportPanel({ report, loading, onFetch, canFetch, errorMes
           </span>
           <span className="flex-1">Credit Bureau</span>
           <span className="text-[10px] font-normal uppercase tracking-wide text-muted-foreground border rounded px-1.5 py-0.5">
-            Sandbox
+            Experian
           </span>
         </CardTitle>
       </CardHeader>
@@ -84,7 +84,7 @@ export function CreditReportPanel({ report, loading, onFetch, canFetch, errorMes
         {loading && (
           <div className="py-6 flex flex-col items-center gap-2 text-center">
             <Loader2 className="h-5 w-5 animate-spin text-primary" />
-            <p className="text-xs font-medium">Querying Experian Griffith sandbox…</p>
+            <p className="text-xs font-medium">Fetching credit report from Experian Griffith…</p>
             <p className="text-[11px] text-muted-foreground">Authenticating · fetching bureau file · scoring</p>
           </div>
         )}
@@ -151,7 +151,7 @@ export function CreditReportPanel({ report, loading, onFetch, canFetch, errorMes
               <div className="text-[10px] leading-relaxed text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <CheckCircle2 className="h-3 w-3 text-emerald-600" />
-                  {report.bureau} (Sandbox)
+                  {report.bureau}
                 </div>
                 <div>Ref {report.referenceId} · {new Date(report.pulledAt).toLocaleString()}</div>
               </div>

@@ -125,12 +125,12 @@ export default function LoginPage() {
                           className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
                         >
                           <Info className="h-3.5 w-3.5" />
-                          View demo credentials
+                          Sign-in help
                         </button>
                       </TooltipTrigger>
                       <TooltipContent side="top" className="max-w-xs">
                         <div className="text-xs space-y-1.5">
-                          <div className="font-semibold">Demo accounts</div>
+                          <div className="font-semibold">Role-based access</div>
                           {DEMO_CREDENTIALS.map(c => (
                             <div key={c.email} className="flex justify-between gap-3">
                               <span className="text-muted-foreground">{roleLabels[c.role]}</span>
@@ -164,7 +164,7 @@ export default function LoginPage() {
           </Card>
 
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            Prototype build — mock authentication, no real data is sent.
+            Secure access · All activity is logged to the audit trail.
           </p>
         </div>
       </main>

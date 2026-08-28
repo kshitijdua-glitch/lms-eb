@@ -108,7 +108,9 @@ export function SubmissionStatusDialog({ submission, onOpenChange }: Props) {
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <Badge variant="secondary">Current: {STB_STATUS_LABELS[submission.status]}</Badge>
               {submission.applicationRef && <Badge variant="outline">Ref {submission.applicationRef}</Badge>}
-              <Badge variant="outline" className="capitalize">{submission.integrationType}</Badge>
+              <Badge variant="outline">
+                {submission.integrationType === "api" ? "API integrated" : "Manual partner"}
+              </Badge>
             </div>
 
             {options.length === 0 ? (

@@ -29,6 +29,9 @@ import { can } from "@/lib/permissions";
 import { agents, teams, getDispositionLabel, getStageLabel, getProductLabel } from "@/data/mockData";
 import { allSubmissions, dispositionBreakdown, inr, partnerBreakdown, scopeLeads } from "@/lib/metrics";
 import { buildCsv, dateStamp, downloadCsv, maskValue, type CsvColumn } from "@/lib/csv";
+import { DateRangeFilter } from "@/components/DateRangeFilter";
+import { SavedViewsBar } from "@/components/SavedViewsBar";
+import { describeRange, resolvePreset, type RangePresetId } from "@/lib/dateRanges";
 import { EmptyState } from "@/components/EmptyState";
 import type { Lead } from "@/types/lms";
 
@@ -69,16 +72,38 @@ const MISExportPage = () => {
   const { leads } = useLmsData();
   const actor = buildActor(role, currentAgentId);
 
-  const [dateFrom, setDateFrom] = useState(() => {
-    const d = new Date();
-    d.setMonth(d.getMonth() - 6);
-    return d.toISOString().slice(0, 10);
-  });
-  const [dateTo, setDateTo] = useState(() => new Date().toISOString().slice(0, 10));
+  const defaultRange = resolvePreset("last6m")!;
+  const [preset, setPreset] = useState<RangePresetId>("last6m");
+  const [dateFrom, setDateFrom] = useState(defaultRange.from);
+  const [dateTo, setDateTo] = useState(defaultRange.to);
   const [teamFilter, setTeamFilter] = useState("all");
   const [agentFilter, setAgentFilter] = useState("all");
   const [productFilter, setProductFilter] = useState("all");
   const [stageFilter, setStageFilter] = useState("all");
+
+  const viewFilters = { preset, dateFrom, dateTo, teamFilter, agentFilter, productFilter, stageFilter };
+
+  const applyViewFilters = (f: Record<string, string>) => {
+    setPreset((f.preset as RangePresetId) ?? "custom");
+    if (f.dateFrom) setDateFrom(f.dateFrom);
+    if (f.dateTo) setDateTo(f.dateTo);
+    setTeamFilter(f.teamFilter ?? "all");
+    setAgentFilter(f.agentFilter ?? "all");
+    setProductFilter(f.productFilter ?? "all");
+    setStageFilter(f.stageFilter ?? "all");
+  };
+
+  const resetViewFilters = () => {
+    const r = resolvePreset("last6m")!;
+    setPreset("last6m");
+    setDateFrom(r.from);
+    setDateTo(r.to);
+    setTeamFilter("all");
+    setAgentFilter("all");
+    setProductFilter("all");
+    setStageFilter("all");
+  };
+
 
   const [preview, setPreview] = useState<{ label: string; header: string[]; rows: string[][]; total: number } | null>(null);
   const [piiConfirm, setPiiConfirm] = useState<ExportDef | null>(null);
@@ -325,22 +350,34 @@ const MISExportPage = () => {
       <div>
         <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">MIS &amp; Data Export</h1>
         <p className="text-muted-foreground text-sm">
-          Filtered CSV exports generated from live data · {filtered.length} leads in current selection
+          Filtered CSV exports generated from live data · {describeRange(dateFrom, dateTo)} · {filtered.length} leads in current selection
         </p>
       </div>
 
       <Card>
-        <CardHeader className="pb-2"><CardTitle className="text-base">Filters</CardTitle></CardHeader>
-        <CardContent>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
-            <div className="space-y-1.5">
-              <Label className="text-xs" htmlFor="from">From date</Label>
-              <Input id="from" type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs" htmlFor="to">To date</Label>
-              <Input id="to" type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} />
-            </div>
+        <CardHeader className="pb-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <CardTitle className="text-base">Filters</CardTitle>
+          <SavedViewsBar
+            module="mis-export"
+            owner={`${role}:${currentAgentId}`}
+            filters={viewFilters}
+            onApply={applyViewFilters}
+            onReset={resetViewFilters}
+          />
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <DateRangeFilter
+            from={dateFrom}
+            to={dateTo}
+            preset={preset}
+            onChange={({ from, to, preset: p }) => {
+              setDateFrom(from);
+              setDateTo(to);
+              setPreset(p);
+            }}
+          />
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+
             <div className="space-y-1.5">
               <Label className="text-xs">Team</Label>
               <Select value={teamFilter} onValueChange={setTeamFilter}>

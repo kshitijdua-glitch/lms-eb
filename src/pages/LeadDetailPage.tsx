@@ -38,6 +38,7 @@ import { useLmsData } from "@/contexts/LmsDataContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { CreditReportPanel } from "@/components/CreditReportPanel";
 import { BureauError, fetchCreditReport } from "@/services/experianSandbox";
+import { SubmissionHistoryPanel } from "@/components/SubmissionHistoryPanel";
 import { PartnerApiError, STB_STATUS_LABEL, submitApplication } from "@/services/partnerApi";
 import type { LeadStage, ProductType, STBSubmission } from "@/types/lms";
 
@@ -313,7 +314,7 @@ const LeadDetailPage = () => {
         entityLabel: lead.name,
         before: { creditScore: lead.creditScore },
         after: { bureau: report.bureau, ref: report.referenceId, score: report.score, obligations: report.totalObligations },
-        notes: `Experian Griffith sandbox enquiry · ${report.tradeLines.length} trade lines`,
+        notes: `Experian Griffith bureau enquiry · ${report.tradeLines.length} trade lines`,
       });
       toast.success(`Bureau report fetched — score ${report.score}`, {
         description: `Ref ${report.referenceId} · obligations ₹${report.totalObligations.toLocaleString("en-IN")} · FOIR recalculated`,
@@ -1313,27 +1314,38 @@ const LeadDetailPage = () => {
             <TabsContent value="stb" className="mt-0">
               <div className="divide-y divide-border/60">
                 {lead.stbSubmissions.map(s => (
-                  <div key={s.id} className="flex items-start gap-4 px-5 py-4">
-                    <div className="h-9 w-9 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-                      <Send className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <SoftPill tone="submitted">STB</SoftPill>
-                        <span className="text-sm font-semibold">{s.partnerName}</span>
+                  <div key={s.id} className="px-5 py-4 space-y-4">
+                    <div className="flex items-start gap-4">
+                      <div className="h-9 w-9 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                        <Send className="h-4 w-4" />
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1">Submitted {new Date(s.submittedAt).toLocaleDateString()}</p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <SoftPill tone="submitted">Application</SoftPill>
+                          <span className="text-sm font-semibold">{s.partnerName}</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Submitted {new Date(s.submittedAt).toLocaleDateString()}
+                          {s.applicationRef ? ` · Ref ${s.applicationRef}` : ""}
+                        </p>
+                      </div>
+                      <SoftPill tone={s.status === "approved" || s.status === "disbursed" ? "completed" : s.status === "declined" ? "missed" : "submitted"}>
+                        {s.status.charAt(0).toUpperCase() + s.status.slice(1).replace("_", " ")}
+                      </SoftPill>
                     </div>
-                    <SoftPill tone={s.status === "approved" || s.status === "disbursed" ? "completed" : s.status === "declined" ? "missed" : "submitted"}>
-                      {s.status.charAt(0).toUpperCase() + s.status.slice(1)}
-                    </SoftPill>
+                    <div className="rounded-lg border bg-muted/20 p-4">
+                      <SubmissionHistoryPanel submission={s} leadName={lead.name} dense />
+                    </div>
                   </div>
                 ))}
                 {lead.stbSubmissions.length === 0 && (
-                  <div className="px-5 py-12 text-center text-sm text-muted-foreground">No STB submissions</div>
+                  <div className="px-5 py-12 text-center text-sm text-muted-foreground">
+                    No partner applications yet
+                  </div>
                 )}
               </div>
             </TabsContent>
+
           </Tabs>
         </CardContent>
       </Card>

@@ -75,13 +75,13 @@ export function ProfileMenu() {
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onSelect={() => {
-              if (window.confirm("Reset all demo data back to the seeded state? This clears calls, credit pulls and submissions.")) {
+              if (window.confirm("Reset this workspace back to its baseline state? Calls, bureau enquiries and partner submissions recorded on this device will be cleared.")) {
                 resetDemoData();
               }
             }}
           >
             <RotateCcw className="mr-2 h-4 w-4" />
-            Reset demo data
+            Reset workspace data
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={handleLogout} className="text-destructive focus:text-destructive">

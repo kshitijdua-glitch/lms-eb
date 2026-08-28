@@ -148,7 +148,7 @@ export function AppSidebar() {
                 Signed in as <span className="font-medium text-sidebar-foreground">{user.name}</span>
               </div>
             )}
-            <div className="text-xs text-sidebar-foreground/50">v1.0 Prototype</div>
+            <div className="text-xs text-sidebar-foreground/50">Version 1.0</div>
           </div>
         )}
       </SidebarFooter>
