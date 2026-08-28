@@ -83,6 +83,7 @@ const ConfigPage = () => {
               </div>
             </CardHeader>
             <CardContent className="p-0">
+              <div className="w-full overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -103,6 +104,7 @@ const ConfigPage = () => {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -116,6 +118,7 @@ const ConfigPage = () => {
               </div>
             </CardHeader>
             <CardContent className="p-0">
+              <div className="w-full overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -144,6 +147,7 @@ const ConfigPage = () => {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

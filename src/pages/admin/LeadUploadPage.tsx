@@ -197,6 +197,7 @@ const LeadUploadPage = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">Map your uploaded columns to system fields. Unmapped columns will be ignored.</p>
+            <div className="w-full overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -229,6 +230,7 @@ const LeadUploadPage = () => {
                 ))}
               </TableBody>
             </Table>
+            </div>
             <div className="flex gap-2">
               <Button onClick={handleValidate}>Validate Data</Button>
               <Button variant="outline" onClick={() => setStep("details")}>Back</Button>
@@ -265,6 +267,7 @@ const LeadUploadPage = () => {
           <Card>
             <CardHeader><CardTitle className="text-base">Rejected Rows — Batch: {batchName}</CardTitle></CardHeader>
             <CardContent className="p-0">
+              <div className="w-full overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -283,6 +286,7 @@ const LeadUploadPage = () => {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
 

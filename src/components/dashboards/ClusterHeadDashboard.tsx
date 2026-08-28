@@ -126,6 +126,7 @@ export function ClusterHeadDashboard() {
       <Card>
         <CardHeader className="pb-3"><CardTitle>Manager Group Comparison</CardTitle></CardHeader>
         <CardContent className="p-0">
+          <div className="w-full overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -152,6 +153,7 @@ export function ClusterHeadDashboard() {
               ))}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 
