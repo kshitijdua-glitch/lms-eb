@@ -69,7 +69,9 @@ const App = () => (
                   path="/*"
                   element={
                     <AppLayout>
+                      <Suspense fallback={<PageSkeleton />}>
                       <Routes>
+
                         <Route path="/app" element={guard(<Index />)} />
                         <Route path="/leads" element={guard(<LeadsPage />)} />
                         <Route path="/leads/:id" element={guard(<LeadDetailPage />)} />
