@@ -661,9 +661,9 @@ const LeadDetailPage = () => {
               </SoftPill>
             </div>
             <p className="text-xs text-amber-900/80 mt-0.5">
-              {consentStatus === "sent" && consentSentAt
-                ? <>SMS consent sent to <strong>{lead.mobile}</strong> at {consentSentAt.toLocaleTimeString()}. Awaiting customer response.</>
-                : <>Customer consent must be captured before sharing data with partner banks. STB is disabled until consent is received.</>}
+              {consentStatus === "sent"
+                ? <>SMS consent sent to <strong>{lead.mobile}</strong>. Awaiting customer response.</>
+                : <>Customer consent must be captured before sharing data with partner banks. Submission is disabled until consent is received.</>}
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -871,21 +871,13 @@ const LeadDetailPage = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 pt-5">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-foreground">Credit Score</span>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      className="w-24 h-9 text-sm"
-                      value={editCreditScore}
-                      onChange={e => setEditCreditScore(e.target.value)}
-                      placeholder="—"
-                    />
-                    <Button size="sm" className="h-9" onClick={handleSaveCreditScore}>Save</Button>
-                  </div>
-                </div>
-              </div>
+              <CreditReportPanel
+                report={creditReport}
+                loading={creditLoading}
+                errorMessage={creditError}
+                canFetch={!isProfileLocked}
+                onFetch={handleFetchCreditReport}
+              />
               <div>
                 <div className="text-sm font-medium mb-2">Existing Loans</div>
                 {localLoans.length > 0 ? (
@@ -903,7 +895,7 @@ const LeadDetailPage = () => {
                           size="icon"
                           className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
                           onClick={() => {
-                            setLocalLoans(localLoans.filter(l => l.id !== loan.id));
+                            updateLead(lead.id, current => ({ existingLoans: (current.existingLoans ?? []).filter(l => l.id !== loan.id) }));
                             toast.success("Loan removed");
                           }}
                           aria-label="Remove loan"
@@ -1375,7 +1367,7 @@ const LeadDetailPage = () => {
                 emi: Number(newLoan.emi) || 0,
                 tenure: Number(newLoan.tenure) || 0,
               };
-              setLocalLoans([...localLoans, loan]);
+              updateLead(lead.id, current => ({ existingLoans: [...(current.existingLoans ?? []), loan] }));
               setNewLoan({ bankName: "", loanType: "", outstandingAmount: "", emi: "", tenure: "" });
               setShowAddLoan(false);
               toast.success("Loan added");
