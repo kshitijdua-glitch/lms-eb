@@ -73,7 +73,7 @@ const GroupSTBPage = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Group STB Pipeline</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Team Partner Submissions</h1>
           <p className="text-muted-foreground text-sm">{allSubs.length} total submissions</p>
         </div>
         <Select value={agentFilter} onValueChange={setAgentFilter}>
@@ -95,7 +95,7 @@ const GroupSTBPage = () => {
           <Card key={k.label}>
             <CardContent className="p-4">
               <k.icon className={`h-4 w-4 ${k.color} mb-1`} />
-              <div className="text-2xl font-bold">{k.value}</div>
+              <div className="text-2xl font-semibold tracking-tight">{k.value}</div>
               <div className="text-xs text-muted-foreground">{k.label}</div>
             </CardContent>
           </Card>
@@ -103,7 +103,7 @@ const GroupSTBPage = () => {
       </div>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Group STB Submissions</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">Submissions</CardTitle></CardHeader>
         <CardContent className="p-0">
           <ConfigurableTable tableId="group-stb" columns={columns} data={allSubs} onRowClick={(s) => navigate(`/leads/${s.leadId}`)} />
         </CardContent>

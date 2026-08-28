@@ -132,23 +132,23 @@ const LeadsPage = () => {
   ];
 
   return (
-    <div className="space-y-6 max-w-[1600px] mx-auto">
+    <div className="space-y-5 sm:space-y-6 max-w-[1600px] mx-auto">
       {/* Page header */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">{role === "agent" ? "My Leads" : "All Leads"}</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">{role === "agent" ? "My Leads" : "All Leads"}</h1>
           <p className="text-sm text-muted-foreground">
             Showing <span className="font-medium text-foreground">{filtered.length}</span> of {allLeads.length} leads
           </p>
         </div>
         <div className="flex gap-2">
           {role === "agent" && (
-            <Button size="sm" onClick={() => setShowCreateLead(true)} className="h-9">
+            <Button size="sm" onClick={() => setShowCreateLead(true)} className="h-9 flex-1 sm:flex-none">
               <Plus className="h-4 w-4 mr-1.5" /> New Lead
             </Button>
           )}
           {role !== "agent" && (
-            <Button variant="outline" size="sm" className="h-9" onClick={() => toast.success("Team summary CSV exported (non-PII)")}>
+            <Button variant="outline" size="sm" className="h-9 flex-1 sm:flex-none" onClick={() => toast.success("Team summary CSV exported (non-PII)")}>
               <Download className="h-4 w-4 mr-1.5" /> Export
             </Button>
           )}
@@ -156,35 +156,37 @@ const LeadsPage = () => {
       </div>
 
       {/* Summary tiles */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {summaryTiles.map(t => {
           const Icon = t.icon;
           return (
             <Card key={t.label} className="shadow-none">
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between mb-3">
-                  <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              <CardContent className="p-4 sm:p-5">
+                <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
+                  <span className="text-[10px] sm:text-[11px] font-medium uppercase tracking-wide text-muted-foreground leading-tight">
                     {t.label}
                   </span>
-                  <Icon className={`h-4 w-4 ${t.tone}`} />
+                  <Icon className={`h-4 w-4 shrink-0 ${t.tone}`} />
                 </div>
-                <div className="text-2xl font-semibold tracking-tight leading-none">{t.value}</div>
+                <div className="text-xl sm:text-2xl font-semibold tracking-tight leading-none">{t.value}</div>
               </CardContent>
             </Card>
           );
         })}
       </div>
 
+
       {/* Stage tabs */}
       <Tabs value={stageFilter} onValueChange={setStageFilter} className="w-full">
-        <TabsList className="w-full justify-start overflow-x-auto h-auto flex-wrap gap-1.5 bg-transparent p-0">
+        <TabsList className="w-full justify-start overflow-x-auto no-scrollbar h-auto flex-nowrap sm:flex-wrap gap-1.5 bg-transparent p-0">
           {["all","new","contacted","interested","bank_selected","stb_submitted","approved","declined","disbursed","closed_lost"].map(s => {
             const count = s === "all" ? allLeads.length : allLeads.filter(l => l.stage === s).length;
             return (
               <TabsTrigger
                 key={s}
                 value={s}
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-card data-[state=inactive]:border data-[state=inactive]:border-border text-xs px-3.5 py-2 rounded-md"
+                className="shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-card data-[state=inactive]:border data-[state=inactive]:border-border text-xs px-3.5 py-2 rounded-md"
+
               >
                 {s === "all" ? "All" : getStageLabel(s as any)}
                 <Badge variant="secondary" className="ml-2 text-[10px] px-1.5 py-0 h-4 bg-background/20">{count}</Badge>
@@ -197,8 +199,8 @@ const LeadsPage = () => {
       {/* Filter bar inside its own card for breathing room */}
       <Card className="shadow-none">
         <CardContent className="p-4">
-          <div className="flex flex-wrap gap-3">
-            <div className="relative flex-1 min-w-[240px]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-3">
+            <div className="relative sm:col-span-2 lg:flex-1 lg:min-w-[240px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search by name or lead ID..."
@@ -208,7 +210,7 @@ const LeadsPage = () => {
               />
             </div>
             <Select value={productFilter} onValueChange={setProductFilter}>
-              <SelectTrigger className="w-44 h-10"><SelectValue placeholder="Product" /></SelectTrigger>
+              <SelectTrigger className="w-full lg:w-44 h-10"><SelectValue placeholder="Product" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Products</SelectItem>
                 {["personal_loan","home_loan","business_loan","credit_card","loan_against_property"].map(p => (
@@ -218,7 +220,7 @@ const LeadsPage = () => {
             </Select>
             {role !== "agent" && (
               <Select value={sourceFilter} onValueChange={setSourceFilter}>
-                <SelectTrigger className="w-40 h-10"><SelectValue placeholder="Source" /></SelectTrigger>
+                <SelectTrigger className="w-full lg:w-40 h-10"><SelectValue placeholder="Source" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Sources</SelectItem>
                   {sources.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
@@ -226,7 +228,7 @@ const LeadsPage = () => {
               </Select>
             )}
             <Select value={followUpFilter} onValueChange={setFollowUpFilter}>
-              <SelectTrigger className="w-44 h-10"><SelectValue placeholder="Follow-Up" /></SelectTrigger>
+              <SelectTrigger className="w-full lg:w-44 h-10"><SelectValue placeholder="Follow-Up" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Follow-Ups</SelectItem>
                 <SelectItem value="has_pending">Has Pending F/U</SelectItem>
@@ -235,6 +237,7 @@ const LeadsPage = () => {
               </SelectContent>
             </Select>
           </div>
+
         </CardContent>
       </Card>
 
@@ -254,11 +257,11 @@ const LeadsPage = () => {
         <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle>Create New Lead</DialogTitle></DialogHeader>
           <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div><Label>Full Name *</Label><Input placeholder="Customer name" value={newLeadName} onChange={e => setNewLeadName(e.target.value)} /></div>
               <div><Label>Mobile Number *</Label><Input placeholder="10-digit mobile" value={newLeadMobile} onChange={e => setNewLeadMobile(e.target.value)} /></div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label>Lead Source *</Label>
                 <Select value={newLeadSource} onValueChange={setNewLeadSource}>
@@ -282,7 +285,7 @@ const LeadsPage = () => {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div><Label>City</Label><Input placeholder="City" value={newLeadCity} onChange={e => setNewLeadCity(e.target.value)} /></div>
               <div><Label>Monthly Income (₹)</Label><Input type="number" placeholder="50000" value={newLeadIncome} onChange={e => setNewLeadIncome(e.target.value)} /></div>
               <div><Label>Loan Amount (₹)</Label><Input type="number" placeholder="500000" value={newLeadLoanAmt} onChange={e => setNewLeadLoanAmt(e.target.value)} /></div>

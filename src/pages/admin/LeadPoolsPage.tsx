@@ -41,7 +41,7 @@ const LeadPoolsPage = () => {
       <div className="space-y-6">
         <Button variant="ghost" size="sm" onClick={() => setSelectedPool(null)}><ArrowLeft className="h-4 w-4 mr-1" /> Back to Pools</Button>
         <div>
-          <h1 className="text-2xl font-bold">{pool.name}</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">{pool.name}</h1>
           <p className="text-muted-foreground text-sm">Uploaded {pool.uploadDate} by {pool.uploadedBy}</p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -92,7 +92,7 @@ const LeadPoolsPage = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold flex items-center gap-2"><Database className="h-6 w-6" /> Lead Pools</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight flex items-center gap-2"><Database className="h-6 w-6" /> Lead Pools</h1>
         <p className="text-muted-foreground text-sm">All uploaded batches and their allocation status</p>
       </div>
 

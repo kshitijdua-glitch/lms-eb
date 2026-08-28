@@ -63,7 +63,7 @@ const ReportsPage = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">MIS & Reports</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">MIS & Reports</h1>
           <p className="text-muted-foreground text-sm">Analytics, data exports & team performance</p>
         </div>
         <Button onClick={handleExport}><Download className="h-4 w-4 mr-1" /> Export All</Button>

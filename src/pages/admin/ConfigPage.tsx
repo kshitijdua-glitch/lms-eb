@@ -61,7 +61,7 @@ const ConfigPage = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Configuration</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Configuration</h1>
           <p className="text-muted-foreground text-sm">System settings and rules management</p>
         </div>
         {!canEdit && <Badge variant="secondary" className="gap-1"><Lock className="h-3 w-3" /> Read-only</Badge>}
@@ -83,6 +83,7 @@ const ConfigPage = () => {
               </div>
             </CardHeader>
             <CardContent className="p-0">
+              <div className="w-full overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -103,6 +104,7 @@ const ConfigPage = () => {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -116,6 +118,7 @@ const ConfigPage = () => {
               </div>
             </CardHeader>
             <CardContent className="p-0">
+              <div className="w-full overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -144,6 +147,7 @@ const ConfigPage = () => {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

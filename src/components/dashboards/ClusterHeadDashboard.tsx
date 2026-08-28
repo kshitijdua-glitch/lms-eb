@@ -108,7 +108,7 @@ export function ClusterHeadDashboard() {
             Total Disbursed: <strong className="text-foreground">₹{(totalDisbursedAmt / 100000).toFixed(1)}L</strong>
           </span>
         </div>
-        <div className="grid grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {funnelSteps.map((step, idx) => (
             <StatTile
               key={step.label}
@@ -126,6 +126,7 @@ export function ClusterHeadDashboard() {
       <Card>
         <CardHeader className="pb-3"><CardTitle>Manager Group Comparison</CardTitle></CardHeader>
         <CardContent className="p-0">
+          <div className="w-full overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -152,6 +153,7 @@ export function ClusterHeadDashboard() {
               ))}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 

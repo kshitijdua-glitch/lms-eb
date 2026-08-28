@@ -61,7 +61,7 @@ const GroupReportsPage = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Group Lead Report</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Group Lead Report</h1>
           <p className="text-muted-foreground text-sm">Agent × Disposition breakdown</p>
         </div>
         <Button size="sm" onClick={handleExportCSV}><Download className="h-4 w-4 mr-1" /> Export CSV</Button>

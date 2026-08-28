@@ -125,7 +125,7 @@ const PartnersPage = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Lending Partners</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Lending Partners</h1>
           <p className="text-muted-foreground text-sm">{partners.length} partners configured · {partners.filter(p => p.status === "active").length} active</p>
         </div>
         {canEdit ? (
@@ -137,6 +137,7 @@ const PartnersPage = () => {
 
       <Card>
         <CardContent className="p-0">
+          <div className="w-full overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -198,6 +199,7 @@ const PartnersPage = () => {
               )}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 
@@ -237,7 +239,7 @@ const PartnersPage = () => {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <Label>Min Credit Score</Label>
                 <Input type="number" value={form.minCreditScore} onChange={e => setForm(f => ({ ...f, minCreditScore: Number(e.target.value) }))} />

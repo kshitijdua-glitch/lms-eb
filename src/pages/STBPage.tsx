@@ -76,7 +76,7 @@ const STBPage = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Send to Bank (STB)</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Lending Partner Submissions</h1>
         <p className="text-muted-foreground text-sm">{allSubs.length} total submissions</p>
       </div>
 
@@ -90,7 +90,7 @@ const STBPage = () => {
           <Card key={k.label}>
             <CardContent className="p-4">
               <k.icon className={`h-4 w-4 ${k.color} mb-1`} />
-              <div className="text-2xl font-bold">{k.value}</div>
+              <div className="text-2xl font-semibold tracking-tight">{k.value}</div>
               <div className="text-xs text-muted-foreground">{k.label}</div>
             </CardContent>
           </Card>
@@ -98,7 +98,7 @@ const STBPage = () => {
       </div>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">STB Submissions</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">Submissions</CardTitle></CardHeader>
         <CardContent className="p-0">
           <ConfigurableTable
             tableId="stb"

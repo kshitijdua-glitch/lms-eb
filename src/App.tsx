@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { ReactElement } from "react";
+import { ReactElement, Suspense, lazy } from "react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,36 +13,38 @@ import { LmsDataProvider } from "@/contexts/LmsDataContext";
 import LoginPage from "./pages/LoginPage";
 import { AppLayout } from "@/components/AppLayout";
 import { RouteGuard } from "@/components/RouteGuard";
+import { PageSkeleton } from "@/components/PageSkeleton";
 import Index from "./pages/Index";
 import LeadsPage from "./pages/LeadsPage";
 import LeadDetailPage from "./pages/LeadDetailPage";
 import FollowUpsPage from "./pages/FollowUpsPage";
 import STBPage from "./pages/STBPage";
-import ReportsPage from "./pages/ReportsPage";
-import LeadUploadPage from "./pages/admin/LeadUploadPage";
-import AgentManagementPage from "./pages/admin/AgentManagementPage";
-import ConfigPage from "./pages/admin/ConfigPage";
-import PartnersPage from "./pages/admin/PartnersPage";
-import LeadPoolsPage from "./pages/admin/LeadPoolsPage";
-import MISExportPage from "./pages/admin/MISExportPage";
-
-import AdminStaffPage from "./pages/admin/AdminStaffPage";
-import PerformancePage from "./pages/PerformancePage";
-import GroupLeadsPage from "./pages/GroupLeadsPage";
-import GroupFollowUpsPage from "./pages/GroupFollowUpsPage";
-import GroupSTBPage from "./pages/GroupSTBPage";
-import GroupManagementPage from "./pages/GroupManagementPage";
-import GroupReportsPage from "./pages/GroupReportsPage";
-import OrgLeadsPage from "./pages/OrgLeadsPage";
-import OrgFollowUpsPage from "./pages/OrgFollowUpsPage";
-import OrgSTBPage from "./pages/OrgSTBPage";
-import OrgReportsPage from "./pages/OrgReportsPage";
-import StaffManagementPage from "./pages/StaffManagementPage";
-import SystemConfigPage from "./pages/SystemConfigPage";
-import LeadAllocationPage from "./pages/LeadAllocationPage";
-import AuditTrailPage from "./pages/AuditTrailPage";
 import LandingPage from "./pages/LandingPage";
 import NotFound from "./pages/NotFound";
+
+const ReportsPage = lazy(() => import("./pages/ReportsPage"));
+const LeadUploadPage = lazy(() => import("./pages/admin/LeadUploadPage"));
+const AgentManagementPage = lazy(() => import("./pages/admin/AgentManagementPage"));
+const ConfigPage = lazy(() => import("./pages/admin/ConfigPage"));
+const PartnersPage = lazy(() => import("./pages/admin/PartnersPage"));
+const LeadPoolsPage = lazy(() => import("./pages/admin/LeadPoolsPage"));
+const MISExportPage = lazy(() => import("./pages/admin/MISExportPage"));
+const AdminStaffPage = lazy(() => import("./pages/admin/AdminStaffPage"));
+const PerformancePage = lazy(() => import("./pages/PerformancePage"));
+const GroupLeadsPage = lazy(() => import("./pages/GroupLeadsPage"));
+const GroupFollowUpsPage = lazy(() => import("./pages/GroupFollowUpsPage"));
+const GroupSTBPage = lazy(() => import("./pages/GroupSTBPage"));
+const GroupManagementPage = lazy(() => import("./pages/GroupManagementPage"));
+const GroupReportsPage = lazy(() => import("./pages/GroupReportsPage"));
+const OrgLeadsPage = lazy(() => import("./pages/OrgLeadsPage"));
+const OrgFollowUpsPage = lazy(() => import("./pages/OrgFollowUpsPage"));
+const OrgSTBPage = lazy(() => import("./pages/OrgSTBPage"));
+const OrgReportsPage = lazy(() => import("./pages/OrgReportsPage"));
+const StaffManagementPage = lazy(() => import("./pages/StaffManagementPage"));
+const SystemConfigPage = lazy(() => import("./pages/SystemConfigPage"));
+const LeadAllocationPage = lazy(() => import("./pages/LeadAllocationPage"));
+const AuditTrailPage = lazy(() => import("./pages/AuditTrailPage"));
+
 
 const queryClient = new QueryClient();
 
@@ -67,7 +69,9 @@ const App = () => (
                   path="/*"
                   element={
                     <AppLayout>
+                      <Suspense fallback={<PageSkeleton />}>
                       <Routes>
+
                         <Route path="/app" element={guard(<Index />)} />
                         <Route path="/leads" element={guard(<LeadsPage />)} />
                         <Route path="/leads/:id" element={guard(<LeadDetailPage />)} />
@@ -98,6 +102,8 @@ const App = () => (
                         <Route path="/audit-trail" element={guard(<AuditTrailPage />)} />
                         <Route path="*" element={<NotFound />} />
                       </Routes>
+                      </Suspense>
+
                     </AppLayout>
                   }
                 />

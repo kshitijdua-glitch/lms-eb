@@ -15,6 +15,8 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -31,7 +33,7 @@ import { useAudit, buildActor } from "@/contexts/AuditContext";
 import { getLeadLockState, can } from "@/lib/permissions";
 import { evaluateAllPartners, DISPOSITION_BY_OUTCOME } from "@/lib/partnerEligibility";
 import { usePartners } from "@/contexts/PartnersContext";
-import { CheckCircle2, XCircle, Info, ShieldAlert, Loader2 } from "lucide-react";
+import { CheckCircle2, XCircle, Info, ShieldAlert, Loader2, List } from "lucide-react";
 import { useLmsData } from "@/contexts/LmsDataContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { CreditReportPanel } from "@/components/CreditReportPanel";
@@ -545,76 +547,102 @@ const LeadDetailPage = () => {
     return [{ group: key === "connected" ? "Connected" : key === "not_connected" ? "Not connected" : "Invalid / Compliance", items: items.map(i => ({ ...i, type: i.type as any, category: "connected" as any, group: "x", requiresFollowUp: false })) }];
   })();
 
+  const leadListItems = (onPick?: () => void) => (
+    <div className="divide-y divide-border">
+      {filteredLeads.map(l => {
+        const daysSince = Math.floor((Date.now() - new Date(l.lastActivityAt || l.allocatedAt).getTime()) / 86400000);
+        const isCurrent = l.id === id;
+        return (
+          <button
+            key={l.id}
+            className={cn(
+              "w-full text-left px-4 py-3.5 hover:bg-muted/40 transition-colors relative",
+              isCurrent && "bg-primary/5"
+            )}
+            onClick={() => { navigate(`/leads/${l.id}`); onPick?.(); }}
+          >
+            {isCurrent && <span className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary" />}
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <span className="text-sm font-semibold text-foreground truncate">{l.name}</span>
+              <SoftPill tone={l.stage}>{getStageLabel(l.stage)}</SoftPill>
+            </div>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{getProductLabel(l.productType)}</span>
+              <span>{daysSince}d</span>
+            </div>
+          </button>
+        );
+      })}
+      {filteredLeads.length === 0 && (
+        <div className="p-6 text-xs text-muted-foreground text-center">No leads found</div>
+      )}
+    </div>
+  );
+
+  const leadSearchInput = (
+    <div className="relative">
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+      <Input
+        placeholder="Search leads"
+        value={leadListSearch}
+        onChange={e => setLeadListSearch(e.target.value)}
+        className="h-9 text-xs pl-8 bg-background"
+      />
+    </div>
+  );
+
   return (
-    <div className="flex gap-0 -m-6 min-h-screen">
-      {/* Lead List Sidebar */}
+    <div className="flex gap-0 -m-4 sm:-m-6 min-h-screen">
+      {/* Lead List Sidebar — desktop only */}
       <div className={cn(
-        "border-r border-border bg-card shrink-0 flex flex-col transition-all duration-200",
+        "border-r border-border bg-card shrink-0 hidden lg:flex flex-col transition-all duration-200",
         leadSidebarOpen ? "w-80" : "w-12"
       )}>
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           {leadSidebarOpen && <span className="text-sm font-semibold">Leads</span>}
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setLeadSidebarOpen(!leadSidebarOpen)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => setLeadSidebarOpen(!leadSidebarOpen)}
+            aria-label={leadSidebarOpen ? "Collapse lead list" : "Expand lead list"}
+          >
             {leadSidebarOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           </Button>
         </div>
         {leadSidebarOpen && (
           <>
-            <div className="p-3 border-b border-border">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <Input
-                  placeholder="Search"
-                  value={leadListSearch}
-                  onChange={e => setLeadListSearch(e.target.value)}
-                  className="h-9 text-xs pl-8 bg-background"
-                />
-              </div>
-            </div>
-            <ScrollArea className="flex-1">
-              <div className="divide-y divide-border">
-                {filteredLeads.map(l => {
-                  const daysSince = Math.floor((Date.now() - new Date(l.lastActivityAt || l.allocatedAt).getTime()) / 86400000);
-                  const isCurrent = l.id === id;
-                  return (
-                    <button
-                      key={l.id}
-                      className={cn(
-                        "w-full text-left px-4 py-3.5 hover:bg-muted/40 transition-colors relative",
-                        isCurrent && "bg-primary/5"
-                      )}
-                      onClick={() => navigate(`/leads/${l.id}`)}
-                    >
-                      {isCurrent && <span className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary" />}
-                      <div className="flex items-center justify-between gap-2 mb-1.5">
-                        <span className="text-sm font-semibold text-foreground truncate">{l.name}</span>
-                        <SoftPill tone={l.stage}>{getStageLabel(l.stage)}</SoftPill>
-                      </div>
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>{getProductLabel(l.productType)}</span>
-                        <span>{daysSince}d</span>
-                      </div>
-                    </button>
-                  );
-                })}
-                {filteredLeads.length === 0 && (
-                  <div className="p-6 text-xs text-muted-foreground text-center">No leads found</div>
-                )}
-              </div>
-            </ScrollArea>
+            <div className="p-3 border-b border-border">{leadSearchInput}</div>
+            <ScrollArea className="flex-1">{leadListItems()}</ScrollArea>
           </>
         )}
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 min-w-0 p-8 overflow-auto space-y-6">
+      <div className="flex-1 min-w-0 p-4 sm:p-6 xl:p-8 overflow-auto space-y-5 sm:space-y-6">
+
       {/* Action Bar */}
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
         <Button variant="ghost" size="sm" onClick={() => navigate("/leads")} className="text-muted-foreground hover:text-foreground -ml-2">
-          <ArrowLeft className="h-4 w-4 mr-1.5" /> Back to Leads
+          <ArrowLeft className="h-4 w-4 mr-1.5" /> <span className="hidden sm:inline">Back to Leads</span><span className="sm:hidden">Leads</span>
         </Button>
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="sm" className="h-9 lg:hidden" aria-label="Browse leads">
+              <List className="h-4 w-4 mr-1.5" /> Browse
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="p-0 w-[85vw] max-w-sm flex flex-col">
+            <SheetHeader className="px-4 py-3 border-b border-border text-left">
+              <SheetTitle className="text-sm">Leads</SheetTitle>
+            </SheetHeader>
+            <div className="p-3 border-b border-border">{leadSearchInput}</div>
+            <ScrollArea className="flex-1">{leadListItems()}</ScrollArea>
+          </SheetContent>
+        </Sheet>
         <div className="flex-1" />
-        <Button size="sm" onClick={() => setShowCallLog(true)} className="h-9"><Phone className="h-4 w-4 mr-1.5" /> Log Call</Button>
+        <Button size="sm" onClick={() => setShowCallLog(true)} className="h-9 flex-1 sm:flex-none"><Phone className="h-4 w-4 mr-1.5" /> Log Call</Button>
+
         <Tooltip>
           <TooltipTrigger asChild>
             <span tabIndex={0}>
@@ -654,24 +682,26 @@ const LeadDetailPage = () => {
 
       {/* Compliance Banner */}
       {!consentReceived ? (
-        <div className="rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3 flex items-start gap-3">
-          <div className="h-8 w-8 rounded-md bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
-            <ShieldAlert className="h-4 w-4" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-semibold text-amber-900">Consent required</span>
-              <SoftPill tone={consentStatus === "sent" ? "pending" : consentStatus === "expired" ? "missed" : "warm"}>
-                {consentStatus.replace(/_/g, " ")}
-              </SoftPill>
+        <div className="rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3 flex flex-col lg:flex-row lg:items-start gap-3">
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            <div className="h-8 w-8 rounded-md bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+              <ShieldAlert className="h-4 w-4" />
             </div>
-            <p className="text-xs text-amber-900/80 mt-0.5">
-              {consentStatus === "sent"
-                ? <>SMS consent sent to <strong>{lead.mobile}</strong>. Awaiting customer response.</>
-                : <>Customer consent must be captured before sharing data with partner banks. Submission is disabled until consent is received.</>}
-            </p>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm font-semibold text-amber-900">Consent required</span>
+                <SoftPill tone={consentStatus === "sent" ? "pending" : consentStatus === "expired" ? "missed" : "warm"}>
+                  {consentStatus.replace(/_/g, " ")}
+                </SoftPill>
+              </div>
+              <p className="text-xs text-amber-900/80 mt-0.5">
+                {consentStatus === "sent"
+                  ? <>SMS consent sent to <strong>{lead.mobile}</strong>. Awaiting customer response.</>
+                  : <>Customer consent must be captured before sharing data with partner banks. Submission is disabled until consent is received.</>}
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
             <Button
               size="sm"
               variant="outline"
@@ -695,6 +725,7 @@ const LeadDetailPage = () => {
             )}
           </div>
         </div>
+
       ) : (
         <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 px-4 py-3 flex items-center gap-3">
           <div className="h-8 w-8 rounded-md bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
@@ -744,7 +775,7 @@ const LeadDetailPage = () => {
       <div className="flex items-start gap-4">
         <div className="flex-1 space-y-3">
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-semibold tracking-tight">{lead.name}</h1>
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight break-words">{lead.name}</h1>
             {isProfileLocked && <Lock className="h-4 w-4 text-muted-foreground" />}
             
             {role !== "agent" && (
@@ -806,7 +837,7 @@ const LeadDetailPage = () => {
         )}
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-12 gap-4 sm:gap-6 [&>*:nth-child(1)]:xl:col-span-4 [&>*:nth-child(2)]:xl:col-span-5 [&>*:nth-child(3)]:xl:col-span-3">
         {/* Customer Profile */}
         <Card className="shadow-none">
           <CardHeader className="pb-3 border-b">

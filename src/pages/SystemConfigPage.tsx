@@ -40,6 +40,7 @@ const PriorityRulesTab = () => {
       <Card>
         <CardHeader><CardTitle className="text-base">Scoring Factors</CardTitle></CardHeader>
         <CardContent>
+          <div className="w-full overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -85,6 +86,7 @@ const PriorityRulesTab = () => {
               ))}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 
@@ -155,7 +157,7 @@ const SystemConfigPage = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">System Configuration</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">System Configuration</h1>
           <p className="text-muted-foreground text-sm">Configure system-wide rules and settings. All changes are audit-logged.</p>
         </div>
         <Settings className="h-5 w-5 text-muted-foreground" />
@@ -179,6 +181,7 @@ const SystemConfigPage = () => {
                 <Input placeholder="New source name" value={newSource} onChange={e => setNewSource(e.target.value)} className="max-w-xs" />
                 <Button onClick={addSource}><Plus className="h-4 w-4 mr-1" /> Add</Button>
               </div>
+              <div className="w-full overflow-x-auto">
               <Table>
                 <TableHeader><TableRow><TableHead>Source</TableHead><TableHead>Status</TableHead><TableHead>Action</TableHead></TableRow></TableHeader>
                 <TableBody>
@@ -198,6 +201,7 @@ const SystemConfigPage = () => {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -269,6 +273,7 @@ const SystemConfigPage = () => {
           <Card>
             <CardHeader><CardTitle className="text-base">Notification Settings</CardTitle></CardHeader>
             <CardContent>
+              <div className="w-full overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow><TableHead>Notification Type</TableHead><TableHead>Real-time</TableHead><TableHead>Summary</TableHead></TableRow>
@@ -283,6 +288,7 @@ const SystemConfigPage = () => {
                   ))}
                 </TableBody>
               </Table>
+              </div>
               <Button className="mt-4" onClick={() => toast.success("Notification settings saved. Change logged.")}><Save className="h-4 w-4 mr-1" /> Save</Button>
             </CardContent>
           </Card>
