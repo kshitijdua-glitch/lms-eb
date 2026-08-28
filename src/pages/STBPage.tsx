@@ -8,10 +8,11 @@ import { Send, CheckCircle, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { ConfigurableTable } from "@/components/ConfigurableTable";
 import type { ColumnDef } from "@/types/table";
+import type { STBStatus } from "@/types/lms";
 
 type STBItem = {
   id: string; partnerId: string; partnerName: string; submittedAt: string;
-  status: "submitted" | "approved" | "declined" | "disbursed";
+  status: STBStatus;
   approvedAmount: number | null; sanctionAmount: number | null;
   disbursedAmount: number | null; disbursementDate: string | null;
   remarks: string; integrationType: "api" | "portal" | "email";

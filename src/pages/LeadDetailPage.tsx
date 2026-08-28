@@ -31,7 +31,13 @@ import { useAudit, buildActor } from "@/contexts/AuditContext";
 import { getLeadLockState, can } from "@/lib/permissions";
 import { evaluateAllPartners, DISPOSITION_BY_OUTCOME } from "@/lib/partnerEligibility";
 import { usePartners } from "@/contexts/PartnersContext";
-import { CheckCircle2, XCircle, Info, ShieldAlert } from "lucide-react";
+import { CheckCircle2, XCircle, Info, ShieldAlert, Loader2 } from "lucide-react";
+import { useLmsData } from "@/contexts/LmsDataContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { CreditReportPanel } from "@/components/CreditReportPanel";
+import { BureauError, fetchCreditReport } from "@/services/experianSandbox";
+import { PartnerApiError, STB_STATUS_LABEL, submitApplication } from "@/services/partnerApi";
+import type { LeadStage, ProductType, STBSubmission } from "@/types/lms";
 
 // Soft pill color map — clean tinted backgrounds for status chips
 const SOFT_PILL: Record<string, string> = {
@@ -69,7 +75,9 @@ const LeadDetailPage = () => {
   const { config } = usePriorityConfig();
   const { logAudit, forLead } = useAudit();
   const { partners } = usePartners();
-  const lead = leads.find(l => l.id === id);
+  const { user } = useAuth();
+  const { leads: allStoreLeads, updateLead, setCreditReport, addSubmissions } = useLmsData();
+  const lead = allStoreLeads.find(l => l.id === id);
   const [showCallLog, setShowCallLog] = useState(false);
   const [showEMI, setShowEMI] = useState(false);
   const [showReassign, setShowReassign] = useState(false);
@@ -83,10 +91,6 @@ const LeadDetailPage = () => {
   const [emiTenure, setEmiTenure] = useState("36");
   const [isEditing, setIsEditing] = useState(false);
   const [newNote, setNewNote] = useState("");
-  const [editCreditScore, setEditCreditScore] = useState(lead?.creditScore?.toString() || "");
-  const [selectedPairs, setSelectedPairs] = useState<Array<{partnerId: string, partnerName: string, productType: string}>>(
-    lead?.selectedBanks?.map(b => ({ partnerId: b.partnerId, partnerName: b.partnerName, productType: b.productType })) || []
-  );
   const [selectedProduct, setSelectedProduct] = useState("");
   const [selectedBank, setSelectedBank] = useState("");
 
@@ -100,24 +104,34 @@ const LeadDetailPage = () => {
   const [callNextAction, setCallNextAction] = useState("");
   const [followUpDate, setFollowUpDate] = useState<Date | undefined>();
   const [followUpTime, setFollowUpTime] = useState("");
-  const [stbSubmitted, setStbSubmitted] = useState(lead?.stbSubmissions?.length ? lead.stbSubmissions.length > 0 : false);
-  const [localStbSubmissions, setLocalStbSubmissions] = useState(lead?.stbSubmissions || []);
-  const [localLoans, setLocalLoans] = useState(lead?.existingLoans || []);
   const [showAddLoan, setShowAddLoan] = useState(false);
   const [newLoan, setNewLoan] = useState({ bankName: "", loanType: "", outstandingAmount: "", emi: "", tenure: "" });
+
+  const [creditLoading, setCreditLoading] = useState(false);
+  const [creditError, setCreditError] = useState<string | null>(null);
+  const [stbLoading, setStbLoading] = useState(false);
 
   const [leadSidebarOpen, setLeadSidebarOpen] = useState(true);
   const [leadListSearch, setLeadListSearch] = useState("");
   const [priorityOverride, setPriorityOverride] = useState<string | null>(null);
-  const [consentStatus, setConsentStatus] = useState<"not_sent" | "sent" | "received" | "expired">(lead?.consentStatus || "not_sent");
-  const [consentSentAt, setConsentSentAt] = useState<Date | null>(null);
 
   if (!lead) return <div className="p-8 text-center text-muted-foreground">Lead not found</div>;
 
-  const allLeads = role === "agent" ? getLeadsForAgent("agent-1") : leads;
+  const allLeads = role === "agent" ? allStoreLeads.filter(l => l.assignedAgentId === "agent-1") : allStoreLeads;
   const filteredLeads = allLeads
     .filter(l => l.name.toLowerCase().includes(leadListSearch.toLowerCase()))
     .slice(0, 50);
+
+  // Derived, persisted state — everything reads from the store
+  const localStbSubmissions = lead.stbSubmissions ?? [];
+  const localLoans = lead.existingLoans ?? [];
+  const selectedPairs = (lead.selectedBanks ?? []).map(b => ({
+    partnerId: b.partnerId,
+    partnerName: b.partnerName,
+    productType: b.productType as string,
+  }));
+  const consentStatus = lead.consentStatus;
+  const creditReport = lead.creditReport ?? null;
 
   const daysSinceAlloc = Math.floor((Date.now() - new Date(lead.allocatedAt).getTime()) / 86400000);
   const lockState = getLeadLockState({ stbSubmissions: localStbSubmissions });
@@ -152,9 +166,19 @@ const LeadDetailPage = () => {
   })();
   const emi = emiCalc.emi;
 
+  const actorName = user?.name ?? actor.actorName;
+
   const handleLogCall = () => {
     if (!callOutcome || !callDisposition) {
       toast.error("Outcome and Disposition are required");
+      return;
+    }
+    if (!callNotes.trim()) {
+      toast.error("Call notes are required");
+      return;
+    }
+    if (!callNextAction) {
+      toast.error("Next action is required");
       return;
     }
     // Validate backdating per role
@@ -169,8 +193,64 @@ const LeadDetailPage = () => {
       toast.error("Follow-up date is required");
       return;
     }
+
+    const at = (() => {
+      const base = callDate ? new Date(callDate) : new Date();
+      const [h, m] = (callTime || "00:00").split(":").map(Number);
+      base.setHours(h || 0, m || 0, 0, 0);
+      return base.toISOString();
+    })();
+
+    const followUpAt = (() => {
+      if (!followUpDate) return null;
+      const base = new Date(followUpDate);
+      const [h, m] = (followUpTime || "10:00").split(":").map(Number);
+      base.setHours(h || 10, m || 0, 0, 0);
+      return base.toISOString();
+    })();
+
+    const callId = `call-${Date.now()}`;
+    updateLead(lead.id, current => {
+      const nextStage: LeadStage = current.stage === "new" ? "contacted" : current.stage;
+      const isNotConnected = callOutcome !== "connected";
+      return {
+        callLogs: [
+          ...current.callLogs,
+          {
+            id: callId,
+            timestamp: at,
+            outcome: (callOutcome === "connected" ? "connected" : "not_connected") as "connected" | "not_connected",
+            duration: Number(callDuration) || 0,
+            disposition: callDisposition as never,
+            notes: callNotes.trim(),
+            agentId: actor.actorId,
+            agentName: actorName,
+            nextAction: (callNextAction || "none") as "follow_up" | "stb" | "close" | "none",
+            followUpDate: followUpAt,
+          },
+        ],
+        followUps: followUpAt
+          ? [
+              ...current.followUps,
+              {
+                id: `fu-${Date.now()}`,
+                scheduledAt: followUpAt,
+                type: callDisposition === "document_follow_up" ? "document_collection" as const : "call" as const,
+                status: "pending" as const,
+                notes: callNotes.trim(),
+                subType: callDisposition,
+              },
+            ]
+          : current.followUps,
+        disposition: callDisposition as never,
+        stage: callNextAction === "close" ? "closed_lost" : nextStage,
+        retryCount: isNotConnected ? current.retryCount + 1 : current.retryCount,
+      };
+    });
+
     logAudit({
       ...actor,
+      actorName,
       action: "log_call",
       entityType: "lead",
       entityId: lead.id,
@@ -180,41 +260,66 @@ const LeadDetailPage = () => {
         disposition: callDisposition,
         duration: callDuration,
         nextAction: callNextAction,
-        followUpAt: followUpDate ? followUpDate.toISOString() : null,
+        followUpAt,
       },
       notes: callNotes || undefined,
     });
     setShowCallLog(false);
-    toast.success("Call logged successfully");
+    toast.success("Call logged", { description: followUpAt ? `Follow-up scheduled for ${new Date(followUpAt).toLocaleString()}` : undefined });
     setCallOutcome(""); setCallDisposition(""); setCallNotes(""); setCallNextAction(""); setCallDuration("120"); setFollowUpDate(undefined); setFollowUpTime("");
   };
 
   const handleAddNote = () => {
     if (!newNote.trim()) return;
+    const text = newNote.trim();
+    updateLead(lead.id, current => ({
+      notes: [
+        ...(current.notes ?? []),
+        { id: `note-${Date.now()}`, text, createdAt: new Date().toISOString(), agentId: actor.actorId, agentName: actorName },
+      ],
+    }));
     logAudit({
       ...actor,
+      actorName,
       action: "add_note",
       entityType: "lead",
       entityId: lead.id,
       entityLabel: lead.name,
-      notes: newNote.trim(),
+      notes: text,
     });
     toast.success("Note added");
     setNewNote("");
   };
 
-  const handleSaveCreditScore = () => {
-    logAudit({
-      ...actor,
-      action: "update_credit_score",
-      entityType: "lead",
-      entityId: lead.id,
-      entityLabel: lead.name,
-      before: { creditScore: lead.creditScore },
-      after: { creditScore: Number(editCreditScore) || null },
-    });
-    toast.success("Credit score updated");
+  const handleFetchCreditReport = async () => {
+    setCreditLoading(true);
+    setCreditError(null);
+    try {
+      const report = await fetchCreditReport({ lead, pulledBy: actorName, pulledByRole: role });
+      setCreditReport(lead.id, report);
+      logAudit({
+        ...actor,
+        actorName,
+        action: "bureau_pull",
+        entityType: "lead",
+        entityId: lead.id,
+        entityLabel: lead.name,
+        before: { creditScore: lead.creditScore },
+        after: { bureau: report.bureau, ref: report.referenceId, score: report.score, obligations: report.totalObligations },
+        notes: `Experian Griffith sandbox enquiry · ${report.tradeLines.length} trade lines`,
+      });
+      toast.success(`Bureau report fetched — score ${report.score}`, {
+        description: `Ref ${report.referenceId} · obligations ₹${report.totalObligations.toLocaleString("en-IN")} · FOIR recalculated`,
+      });
+    } catch (e) {
+      const msg = e instanceof BureauError ? e.message : "Bureau enquiry failed. Please retry.";
+      setCreditError(msg);
+      toast.error("Credit report unavailable", { description: msg });
+    } finally {
+      setCreditLoading(false);
+    }
   };
+
 
 
   const handleAddPair = () => {
@@ -226,18 +331,33 @@ const LeadDetailPage = () => {
       toast.error("Select both product and bank");
       return;
     }
-    const partner = lendingPartners.find(lp => lp.id === selectedBank);
+    const partner = partners.find(lp => lp.id === selectedBank);
     if (!partner) return;
     const exists = selectedPairs.some(p => p.partnerId === selectedBank && p.productType === selectedProduct);
     if (exists) {
       toast.error("This product + bank combination already added");
       return;
     }
-    setSelectedPairs([...selectedPairs, { partnerId: partner.id, partnerName: partner.name, productType: selectedProduct }]);
+    updateLead(lead.id, current => ({
+      selectedBanks: [
+        ...(current.selectedBanks ?? []),
+        {
+          partnerId: partner.id,
+          partnerName: partner.name,
+          productType: selectedProduct as ProductType,
+          selectedAt: new Date().toISOString(),
+          selectedBy: actor.actorId,
+        },
+      ],
+      stage: current.stage === "new" || current.stage === "contacted" || current.stage === "interested"
+        ? "bank_selected"
+        : current.stage,
+    }));
     setSelectedProduct("");
     setSelectedBank("");
     logAudit({
       ...actor,
+      actorName,
       action: "select_bank",
       entityType: "lead",
       entityId: lead.id,
@@ -253,9 +373,12 @@ const LeadDetailPage = () => {
       return;
     }
     const removed = selectedPairs[index];
-    setSelectedPairs(selectedPairs.filter((_, i) => i !== index));
+    updateLead(lead.id, current => ({
+      selectedBanks: (current.selectedBanks ?? []).filter((_, i) => i !== index),
+    }));
     logAudit({
       ...actor,
+      actorName,
       action: "remove_bank",
       entityType: "lead",
       entityId: lead.id,
@@ -269,10 +392,10 @@ const LeadDetailPage = () => {
   const consentReceived = consentStatus === "received";
 
   const handleTriggerConsent = () => {
-    setConsentStatus("sent");
-    setConsentSentAt(new Date());
+    updateLead(lead.id, { consentStatus: "sent" });
     logAudit({
       ...actor,
+      actorName,
       action: "trigger_sms_consent",
       entityType: "lead",
       entityId: lead.id,
@@ -283,9 +406,10 @@ const LeadDetailPage = () => {
   };
 
   const handleMarkConsentReceived = () => {
-    setConsentStatus("received");
+    updateLead(lead.id, { consentStatus: "received" });
     logAudit({
       ...actor,
+      actorName,
       action: "mark_consent_received",
       entityType: "lead",
       entityId: lead.id,
@@ -297,10 +421,10 @@ const LeadDetailPage = () => {
   };
 
   const handleClearConsent = () => {
-    setConsentStatus("not_sent");
-    setConsentSentAt(null);
+    updateLead(lead.id, { consentStatus: "not_sent" });
     logAudit({
       ...actor,
+      actorName,
       action: "clear_consent_flag",
       entityType: "lead",
       entityId: lead.id,
@@ -311,57 +435,97 @@ const LeadDetailPage = () => {
     toast.success("Consent flag cleared");
   };
 
-  const handleSendToBank = () => {
+  const handleSendToBank = async () => {
     if (isProfileLocked) {
-      toast.error("STB already submitted — cannot resubmit", {
-        description: lockState.reason,
-      });
+      toast.error("Already submitted — cannot resubmit", { description: lockState.reason });
+      return;
+    }
+    if (!can.sendToBank(role)) {
+      toast.error("Your role cannot submit applications to lending partners");
       return;
     }
     if (!consentReceived) {
-      toast.error("Customer consent required", { description: "Trigger SMS consent and mark as received before STB." });
+      toast.error("Customer consent required", { description: "Trigger SMS consent and mark as received before submitting." });
       return;
     }
-    // Pre-STB checklist
-    const checks = [];
-    if (selectedPairs.length === 0) checks.push("No banks selected");
-
-    if (checks.length > 0) {
-      toast.error("Pre-STB checklist failed", { description: checks.join(", ") });
+    if (!creditReport) {
+      toast.error("Bureau report required", { description: "Fetch the Experian Griffith credit report before submitting." });
+      return;
+    }
+    if (selectedPairs.length === 0) {
+      toast.error("Pre-submission checklist failed", { description: "No lending partners selected" });
       return;
     }
 
-    // Create STB submissions for each selected pair
-    const newSubmissions = selectedPairs.map((pair, i) => ({
-      id: `stb-new-${Date.now()}-${i}`,
-      partnerId: pair.partnerId,
-      partnerName: pair.partnerName,
-      submittedAt: new Date().toISOString(),
-      status: "submitted" as const,
-      approvedAmount: null,
-      sanctionAmount: null,
-      disbursedAmount: null,
-      disbursementDate: null,
-      remarks: `${getProductLabel(pair.productType as any)} application`,
-      integrationType: "portal" as const,
-    }));
+    setStbLoading(true);
+    try {
+      const results = await Promise.all(
+        selectedPairs.map(async pair => {
+          const partner = partners.find(p => p.id === pair.partnerId);
+          if (!partner) throw new PartnerApiError(`${pair.partnerName} is no longer configured.`);
+          const res = await submitApplication({
+            lead,
+            partner,
+            productType: pair.productType as ProductType,
+            report: creditReport,
+          });
+          const submission: STBSubmission = {
+            id: `stb-${Date.now()}-${pair.partnerId}`,
+            leadId: lead.id,
+            partnerId: partner.id,
+            partnerName: partner.name,
+            productType: pair.productType as ProductType,
+            submittedAt: new Date().toISOString(),
+            status: res.status,
+            applicationRef: res.applicationRef,
+            approvedAmount: null,
+            sanctionAmount: res.sanctionAmount,
+            disbursedAmount: null,
+            disbursementDate: null,
+            roi: res.roi,
+            tenureMonths: res.tenureMonths,
+            decisionReasons: res.decisionReasons,
+            remarks: res.status === "declined" ? "Declined at submission (BRE)" : "Application accepted by partner",
+            integrationType: partner.integrationType,
+            statusHistory: [{
+              status: res.status,
+              at: new Date().toISOString(),
+              note: res.status === "declined"
+                ? `${partner.name} declined at submission`
+                : `${partner.name} accepted application ${res.applicationRef}`,
+            }],
+          };
+          return submission;
+        }),
+      );
 
-    setLocalStbSubmissions([...localStbSubmissions, ...newSubmissions]);
-    setStbSubmitted(true);
-    newSubmissions.forEach(s => {
-      logAudit({
-        ...actor,
-        action: "send_to_bank",
-        entityType: "stb",
-        entityId: s.id,
-        entityLabel: `${lead.name} → ${s.partnerName}`,
-        after: { partner: s.partnerName, status: s.status },
+      const anyAccepted = results.some(r => r.status !== "declined");
+      addSubmissions(lead.id, results, anyAccepted ? "stb_submitted" : "declined");
+
+      results.forEach(s => {
+        logAudit({
+          ...actor,
+          actorName,
+          action: "submit_to_lending_partner",
+          entityType: "stb",
+          entityId: s.id,
+          entityLabel: `${lead.name} → ${s.partnerName}`,
+          after: { partner: s.partnerName, status: s.status, ref: s.applicationRef, sanction: s.sanctionAmount },
+          notes: s.decisionReasons?.join(" | "),
+        });
       });
-    });
-    toast.success(`STB initiated for ${selectedPairs.length} bank(s)`, {
-      description: selectedPairs.map(p => `${p.partnerName} (${getProductLabel(p.productType as any)})`).join(", "),
-    });
+
+      toast.success(`Submitted to ${results.length} lending partner(s)`, {
+        description: results.map(r => `${r.partnerName}: ${STB_STATUS_LABEL[r.status]}`).join(" · "),
+      });
+    } catch (e) {
+      const msg = e instanceof PartnerApiError ? e.message : "Partner API submission failed. Please retry.";
+      toast.error("Submission failed", { description: msg });
+    } finally {
+      setStbLoading(false);
+    }
   };
+
 
   // Build unified timeline (call logs + follow-ups + STB + notes + audit entries)
   const auditEntries = forLead(lead.id);
@@ -458,16 +622,21 @@ const LeadDetailPage = () => {
                 size="sm"
                 variant="outline"
                 onClick={handleSendToBank}
-                disabled={isProfileLocked || !consentReceived}
+                disabled={isProfileLocked || !consentReceived || !creditReport || stbLoading}
                 className="h-9"
-                aria-label="Send to Bank"
+                aria-label="Submit to Lending Partner"
               >
-                <Send className="h-4 w-4 mr-1.5" /> Send to Bank
+                {stbLoading
+                  ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                  : <Send className="h-4 w-4 mr-1.5" />}
+                {stbLoading ? "Submitting…" : "Submit to Lending Partner"}
               </Button>
             </span>
           </TooltipTrigger>
-          {!consentReceived && !isProfileLocked && (
-            <TooltipContent>Customer consent required before STB</TooltipContent>
+          {!isProfileLocked && (!consentReceived || !creditReport) && (
+            <TooltipContent>
+              {!consentReceived ? "Customer consent required before submission" : "Fetch the bureau credit report before submission"}
+            </TooltipContent>
           )}
         </Tooltip>
         <Button size="sm" variant="outline" onClick={() => setShowEMI(true)} className="h-9"><Calculator className="h-4 w-4 mr-1.5" /> EMI Calculator</Button>
@@ -497,9 +666,9 @@ const LeadDetailPage = () => {
               </SoftPill>
             </div>
             <p className="text-xs text-amber-900/80 mt-0.5">
-              {consentStatus === "sent" && consentSentAt
-                ? <>SMS consent sent to <strong>{lead.mobile}</strong> at {consentSentAt.toLocaleTimeString()}. Awaiting customer response.</>
-                : <>Customer consent must be captured before sharing data with partner banks. STB is disabled until consent is received.</>}
+              {consentStatus === "sent"
+                ? <>SMS consent sent to <strong>{lead.mobile}</strong>. Awaiting customer response.</>
+                : <>Customer consent must be captured before sharing data with partner banks. Submission is disabled until consent is received.</>}
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -707,21 +876,13 @@ const LeadDetailPage = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 pt-5">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-foreground">Credit Score</span>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      className="w-24 h-9 text-sm"
-                      value={editCreditScore}
-                      onChange={e => setEditCreditScore(e.target.value)}
-                      placeholder="—"
-                    />
-                    <Button size="sm" className="h-9" onClick={handleSaveCreditScore}>Save</Button>
-                  </div>
-                </div>
-              </div>
+              <CreditReportPanel
+                report={creditReport}
+                loading={creditLoading}
+                errorMessage={creditError}
+                canFetch={!isProfileLocked}
+                onFetch={handleFetchCreditReport}
+              />
               <div>
                 <div className="text-sm font-medium mb-2">Existing Loans</div>
                 {localLoans.length > 0 ? (
@@ -739,7 +900,7 @@ const LeadDetailPage = () => {
                           size="icon"
                           className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
                           onClick={() => {
-                            setLocalLoans(localLoans.filter(l => l.id !== loan.id));
+                            updateLead(lead.id, current => ({ existingLoans: (current.existingLoans ?? []).filter(l => l.id !== loan.id) }));
                             toast.success("Loan removed");
                           }}
                           aria-label="Remove loan"
@@ -817,8 +978,8 @@ const LeadDetailPage = () => {
                     </div>
                   );
                 })()}
-                <Button variant="outline" className="w-full h-10" onClick={handleAddPair} disabled={isProfileLocked}>
-                  <Plus className="h-4 w-4 mr-1.5" /> Add
+                <Button variant="outline" className="w-full h-10" onClick={handleAddPair} disabled={isProfileLocked} aria-label="Add lending partner">
+                  <Plus className="h-4 w-4 mr-1.5" /> Add Partner
                 </Button>
               </div>
               {selectedPairs.length > 0 ? (
@@ -1211,7 +1372,7 @@ const LeadDetailPage = () => {
                 emi: Number(newLoan.emi) || 0,
                 tenure: Number(newLoan.tenure) || 0,
               };
-              setLocalLoans([...localLoans, loan]);
+              updateLead(lead.id, current => ({ existingLoans: [...(current.existingLoans ?? []), loan] }));
               setNewLoan({ bankName: "", loanType: "", outstandingAmount: "", emi: "", tenure: "" });
               setShowAddLoan(false);
               toast.success("Loan added");

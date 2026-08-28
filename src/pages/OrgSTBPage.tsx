@@ -8,6 +8,7 @@ import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { ConfigurableTable } from "@/components/ConfigurableTable";
 import type { ColumnDef } from "@/types/table";
+import type { STBStatus } from "@/types/lms";
 
 const managers = [
   { id: "mgr-1", name: "Vikram Mehta", teams: ["team-1"] },
@@ -16,7 +17,7 @@ const managers = [
 
 type OSTBItem = {
   id: string; partnerId: string; partnerName: string; submittedAt: string;
-  status: "submitted" | "approved" | "declined" | "disbursed";
+  status: STBStatus;
   sanctionAmount: number | null; disbursedAmount: number | null;
   disbursementDate: string | null; integrationType: "api" | "portal" | "email";
   leadName: string; leadId: string; product: string;
