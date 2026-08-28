@@ -177,6 +177,8 @@ export interface STBSubmission {
   tenureMonths?: number | null;
   decisionReasons?: string[];
   statusHistory?: STBStatusEvent[];
+  /** Set when an internal user manually overrides the partner status. */
+  manualOverride?: boolean;
   leadId?: string;
 }
 
