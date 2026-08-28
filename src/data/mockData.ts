@@ -163,8 +163,12 @@ function daysAgo(d: number) {
 
 function generateLeads(): Lead[] {
   return names.map((name, i) => {
-    const income = randomInt(15000, 200000);
-    const obligations = randomInt(0, income * 0.4);
+    // Every 3rd lead is a "prime" profile: high bureau score, low FOIR and
+    // strong income so it passes every active partner's BRE thresholds —
+    // guarantees eligible leads exist in every agent/team for demos.
+    const isPrime = i % 3 === 0;
+    const income = isPrime ? randomInt(60000, 180000) : randomInt(15000, 200000);
+    const obligations = isPrime ? randomInt(0, Math.round(income * 0.3)) : randomInt(0, Math.round(income * 0.4));
     const foir = Math.round((obligations / income) * 100);
     // Round-robin across every stage so each module shows all statuses.
     const stage = stages[i % stages.length];
@@ -176,7 +180,7 @@ function generateLeads(): Lead[] {
     const pan = generatePAN();
     const allocDays = randomInt(1, 60);
     const lastActivityDays = randomInt(0, Math.min(allocDays, 14));
-    const creditScore = randomInt(550, 850);
+    const creditScore = isPrime ? randomInt(740, 830) : randomInt(550, 850);
     const city = randomFrom(cities);
     const source = randomFrom(leadSources);
 
