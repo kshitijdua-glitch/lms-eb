@@ -207,7 +207,7 @@ const OrgLeadsPage = () => {
 
       <Card>
         <CardContent className="p-0">
-          <ConfigurableTable tableId="org-leads" columns={columns} data={filtered.slice(0, 50)} onRowClick={(lead) => navigate(`/leads/${lead.id}`)} />
+          <ConfigurableTable tableId="org-leads" columns={columns} data={filtered} pageSize={25} onRowClick={(lead) => navigate(`/leads/${lead.id}`)} />
         </CardContent>
       </Card>
 

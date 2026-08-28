@@ -256,7 +256,7 @@ const GroupLeadsPage = () => {
           <ConfigurableTable
             tableId="group-leads"
             columns={columns}
-            data={filtered.slice(0, 50)}
+            data={filtered}
             onRowClick={(lead) => navigate(`/leads/${lead.id}`)}
           />
         </CardContent>
