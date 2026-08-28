@@ -237,7 +237,7 @@ const PartnersPage = () => {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <Label>Min Credit Score</Label>
                 <Input type="number" value={form.minCreditScore} onChange={e => setForm(f => ({ ...f, minCreditScore: Number(e.target.value) }))} />

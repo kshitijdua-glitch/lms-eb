@@ -106,7 +106,7 @@ export function ProfileMenu() {
               <div className="text-sm text-muted-foreground truncate">{user.email}</div>
             </div>
           </div>
-          <dl className="grid grid-cols-3 gap-3 text-sm border-t border-border pt-4">
+          <dl className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm border-t border-border pt-4">
             <dt className="text-muted-foreground">Role</dt>
             <dd className="col-span-2 font-medium">{roleLabels[role]}</dd>
             <dt className="text-muted-foreground">Joined</dt>

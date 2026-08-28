@@ -257,11 +257,11 @@ const LeadsPage = () => {
         <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle>Create New Lead</DialogTitle></DialogHeader>
           <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div><Label>Full Name *</Label><Input placeholder="Customer name" value={newLeadName} onChange={e => setNewLeadName(e.target.value)} /></div>
               <div><Label>Mobile Number *</Label><Input placeholder="10-digit mobile" value={newLeadMobile} onChange={e => setNewLeadMobile(e.target.value)} /></div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label>Lead Source *</Label>
                 <Select value={newLeadSource} onValueChange={setNewLeadSource}>
@@ -285,7 +285,7 @@ const LeadsPage = () => {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div><Label>City</Label><Input placeholder="City" value={newLeadCity} onChange={e => setNewLeadCity(e.target.value)} /></div>
               <div><Label>Monthly Income (₹)</Label><Input type="number" placeholder="50000" value={newLeadIncome} onChange={e => setNewLeadIncome(e.target.value)} /></div>
               <div><Label>Loan Amount (₹)</Label><Input type="number" placeholder="500000" value={newLeadLoanAmt} onChange={e => setNewLeadLoanAmt(e.target.value)} /></div>
