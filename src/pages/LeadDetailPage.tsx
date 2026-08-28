@@ -166,9 +166,19 @@ const LeadDetailPage = () => {
   })();
   const emi = emiCalc.emi;
 
+  const actorName = user?.name ?? actor.actorName;
+
   const handleLogCall = () => {
     if (!callOutcome || !callDisposition) {
       toast.error("Outcome and Disposition are required");
+      return;
+    }
+    if (!callNotes.trim()) {
+      toast.error("Call notes are required");
+      return;
+    }
+    if (!callNextAction) {
+      toast.error("Next action is required");
       return;
     }
     // Validate backdating per role
@@ -183,8 +193,64 @@ const LeadDetailPage = () => {
       toast.error("Follow-up date is required");
       return;
     }
+
+    const at = (() => {
+      const base = callDate ? new Date(callDate) : new Date();
+      const [h, m] = (callTime || "00:00").split(":").map(Number);
+      base.setHours(h || 0, m || 0, 0, 0);
+      return base.toISOString();
+    })();
+
+    const followUpAt = (() => {
+      if (!followUpDate) return null;
+      const base = new Date(followUpDate);
+      const [h, m] = (followUpTime || "10:00").split(":").map(Number);
+      base.setHours(h || 10, m || 0, 0, 0);
+      return base.toISOString();
+    })();
+
+    const callId = `call-${Date.now()}`;
+    updateLead(lead.id, current => {
+      const nextStage: LeadStage = current.stage === "new" ? "contacted" : current.stage;
+      const isNotConnected = callOutcome !== "connected";
+      return {
+        callLogs: [
+          ...current.callLogs,
+          {
+            id: callId,
+            timestamp: at,
+            outcome: (callOutcome === "connected" ? "connected" : "not_connected") as "connected" | "not_connected",
+            duration: Number(callDuration) || 0,
+            disposition: callDisposition as never,
+            notes: callNotes.trim(),
+            agentId: actor.actorId,
+            agentName: actorName,
+            nextAction: (callNextAction || "none") as "follow_up" | "stb" | "close" | "none",
+            followUpDate: followUpAt,
+          },
+        ],
+        followUps: followUpAt
+          ? [
+              ...current.followUps,
+              {
+                id: `fu-${Date.now()}`,
+                scheduledAt: followUpAt,
+                type: callDisposition === "document_follow_up" ? "document_collection" as const : "call" as const,
+                status: "pending" as const,
+                notes: callNotes.trim(),
+                subType: callDisposition,
+              },
+            ]
+          : current.followUps,
+        disposition: callDisposition as never,
+        stage: callNextAction === "close" ? "closed_lost" : nextStage,
+        retryCount: isNotConnected ? current.retryCount + 1 : current.retryCount,
+      };
+    });
+
     logAudit({
       ...actor,
+      actorName,
       action: "log_call",
       entityType: "lead",
       entityId: lead.id,
@@ -194,41 +260,66 @@ const LeadDetailPage = () => {
         disposition: callDisposition,
         duration: callDuration,
         nextAction: callNextAction,
-        followUpAt: followUpDate ? followUpDate.toISOString() : null,
+        followUpAt,
       },
       notes: callNotes || undefined,
     });
     setShowCallLog(false);
-    toast.success("Call logged successfully");
+    toast.success("Call logged", { description: followUpAt ? `Follow-up scheduled for ${new Date(followUpAt).toLocaleString()}` : undefined });
     setCallOutcome(""); setCallDisposition(""); setCallNotes(""); setCallNextAction(""); setCallDuration("120"); setFollowUpDate(undefined); setFollowUpTime("");
   };
 
   const handleAddNote = () => {
     if (!newNote.trim()) return;
+    const text = newNote.trim();
+    updateLead(lead.id, current => ({
+      notes: [
+        ...(current.notes ?? []),
+        { id: `note-${Date.now()}`, text, createdAt: new Date().toISOString(), agentId: actor.actorId, agentName: actorName },
+      ],
+    }));
     logAudit({
       ...actor,
+      actorName,
       action: "add_note",
       entityType: "lead",
       entityId: lead.id,
       entityLabel: lead.name,
-      notes: newNote.trim(),
+      notes: text,
     });
     toast.success("Note added");
     setNewNote("");
   };
 
-  const handleSaveCreditScore = () => {
-    logAudit({
-      ...actor,
-      action: "update_credit_score",
-      entityType: "lead",
-      entityId: lead.id,
-      entityLabel: lead.name,
-      before: { creditScore: lead.creditScore },
-      after: { creditScore: Number(editCreditScore) || null },
-    });
-    toast.success("Credit score updated");
+  const handleFetchCreditReport = async () => {
+    setCreditLoading(true);
+    setCreditError(null);
+    try {
+      const report = await fetchCreditReport({ lead, pulledBy: actorName, pulledByRole: role });
+      setCreditReport(lead.id, report);
+      logAudit({
+        ...actor,
+        actorName,
+        action: "bureau_pull",
+        entityType: "lead",
+        entityId: lead.id,
+        entityLabel: lead.name,
+        before: { creditScore: lead.creditScore },
+        after: { bureau: report.bureau, ref: report.referenceId, score: report.score, obligations: report.totalObligations },
+        notes: `Experian Griffith sandbox enquiry · ${report.tradeLines.length} trade lines`,
+      });
+      toast.success(`Bureau report fetched — score ${report.score}`, {
+        description: `Ref ${report.referenceId} · obligations ₹${report.totalObligations.toLocaleString("en-IN")} · FOIR recalculated`,
+      });
+    } catch (e) {
+      const msg = e instanceof BureauError ? e.message : "Bureau enquiry failed. Please retry.";
+      setCreditError(msg);
+      toast.error("Credit report unavailable", { description: msg });
+    } finally {
+      setCreditLoading(false);
+    }
   };
+
 
 
   const handleAddPair = () => {
