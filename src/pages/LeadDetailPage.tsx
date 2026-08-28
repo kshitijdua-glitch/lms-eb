@@ -682,24 +682,26 @@ const LeadDetailPage = () => {
 
       {/* Compliance Banner */}
       {!consentReceived ? (
-        <div className="rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3 flex flex-col sm:flex-row sm:items-start gap-3">
-          <div className="h-8 w-8 rounded-md bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
-            <ShieldAlert className="h-4 w-4" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-semibold text-amber-900">Consent required</span>
-              <SoftPill tone={consentStatus === "sent" ? "pending" : consentStatus === "expired" ? "missed" : "warm"}>
-                {consentStatus.replace(/_/g, " ")}
-              </SoftPill>
+        <div className="rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3 flex flex-col lg:flex-row lg:items-start gap-3">
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            <div className="h-8 w-8 rounded-md bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+              <ShieldAlert className="h-4 w-4" />
             </div>
-            <p className="text-xs text-amber-900/80 mt-0.5">
-              {consentStatus === "sent"
-                ? <>SMS consent sent to <strong>{lead.mobile}</strong>. Awaiting customer response.</>
-                : <>Customer consent must be captured before sharing data with partner banks. Submission is disabled until consent is received.</>}
-            </p>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm font-semibold text-amber-900">Consent required</span>
+                <SoftPill tone={consentStatus === "sent" ? "pending" : consentStatus === "expired" ? "missed" : "warm"}>
+                  {consentStatus.replace(/_/g, " ")}
+                </SoftPill>
+              </div>
+              <p className="text-xs text-amber-900/80 mt-0.5">
+                {consentStatus === "sent"
+                  ? <>SMS consent sent to <strong>{lead.mobile}</strong>. Awaiting customer response.</>
+                  : <>Customer consent must be captured before sharing data with partner banks. Submission is disabled until consent is received.</>}
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
             <Button
               size="sm"
               variant="outline"
@@ -723,6 +725,7 @@ const LeadDetailPage = () => {
             )}
           </div>
         </div>
+
       ) : (
         <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 px-4 py-3 flex items-center gap-3">
           <div className="h-8 w-8 rounded-md bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
