@@ -233,19 +233,48 @@ function generateLeads(): Lead[] {
         }))
       : [];
 
-    const stbSubmissions = ["stb_submitted", "approved", "disbursed"].includes(stage) ? [{
+    const submissionStages = ["stb_submitted", "approved", "disbursed", "declined"];
+    const partner = lendingPartners[i % lendingPartners.length];
+    const submittedDays = randomInt(1, 15);
+    const sanction = randomInt(100000, 1500000);
+    // Leads sitting in stb_submitted alternate between "submitted" and "under_review"
+    // so the partner pipeline shows the full status ladder.
+    const stbStatus: STBStatus =
+      stage === "approved" ? "approved"
+      : stage === "disbursed" ? "disbursed"
+      : stage === "declined" ? "declined"
+      : i % 2 === 0 ? "submitted" : "under_review";
+
+    const stbSubmissions = submissionStages.includes(stage) ? [{
       id: `stb-${i}-1`,
-      partnerId: "lp-1",
-      partnerName: "HDFC Bank",
-      submittedAt: daysAgo(randomInt(1, 15)),
-      status: (stage === "approved" ? "approved" : stage === "disbursed" ? "disbursed" : "submitted") as "submitted" | "approved" | "disbursed",
-      approvedAmount: stage === "approved" || stage === "disbursed" ? randomInt(100000, 1500000) : null,
-      sanctionAmount: stage === "approved" || stage === "disbursed" ? randomInt(100000, 1500000) : null,
-      disbursedAmount: stage === "disbursed" ? randomInt(100000, 1500000) : null,
-      disbursementDate: stage === "disbursed" ? daysAgo(randomInt(1, 5)) : null,
-      remarks: "Application processed",
-      integrationType: "api" as const,
+      partnerId: partner.id,
+      partnerName: partner.name,
+      submittedAt: daysAgo(submittedDays),
+      status: stbStatus,
+      approvedAmount: stbStatus === "approved" || stbStatus === "disbursed" ? sanction : null,
+      sanctionAmount: stbStatus === "approved" || stbStatus === "disbursed" ? sanction : null,
+      disbursedAmount: stbStatus === "disbursed" ? Math.round(sanction * 0.95) : null,
+      disbursementDate: stbStatus === "disbursed" ? daysAgo(randomInt(1, 5)) : null,
+      remarks: stbStatus === "declined"
+        ? "Declined by partner credit policy"
+        : stbStatus === "under_review"
+          ? "Under credit review with partner"
+          : "Application processed",
+      integrationType: partner.integrationType,
+      applicationRef: `${partner.name.split(" ")[0].toUpperCase()}-${100000 + i}`,
+      decisionReasons: stbStatus === "declined" ? ["Credit score below partner cut-off", "High existing obligations"] : undefined,
+      statusHistory: stbStatus === "submitted" ? [] : [{
+        status: stbStatus,
+        previousStatus: "submitted" as STBStatus,
+        at: daysAgo(Math.max(0, submittedDays - randomInt(1, 3))),
+        note: stbStatus === "declined" ? "Partner declined the application" : `Partner moved application to ${stbStatus.replace("_", " ")}`,
+        source: "partner_api" as const,
+        actorName: partner.name,
+        sanctionAmount: stbStatus === "approved" || stbStatus === "disbursed" ? sanction : null,
+        disbursedAmount: stbStatus === "disbursed" ? Math.round(sanction * 0.95) : null,
+      }],
     }] : [];
+
 
     const noteTexts = ["Initial contact made", "Customer interested in PL ₹5L", "Documents collection pending", "Bureau pulled - score 720", "Submitted to HDFC"];
     const leadNotes = Array.from({ length: randomInt(0, 3) }, (_, ni) => ({
