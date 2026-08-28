@@ -194,24 +194,41 @@ function generateLeads(): Lead[] {
       followUpDate: ci % 4 === 0 ? daysAgo(-randomInt(1, 7)) : null,
     }));
 
-    // Deterministic spread of overdue / today / upcoming / completed follow-ups
-    // so the follow-up module always demonstrates every bucket.
-    const followUpBuckets = [-4, -1, 0, 1, 3, 7];
-    const followUps = Array.from({ length: 1 + (i % 3) }, (_, fi) => {
-      const offset = followUpBuckets[(i + fi) % followUpBuckets.length];
+    // Deterministic spread of overdue / today / upcoming / completed follow-ups so
+    // every agent, team and the org view always demonstrate each bucket.
+    const followUpPlans: { offset: number; status: "pending" | "completed" | "missed" }[] =
+      i % 3 === 0
+        ? [
+            { offset: -(1 + (i % 5)), status: i % 9 === 0 ? "missed" : "pending" },
+            { offset: 0, status: "pending" },
+            { offset: 1 + (i % 6), status: "pending" },
+          ]
+        : i % 3 === 1
+          ? [
+              { offset: 0, status: "pending" },
+              { offset: 2 + (i % 5), status: "pending" },
+              { offset: -(2 + (i % 4)), status: "completed" },
+            ]
+          : [
+              { offset: -(1 + (i % 3)), status: "pending" },
+              { offset: 3 + (i % 7), status: "pending" },
+              { offset: -(5 + (i % 6)), status: "completed" },
+            ];
+
+    const followUps = followUpPlans.map((plan, fi) => {
       const when = new Date();
-      when.setDate(when.getDate() + offset);
-      when.setHours(offset === 0 ? new Date().getHours() + 1 : 11, 0, 0, 0);
-      const status = (i + fi) % 5 === 0 ? "completed" : offset < 0 && (i + fi) % 3 === 0 ? "missed" : "pending";
+      when.setDate(when.getDate() + plan.offset);
+      when.setHours(plan.offset === 0 ? Math.min(23, new Date().getHours() + 1) : 11, 0, 0, 0);
       return {
         id: `fu-${i}-${fi}`,
         scheduledAt: when.toISOString(),
         type: (["call", "document_collection", "stb_follow_up"] as const)[(i + fi) % 3],
-        status: status as "pending" | "completed" | "missed",
+        status: plan.status,
         notes: ["Follow up on documentation", "Confirm income proof", "Share sanction letter update", "Reconfirm interest"][(i + fi) % 4],
         subType: fi === 0 ? "hot_follow_up" : undefined,
       };
     });
+
 
 
     const existingLoans = Array.from({ length: randomInt(0, 3) }, (_, li) => ({
