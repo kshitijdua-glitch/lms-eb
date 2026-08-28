@@ -1,4 +1,4 @@
-import { Lead, Agent, Team, LendingPartner, DispositionConfig, Notification, type DispositionType, type LeadStage, type ProductType, type EmploymentType, type Priority } from "@/types/lms";
+import { Lead, Agent, Team, LendingPartner, DispositionConfig, Notification, type DispositionType, type LeadStage, type ProductType, type EmploymentType, type Priority, type STBStatus } from "@/types/lms";
 import { calculatePriority, defaultPriorityConfig } from "@/utils/priorityEngine";
 
 // Teams
