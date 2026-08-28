@@ -1,88 +1,66 @@
-## Login Screen + Auth Flow (Mock)
+# Demo-Ready LMS: Functional Lifecycle, Credit Bureau Pull, Partner API
 
-A simple, common login screen for all roles, with a tooltip showing demo credentials, a persistent mock auth session, and full profile/logout functionality in the app header.
+Goal: by tomorrow the prototype behaves like a working loan management platform — every action changes real state, survives refresh, and the full lead lifecycle can be demonstrated end to end for any role.
 
-This stays consistent with the prototype (mock data, no real backend). Auth is simulated via `localStorage`, mirroring the existing `RoleContext` pattern.
+## 1. Make the app actually stateful (foundation)
 
----
+Today all leads, batches, STB records and allocations live in a module-level array (`src/data/mockData.ts` exports `leads` directly), so most screen actions only fire a toast plus an audit entry and are lost on refresh. Confirmed examples: saving a credit score only writes an audit log, added banks/loans/STB records live in local component state on the lead page.
 
-### 1. New `AuthContext` (`src/contexts/AuthContext.tsx`)
+Fix: introduce a single `LmsDataProvider` (React context + localStorage persistence) that owns leads, batches, allocations, STB submissions, follow-ups, call logs, notes and notifications. Every page reads from it via selector hooks instead of importing `leads`. Adds:
 
-Lightweight mock auth provider:
-- State: `user: { name, email, role } | null`, `isAuthenticated`
-- Methods: `login(email, password)`, `logout()`
-- Persistence: `localStorage` key `lms-auth`
-- On `login`: validates against demo credentials map → sets user + syncs `RoleContext` role
-- On `logout`: clears storage, resets role, navigates to `/login`
+- All mutations (log call, disposition, credit pull, bank select, submit, reassign, allocate, follow-up complete) write through the store, so lists, dashboards, KPIs and reports update instantly and consistently.
+- Derived stage/priority recomputed automatically after each action.
+- "Reset demo data" in the profile menu to return to a clean state between client walkthroughs.
 
-Demo credentials (one per role, shared password `demo123`):
-- `agent@smartlms.com` → Agent
-- `manager@smartlms.com` → Manager
-- `cluster@smartlms.com` → Cluster Head
-- `admin@smartlms.com` → Data Admin
+## 2. Credit bureau: replace manual score with Experian Griffith (simulated sandbox)
 
-Wired into `App.tsx` above `RoleProvider` (or alongside, with role sync via effect).
+- Remove the manual credit-score input from the Lead Detail page.
+- New "Fetch Credit Report" action calling a simulated Experian Griffith sandbox service (`src/services/experianSandbox.ts`): realistic latency, deterministic per-PAN results, occasional "no-hit"/"error" cases so error handling is demonstrable.
+- Returns a full report: score + band, score factors, trade lines (lender, type, sanctioned/outstanding, EMI, DPD history), enquiries last 6/12 months, total obligations, bureau reference ID and pull timestamp.
+- New Credit Report panel/drawer on the lead page: score gauge, band, factors, accounts table, enquiry summary, "Bureau: Experian Griffith (Sandbox) · Ref ####" footer, plus "Re-pull" with a cooldown note.
+- Fetched obligations auto-populate existing loans and recompute FOIR, which then feeds partner eligibility — no manual entry.
+- Score, FOIR and DPD flow into the priority engine and BRE eligibility so downstream screens stay consistent.
 
-### 2. New Login Page (`src/pages/LoginPage.tsx`) — route `/login`
+## 3. Lending partner integration: simulated partner API + live status updates
 
-Clean, centered card layout matching landing page aesthetics (white surface, indigo accent, Inter, soft radial bg):
-- Logo + "Sign in to Smart LMS" heading
-- Email + Password inputs
-- "Sign in" primary button
-- Below the form: an `Info` icon + "View demo credentials" with a `Tooltip` (hover/focus) listing all 4 role logins and the shared password, plus "click to autofill" quick-pick chips for each role
-- Inline error toast on bad credentials
-- On success → navigate to `/app`
+- Remove manual STB status/amount entry. "Submit to Lending Partner" calls a simulated partner API (`src/services/partnerApi.ts`) per selected partner-product pair.
+- Response: application reference number, decision (`approved` / `declined` / `pending review`), sanction amount, ROI, tenure, decision reasons — driven by the partner's BRE thresholds against the bureau data, so decisions look logical.
+- Webhook-style progression: a background simulator advances `submitted → under review → approved/declined → disbursed` on timers, pushing notifications and audit entries, so statuses visibly change during the presentation.
+- Lead stage, STB pages (agent/group/org) and dashboard KPIs follow these updates automatically.
+- Partner config screen keeps CRUD, and eligibility uses each partner's own thresholds.
 
-### 3. Route protection
+## 4. Full lifecycle QA pass and fixes
 
-Update `src/components/RouteGuard.tsx`:
-- If `!isAuthenticated` and route is not `/` or `/login` → `<Navigate to="/login" replace />`
-- Keep existing role-based check after auth check
+Walk and fix the entire lifecycle for each of the five roles, in the browser:
 
-Update `src/App.tsx`:
-- Add `<Route path="/login" element={<LoginPage />} />` outside `AppLayout`
-- Wrap providers with `AuthProvider`
+```text
+Upload batch -> validate/map -> ingest -> allocate (incl. split) ->
+agent worklist -> call + disposition -> follow-up scheduling ->
+credit pull (Experian) -> BRE eligibility -> select partners ->
+submit to lending partner -> decision -> disbursed -> reports/MIS/audit
+```
 
-Update `src/pages/LandingPage.tsx`:
-- "Enter LMS" CTA → if authenticated go to `/app`, else go to `/login`
-- Add a secondary "Sign in" link in header when unauthenticated
+For each step: confirm the action mutates state, the lead moves stage correctly, invalid transitions are blocked with a clear reason, and the audit trail records actor + role. Fix broken links, stale routes, dead buttons, empty screens, and any page still reading stale mock arrays. Verify guards for Agent, Manager, Cluster Head and Data Admin by direct URL.
 
-### 4. Header profile menu (`src/components/AppLayout.tsx`)
+## 5. Presentation polish
 
-Replace the static `AV` avatar circle with a `DropdownMenu`:
-- Trigger: avatar with user initials (derived from `user.name`)
-- Content:
-  - Header block: name, email, role badge
-  - `Profile` (opens a simple Profile dialog/sheet showing name, email, role, joined-at — read-only for prototype)
-  - `Settings` (links to `/system-config` if permitted, otherwise hidden)
-  - Divider
-  - `Sign out` → calls `logout()` → redirects to `/login`
+- Consistent loading, empty and error states for every async action (credit pull, submit, upload, export).
+- Obvious primary action per stage on the lead page; secondary actions grouped.
+- Dashboards, reports and MIS export driven by live store data so numbers reconcile across screens.
+- Responsive check at 375 / 768 / 1280.
+- Keep the existing minimal indigo/Inter aesthetic — no new colour system.
 
-Role badge in header continues to show current role (still switchable via sidebar role-switcher for prototype demo purposes; switching role updates the mock user's role too so menu stays in sync).
+## Technical notes
 
-### 5. Sidebar adjustment (`src/components/AppSidebar.tsx`)
+- New: `src/contexts/LmsDataContext.tsx`, `src/services/experianSandbox.ts`, `src/services/partnerApi.ts`, `src/lib/leadLifecycle.ts` (stage transition rules), `src/components/CreditReportPanel.tsx`, `src/components/StbTracker.tsx`.
+- `src/data/mockData.ts` becomes seed data only; pages stop importing mutable `leads`.
+- No backend, no real network calls; both services are local simulators with realistic latency and clear "Sandbox" labelling in the UI.
+- Existing audit, permissions, partners and priority-config contexts are reused, not replaced.
 
-Footer: add small "Signed in as {name}" line above the version string (collapsed: hidden).
+## Sequence
 
----
-
-### Files
-
-**Created**
-- `src/contexts/AuthContext.tsx`
-- `src/pages/LoginPage.tsx`
-- `src/components/ProfileMenu.tsx` (avatar dropdown used in header)
-
-**Modified**
-- `src/App.tsx` — add `AuthProvider`, `/login` route
-- `src/components/RouteGuard.tsx` — auth gate before role gate
-- `src/components/AppLayout.tsx` — swap static avatar for `ProfileMenu`
-- `src/components/AppSidebar.tsx` — show signed-in user in footer
-- `src/pages/LandingPage.tsx` — CTA routes through `/login` when unauthenticated
-- `src/lib/permissions.ts` — allow `/login` for all (unauth fallthrough)
-
-### Notes / decisions
-
-- Pure prototype auth (no Supabase). Easy to swap later.
-- Role-switcher kept (per project memory: "Always include a role-switcher"), but switching role now also updates the active mock user so profile menu stays consistent.
-- Demo credentials displayed via tooltip + clickable chips for fast role testing.
+1. Data store + wiring existing pages (unblocks everything else)
+2. Experian sandbox service + credit report UI + FOIR/BRE feed
+3. Partner API + status simulator + STB screens
+4. Lifecycle QA sweep per role, fixes
+5. Polish and final browser verification of the full flow
