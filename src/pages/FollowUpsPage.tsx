@@ -106,7 +106,7 @@ const FollowUpsPage = () => {
               <span className="opacity-50">·</span>
               <Badge variant="outline" className="text-[10px] py-0">{getProductLabel(f.productType as any)}</Badge>
               <span className="opacity-50">·</span>
-              <span className="capitalize">{f.type.replace(/_/g, " ")}</span>
+              <span className="capitalize">{f.type === "stb_follow_up" ? "Partner Follow-Up" : f.type.replace(/_/g, " ")}</span>
             </div>
           </button>
 
