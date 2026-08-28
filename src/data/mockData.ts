@@ -194,14 +194,25 @@ function generateLeads(): Lead[] {
       followUpDate: ci % 4 === 0 ? daysAgo(-randomInt(1, 7)) : null,
     }));
 
-    const followUps = Array.from({ length: randomInt(0, 3) }, (_, fi) => ({
-      id: `fu-${i}-${fi}`,
-      scheduledAt: daysAgo(-randomInt(-2, 5)),
-      type: (["call", "document_collection", "stb_follow_up"] as const)[fi % 3],
-      status: (["pending", "completed", "missed"] as const)[fi % 3],
-      notes: "Follow up on documentation",
-      subType: fi === 0 ? "hot_follow_up" : undefined,
-    }));
+    // Deterministic spread of overdue / today / upcoming / completed follow-ups
+    // so the follow-up module always demonstrates every bucket.
+    const followUpBuckets = [-4, -1, 0, 1, 3, 7];
+    const followUps = Array.from({ length: 1 + (i % 3) }, (_, fi) => {
+      const offset = followUpBuckets[(i + fi) % followUpBuckets.length];
+      const when = new Date();
+      when.setDate(when.getDate() + offset);
+      when.setHours(offset === 0 ? new Date().getHours() + 1 : 11, 0, 0, 0);
+      const status = (i + fi) % 5 === 0 ? "completed" : offset < 0 && (i + fi) % 3 === 0 ? "missed" : "pending";
+      return {
+        id: `fu-${i}-${fi}`,
+        scheduledAt: when.toISOString(),
+        type: (["call", "document_collection", "stb_follow_up"] as const)[(i + fi) % 3],
+        status: status as "pending" | "completed" | "missed",
+        notes: ["Follow up on documentation", "Confirm income proof", "Share sanction letter update", "Reconfirm interest"][(i + fi) % 4],
+        subType: fi === 0 ? "hot_follow_up" : undefined,
+      };
+    });
+
 
     const existingLoans = Array.from({ length: randomInt(0, 3) }, (_, li) => ({
       id: `loan-${i}-${li}`,
