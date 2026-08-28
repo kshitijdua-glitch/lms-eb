@@ -775,7 +775,7 @@ const LeadDetailPage = () => {
       <div className="flex items-start gap-4">
         <div className="flex-1 space-y-3">
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-semibold tracking-tight">{lead.name}</h1>
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight break-words">{lead.name}</h1>
             {isProfileLocked && <Lock className="h-4 w-4 text-muted-foreground" />}
             
             {role !== "agent" && (
